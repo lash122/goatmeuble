@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Élégance — Boutique de costumes</title>
+  <meta name="description" content="Costumes et vêtements formels pour hommes. Livraison à domicile, paiement à la livraison.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="demo-banner" id="demoBanner" data-i18n="demo_notice"></div>
+  <div class="topbar">Livraison à domicile — Paiement à la livraison فقط | Cash on delivery</div>
+
+  <header class="site">
+    <div class="container site-inner">
+      <a class="brand" href="index.html">
+        <span class="logo">É<em>l</em>égance</span>
+      </a>
+      <nav class="main-nav">
+        <a href="#shop" data-i18n="nav_shop"></a>
+        <a href="#contact" data-i18n="nav_contact"></a>
+      </nav>
+      <div class="header-actions">
+        <div class="lang-switch">
+          <button data-lang="fr">FR</button>
+          <button data-lang="ar">ع</button>
+          <button data-lang="en">EN</button>
+        </div>
+        <a class="cart-btn" href="checkout.html">
+          <span data-i18n="cart"></span>
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1 data-i18n="hero_title"></h1>
+      <p data-i18n="hero_sub"></p>
+      <a class="btn-gold" href="#shop" data-i18n="shop_now"></a>
+      <br>
+      <span class="cod-badge" data-i18n="cod_only"></span>
+    </section>
+
+    <section class="block container" id="featured" hidden>
+      <h2 class="section-title" data-i18n="featured"></h2>
+      <div class="product-grid" id="featuredGrid" style="margin-top:34px"></div>
+    </section>
+
+    <section class="block container" id="shop">
+      <h2 class="section-title" data-i18n="all_products"></h2>
+      <div class="chip-row" id="categoryChips"></div>
+      <div class="product-grid" id="productGrid"></div>
+    </section>
+  </main>
+
+  <footer class="site" id="contact">
+    <div class="container cols">
+      <div>
+        <h4>É<em style="color:var(--gold)">l</em>égance</h4>
+        <p style="max-width:260px" data-i18n="hero_sub"></p>
+      </div>
+      <div>
+        <h4 data-i18n="nav_contact"></h4>
+        <p id="footerPhone">—</p>
+        <a href="admin.html">Espace propriétaire</a>
+      </div>
+    </div>
+    <div class="container fine">© <span id="year"></span> Élégance — <span data-i18n="cod_only"></span></div>
+  </footer>
+
+  <!-- product modal -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal-wrap">
+      <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+      <div class="modal">
+        <div class="m-photo"><img id="mPhoto" alt=""></div>
+        <div class="m-body">
+          <span class="cat" id="mCat"></span>
+          <h3 id="mName"></h3>
+          <div class="price-row"><span class="price" id="mPrice"></span><span class="price-old" id="mOld"></span></div>
+          <p class="desc" id="mDesc"></p>
+          <div id="mSizeBlock">
+            <div class="size-label" data-i18n="select_size"></div>
+            <div class="sizes" id="mSizes" style="margin-top:8px"></div>
+            <div class="size-error" id="mSizeError" data-i18n="size_required"></div>
+          </div>
+          <button class="btn-gold" id="mAdd" data-i18n="add_to_cart"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pinned to an exact version with a Subresource Integrity hash: the browser
+       refuses the file if its bytes ever change. Without this, whoever controls
+       the CDN controls a page that handles customer names, phones and addresses.
+       To upgrade, bump the version and recompute:
+         curl -sL <url> | openssl dgst -sha384 -binary | openssl base64 -A  -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
+    integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
+    crossorigin="anonymous"></script>
+  <script src="js/config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/store.js"></script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin — Élégance</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+  <!-- ============ LOGIN ============ -->
+  <div class="login-wrap" id="loginView">
+    <div class="login-box">
+      <h1>É<span style="color:var(--gold)">l</span>égance</h1>
+      <p class="sub">Espace propriétaire — Owner panel</p>
+      <input id="loginEmail" type="email" placeholder="Email">
+      <input id="loginPass" type="password" placeholder="Mot de passe">
+      <div class="error" id="loginError">Identifiants incorrects</div>
+      <button class="a-btn gold" id="loginBtn" style="width:100%">Se connecter</button>
+      <div class="demo-hint" id="demoHint">
+        <b>⚠ Supabase n'est pas connecté.</b><br>
+        Mode démo : cliquez sur « Se connecter » pour prévisualiser le panneau.
+        Les données ne sont pas enregistrées. Ne mettez pas ce site en ligne
+        avant d'avoir rempli <code>js/config.js</code>.
+      </div>
+      <p style="margin-top:18px;font-size:0.78rem"><a href="index.html" style="color:var(--muted)">← Retour à la boutique</a></p>
+    </div>
+  </div>
+
+  <!-- ============ ADMIN SHELL ============ -->
+  <div class="admin-shell" id="adminShell">
+    <div class="admin-top">
+      <div class="container" style="display:flex;justify-content:space-between;align-items:center">
+        <span class="brand-w">É<span>l</span>égance · Admin</span>
+        <span style="display:flex;align-items:center;gap:14px">
+          <span class="who" id="demoTag"></span>
+          <button id="logoutBtn">Déconnexion</button>
+        </span>
+      </div>
+    </div>
+
+    <div class="admin-tabs container" style="padding-inline:0">
+      <button data-tab="orders" class="active">Commandes <span class="pill" id="newOrdersBadge" style="display:none">0</span></button>
+      <button data-tab="products">Produits</button>
+      <button data-tab="categories">Catégories</button>
+      <button data-tab="zones">Zones de livraison</button>
+      <button data-tab="stats">Statistiques</button>
+    </div>
+
+    <div class="container">
+      <!-- ORDERS -->
+      <div class="tab-panel active" id="tab-orders">
+        <div class="panel-h">
+          <h2>Commandes</h2>
+          <select id="orderStatusFilter" class="btn-mini" style="padding:9px 12px">
+            <option value="">Toutes</option>
+            <option value="new">Nouvelles</option>
+            <option value="confirmed">Confirmées</option>
+            <option value="shipped">Expédiées</option>
+            <option value="delivered">Livrées</option>
+            <option value="cancelled">Annulées</option>
+          </select>
+        </div>
+        <div class="tbl-wrap"><table class="tbl"><thead>
+          <tr><th>#</th><th>Client</th><th>Zone</th><th>Total</th><th>Articles</th><th>Statut</th><th></th></tr>
+        </thead><tbody id="ordersBody"></tbody></table></div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div class="tab-panel" id="tab-products">
+        <div class="panel-h">
+          <h2>Produits</h2>
+          <button class="a-btn gold" id="addProductBtn">+ Nouveau produit</button>
+        </div>
+        <div class="tbl-wrap"><table class="tbl"><thead>
+          <tr><th></th><th>Nom (FR)</th><th>Prix</th><th>Stock</th><th>Catégorie</th><th>État</th><th></th></tr>
+        </thead><tbody id="productsBody"></tbody></table></div>
+      </div>
+
+      <!-- CATEGORIES -->
+      <div class="tab-panel" id="tab-categories">
+        <div class="panel-h">
+          <h2>Catégories</h2>
+          <button class="a-btn gold" id="addCatBtn">+ Nouvelle catégorie</button>
+        </div>
+        <div class="tbl-wrap"><table class="tbl"><thead>
+          <tr><th>Nom (FR)</th><th>العربية</th><th>English</th><th>Ordre</th><th></th></tr>
+        </thead><tbody id="catsBody"></tbody></table></div>
+      </div>
+
+      <!-- ZONES -->
+      <div class="tab-panel" id="tab-zones">
+        <div class="panel-h"><h2>Zones de livraison & frais</h2></div>
+        <div class="panel" style="max-width:480px" id="zonesBox"></div>
+        <button class="a-btn gold" id="addZoneBtn" style="margin-top:14px">+ Ajouter une zone</button>
+        <div style="margin-top:20px">
+          <button class="a-btn" id="saveZonesBtn">💾 Enregistrer les zones</button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="tab-panel" id="tab-stats">
+        <div class="panel-h"><h2>Statistiques</h2></div>
+        <div class="stat-grid" id="statCards"></div>
+        <div class="panel">
+          <h3 style="margin-bottom:14px;font-size:1.05rem">Produits les plus vendus</h3>
+          <div id="topProducts"></div>
+        </div>
+        <div class="panel" style="margin-top:16px">
+          <h3 style="margin-bottom:14px;font-size:1.05rem">Commandes par zone</h3>
+          <div id="zoneStats"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- generic editor modal -->
+  <div class="modal-overlay" id="editorModal">
+    <div class="modal-wrap">
+      <button class="modal-close" id="editorClose" style="color:var(--ink);text-shadow:none">&times;</button>
+      <div class="modal" style="grid-template-columns:1fr">
+        <div class="m-body narrow" id="editorBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pinned to an exact version with a Subresource Integrity hash: the browser
+       refuses the file if its bytes ever change. Without this, whoever controls
+       the CDN controls a page that handles customer names, phones and addresses.
+       To upgrade, bump the version and recompute:
+         curl -sL <url> | openssl dgst -sha384 -binary | openssl base64 -A  -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
+    integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
+    crossorigin="anonymous"></script>
+  <script src="js/config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

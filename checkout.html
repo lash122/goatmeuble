@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panier & Commande — Élégance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="topbar">Livraison à domicile — Paiement à la livraison | الدفع عند الاستلام</div>
+
+  <header class="site">
+    <div class="container site-inner">
+      <a class="brand" href="index.html"><span class="logo">É<em>l</em>égance</span></a>
+      <div class="header-actions">
+        <div class="lang-switch">
+          <button data-lang="fr">FR</button>
+          <button data-lang="ar">ع</button>
+          <button data-lang="en">EN</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container page-pad">
+    <!-- ============ CART VIEW ============ -->
+    <div id="cartView">
+      <h1 class="section-title" data-i18n="cart" style="margin-bottom:26px"></h1>
+
+      <div class="checkout-grid">
+        <div class="panel" id="cartLines"></div>
+        <div class="panel">
+          <div class="totals">
+            <div class="row"><span data-i18n="subtotal"></span><span id="subtotalVal">—</span></div>
+            <div class="row"><span data-i18n="delivery"></span><span id="deliveryVal">—</span></div>
+            <div class="row grand"><span data-i18n="total"></span><span id="totalVal">—</span></div>
+          </div>
+          <div class="cod-note">💵 <span data-i18n="cod_only"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SUCCESS VIEW ============ -->
+    <div id="successView" style="display:none">
+      <div class="success-box">
+        <div class="check">✓</div>
+        <h2 data-i18n="order_success"></h2>
+        <div class="order-ref"><span data-i18n="order_number"></span> : <span id="orderRef"></span></div>
+        <div class="order-ref"><span data-i18n="total"></span> : <span id="finalTotal"></span></div>
+        <p style="color:var(--muted);margin-bottom:26px" data-i18n="order_success_sub"></p>
+        <a class="btn-outline" href="index.html" data-i18n="continue_shopping"></a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site" style="margin-top:60px">
+    <div class="container fine">© <span id="year"></span> Élégance — <span data-i18n="cod_only"></span></div>
+  </footer>
+
+  <!-- Pinned to an exact version with a Subresource Integrity hash: the browser
+       refuses the file if its bytes ever change. Without this, whoever controls
+       the CDN controls a page that handles customer names, phones and addresses.
+       To upgrade, bump the version and recompute:
+         curl -sL <url> | openssl dgst -sha384 -binary | openssl base64 -A  -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
+    integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
+    crossorigin="anonymous"></script>
+  <script src="js/config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/checkout.js"></script>
+</body>
+</html>

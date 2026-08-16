@@ -1,0 +1,10 @@
+# agent planning notes, not part of the site
+.zcode/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*~
+*.swp
+.vscode/
+.idea/
