@@ -112,10 +112,42 @@ function card_badge_i18n() {
   document.querySelectorAll('[data-i18n="out_of_stock"]').forEach(el => el.textContent = I18N.t('out_of_stock'));
 }
 
+/* Thumbnail strip under the main photo. The admin panel has always accepted
+   several photos per product and stored them all; only the first was ever
+   displayed. Hidden for single-photo products so nothing changes for them. */
+function renderThumbs(p, mainPhoto) {
+  const strip = document.getElementById('mThumbs');
+  const photos = p.photos || [];
+  strip.innerHTML = '';
+  strip.hidden = photos.length < 2;
+  if (strip.hidden) return;
+
+  const name = I18N.localize(p, 'name');
+  photos.forEach((src, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'm-thumb' + (i === 0 ? ' active' : '');
+    btn.setAttribute('aria-label', `${name} — ${i + 1}/${photos.length}`);
+    const img = document.createElement('img');
+    img.src = src;               // set as a property, so no HTML escaping to get wrong
+    img.alt = '';
+    img.loading = 'lazy';
+    btn.appendChild(img);
+    btn.addEventListener('click', () => {
+      mainPhoto.src = src;
+      strip.querySelectorAll('.m-thumb').forEach(x => x.classList.remove('active'));
+      btn.classList.add('active');
+    });
+    strip.appendChild(btn);
+  });
+}
+
 function openModal(p) {
   state.current = p;
   state.selectedSize = null;
-  document.getElementById('mPhoto').src = DB.photoOf(p);
+  const mainPhoto = document.getElementById('mPhoto');
+  mainPhoto.src = DB.photoOf(p);
+  mainPhoto.alt = I18N.localize(p, 'name');
+  renderThumbs(p, mainPhoto);
   document.getElementById('mCat').textContent = catName(p.category_id);
   document.getElementById('mName').textContent = I18N.localize(p, 'name');
   document.getElementById('mPrice').textContent = I18N.fmtPrice(p.price);

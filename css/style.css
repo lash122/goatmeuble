@@ -155,8 +155,20 @@ section.block { padding: 56px 0 30px; }
   background: var(--paper); border-radius: 14px; max-width: 820px; width: 100%;
   max-height: 90vh; overflow: auto; display: grid; grid-template-columns: 1fr 1fr;
 }
-.modal .m-photo { background: var(--navy-2); min-height: 320px; }
+.modal .m-media { display: flex; flex-direction: column; background: var(--navy-2); min-height: 320px; }
+.modal .m-photo { flex: 1; min-height: 0; }
 .modal .m-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* thumbnail strip — only rendered when a product has more than one photo */
+.m-thumbs { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; }
+.m-thumb {
+  width: 54px; height: 66px; padding: 0; overflow: hidden; cursor: pointer;
+  border: 2px solid transparent; border-radius: 6px; background: none;
+  transition: border-color 0.15s;
+}
+.m-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.m-thumb.active { border-color: var(--gold); }
+.m-thumb:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .modal .m-body { padding: 28px; display: flex; flex-direction: column; gap: 12px; }
 .modal h3 { font-size: 1.5rem; }
 .modal .desc { color: var(--muted); font-size: 0.95rem; flex: 1; }
@@ -226,6 +238,7 @@ footer.site .fine { border-top: 1px solid rgba(255,255,255,0.12); margin-top: 28
 @media (max-width: 860px) {
   .checkout-grid { grid-template-columns: 1fr; }
   .modal { grid-template-columns: 1fr; }
+  .modal .m-media { min-height: 0; }
   .modal .m-photo { max-height: 300px; }
   nav.main-nav { display: none; }
 }
