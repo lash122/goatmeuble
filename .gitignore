@@ -8,3 +8,6 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+
+# build output for the web host, regenerate with the copy step in README
+dist/
