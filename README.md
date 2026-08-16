@@ -52,6 +52,7 @@ Log in at `admin.html` with the owner account created in step 2.4.
 | See orders, mark delivered | admin.html → Commandes |
 | Delivery zones & fees | admin.html → Zones de livraison |
 | Shop name, phone, WhatsApp | admin.html → Boutique |
+| Customers track their order | track.html (order no. + phone) |
 | Sales, best sellers | admin.html → Statistiques |
 
 ---
@@ -92,7 +93,8 @@ C'est tout. Connectez-vous sur `admin.html` avec le compte créé à l'étape 2.
 
 ## Files
 ```
-index.html        Storefront
+index.html        Storefront (search, sort, categories)
+track.html        Customer order tracking
 checkout.html     Cart + cash-on-delivery order form
 admin.html        Owner panel (login required)
 css/style.css     Elegant theme, LTR + RTL (Arabic)
@@ -102,6 +104,7 @@ js/i18n.js        FR/AR/EN translations
 js/supabase.js    Database layer (+ demo mode)
 js/store.js       Storefront logic, cart
 js/checkout.js    Order placement (COD only)
+js/track.js       Order tracking lookup
 js/admin.js       Admin panel logic
 supabase/schema.sql  Tables, security rules, default zones — paste into Supabase SQL Editor
 ```

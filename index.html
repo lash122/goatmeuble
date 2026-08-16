@@ -67,6 +67,14 @@
     <section class="block container" id="shop">
       <h2 class="section-title" data-i18n="all_products"></h2>
       <div class="chip-row" id="categoryChips"></div>
+      <div class="shop-tools">
+        <input id="searchBox" type="search" data-i18n-placeholder="search_ph" aria-label="Search">
+        <select id="sortBy">
+          <option value="new" data-i18n="sort_new"></option>
+          <option value="price_asc" data-i18n="sort_price_asc"></option>
+          <option value="price_desc" data-i18n="sort_price_desc"></option>
+        </select>
+      </div>
       <div class="product-grid" id="productGrid"></div>
     </section>
   </main>
@@ -80,6 +88,7 @@
       <div>
         <h4 data-i18n="nav_contact"></h4>
         <p id="footerPhone">—</p>
+        <a href="track.html" data-i18n="track"></a><br>
         <a href="admin.html">Espace propriétaire</a>
       </div>
     </div>

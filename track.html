@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panier & Commande — Élégance</title>
+  <title>Suivi de commande — Élégance</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -22,42 +22,28 @@
           <button data-lang="ar">ع</button>
           <button data-lang="en">EN</button>
         </div>
+        <a class="cart-btn" href="checkout.html">
+          <span data-i18n="cart"></span>
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
       </div>
     </div>
   </header>
 
   <main class="container page-pad">
-    <!-- ============ CART VIEW ============ -->
-    <div id="cartView">
-      <h1 class="section-title" data-i18n="cart" style="margin-bottom:26px"></h1>
+    <h1 class="section-title" data-i18n="track" style="margin-bottom:14px"></h1>
+    <p style="text-align:center;color:var(--muted);max-width:440px;margin:0 auto 26px" data-i18n="track_intro"></p>
 
-      <div class="checkout-grid">
-        <div class="panel" id="cartLines"></div>
-        <div class="panel">
-          <div class="totals">
-            <div class="row"><span data-i18n="subtotal"></span><span id="subtotalVal">—</span></div>
-            <div class="row"><span data-i18n="delivery"></span><span id="deliveryVal">—</span></div>
-            <div class="row grand"><span data-i18n="total"></span><span id="totalVal">—</span></div>
-          </div>
-          <div class="cod-note">💵 <span data-i18n="cod_only"></span></div>
-        </div>
+    <div class="panel" style="max-width:440px;margin:0 auto">
+      <div class="form-grid">
+        <div><label data-i18n="track_id"></label><input id="tId" type="text" inputmode="numeric" placeholder="42"></div>
+        <div><label data-i18n="phone"></label><input id="tPhone" type="tel" placeholder="05 XX XX XX XX"></div>
+        <div class="error-msg" id="tError"></div>
+        <button class="btn-gold" id="tBtn" style="width:100%" data-i18n="track_btn"></button>
       </div>
     </div>
 
-    <!-- ============ SUCCESS VIEW ============ -->
-    <div id="successView" style="display:none">
-      <div class="success-box">
-        <div class="check">✓</div>
-        <h2 data-i18n="order_success"></h2>
-        <div class="order-ref"><span data-i18n="order_number"></span> : <span id="orderRef"></span></div>
-        <div class="order-ref"><span data-i18n="total"></span> : <span id="finalTotal"></span></div>
-        <p style="color:var(--muted);margin-bottom:10px" data-i18n="order_success_sub"></p>
-        <!-- filled from the store settings; hidden while no number is saved -->
-        <div class="success-contact" id="successContact" hidden></div>
-        <a class="btn-outline" href="index.html" data-i18n="continue_shopping"></a>
-        <a class="btn-outline" id="trackLink" href="track.html" hidden data-i18n="track" style="margin-inline-start:8px"></a>
-      </div>
-    </div>
+    <div class="panel" id="tResult" hidden style="max-width:440px;margin:22px auto 0"></div>
   </main>
 
   <footer class="site" style="margin-top:60px">
@@ -82,6 +68,6 @@
   <script src="js/i18n.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/cart.js"></script>
-  <script src="js/checkout.js"></script>
+  <script src="js/track.js"></script>
 </body>
 </html>

@@ -155,6 +155,9 @@ async function placeOrder() {
     // price changed while the basket sat in localStorage
     document.getElementById('finalTotal').textContent = I18N.fmtPrice(res.total);
     renderSuccessContact();
+    const track = document.getElementById('trackLink');
+    track.href = `track.html?id=${encodeURIComponent(res.id)}`;
+    track.hidden = false;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
     err.textContent = orderErrorMessage(e);

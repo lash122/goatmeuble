@@ -1,5 +1,6 @@
 /* Storefront: catalog, category filter, product modal (cart lives in cart.js) */
-let state = { products: [], categories: [], filter: null, current: null, selectedSize: null, store: {} };
+let state = { products: [], categories: [], filter: null, current: null, selectedSize: null,
+              store: {}, query: '', sort: 'new' };
 
 async function initStore() {
   if (DB.isDemo) document.getElementById('demoBanner').classList.add('show');
@@ -29,6 +30,11 @@ async function initStore() {
   document.querySelectorAll('.lang-switch button').forEach(b =>
     b.addEventListener('click', () => { I18N.setLang(b.dataset.lang); }));
   document.addEventListener('langchange', () => { renderChips(); renderFeatured(); renderGrid(); renderWhatsApp(state.store); });
+
+  const search = document.getElementById('searchBox');
+  search.addEventListener('input', () => { state.query = search.value.trim().toLowerCase(); renderGrid(); });
+  const sortSel = document.getElementById('sortBy');
+  sortSel.addEventListener('change', () => { state.sort = sortSel.value; renderGrid(); });
 
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.getElementById('productModal').addEventListener('click', e => {
@@ -83,6 +89,7 @@ function productCard(p) {
         <span class="price">${I18N.fmtPrice(p.price)}</span>
         ${onSale ? `<span class="price-old">${I18N.fmtPrice(p.compare_at_price)}</span><span class="badge-sale">-${Math.round((1 - p.price / p.compare_at_price) * 100)}%</span>` : ''}
         ${soldOut ? `<span class="badge-oos" data-i18n="out_of_stock"></span>` : ''}
+        ${!soldOut && p.stock <= 3 ? `<span class="badge-low">${esc(I18N.t('low_stock').replace('{n}', p.stock))}</span>` : ''}
       </div>
     </div>`;
   card.querySelector('.photo').addEventListener('click', () => openModal(p));
@@ -101,11 +108,31 @@ function renderFeatured() {
   card_badge_i18n();
 }
 
+/* Search matches the name and description in whichever language is showing,
+   so a customer typing Arabic finds Arabic products. */
+function matchesQuery(p) {
+  if (!state.query) return true;
+  const hay = [I18N.localize(p, 'name'), I18N.localize(p, 'description'),
+               catName(p.category_id)].join(' ').toLowerCase();
+  return hay.includes(state.query);
+}
+
+function sortList(list) {
+  const by = state.sort;
+  if (by === 'price_asc') return [...list].sort((a, b) => a.price - b.price);
+  if (by === 'price_desc') return [...list].sort((a, b) => b.price - a.price);
+  return list;   // 'new' — getProducts() already returns newest first
+}
+
 function renderGrid() {
   const grid = document.getElementById('productGrid');
   grid.innerHTML = '';
-  const list = state.products.filter(p => state.filter === null || p.category_id === state.filter);
-  if (!list.length) { grid.innerHTML = '<p style="color:var(--muted)">—</p>'; return; }
+  const list = sortList(state.products.filter(p =>
+    (state.filter === null || p.category_id === state.filter) && matchesQuery(p)));
+  if (!list.length) {
+    grid.innerHTML = `<p style="color:var(--muted)">${esc(I18N.t(state.query ? 'no_results' : 'all'))}</p>`;
+    return;
+  }
   list.forEach(p => grid.appendChild(productCard(p)));
   // re-apply i18n for injected badges
   card_badge_i18n();

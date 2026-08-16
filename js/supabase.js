@@ -164,6 +164,19 @@ const DB = (() => {
       }));
     },
 
+    /* Customer-facing order lookup. Needs the order number *and* the phone
+       that placed it — see track_order() in schema.sql. */
+    async trackOrder(id, phone) {
+      if (IS_DEMO) {
+        const last8 = s => String(s || '').replace(/\D/g, '').slice(-8);
+        const o = demoLoadOrders().find(
+          o => String(o.id) === String(id) && last8(o.phone) === last8(phone));
+        if (!o) throw new Error('NOT_FOUND');
+        return o;
+      }
+      return must(await sb.rpc('track_order', { p_id: Number(id), p_phone: phone }));
+    },
+
     async getOrders() {
       if (IS_DEMO) return demoLoadOrders().reverse();
       return must(await sb.from('orders').select('*').order('created_at', { ascending: false })) || [];

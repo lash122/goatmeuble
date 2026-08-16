@@ -187,6 +187,61 @@ section.block { padding: 56px 0 30px; }
 }
 .modal-wrap { position: relative; width: 100%; display: flex; justify-content: center; }
 
+/* ---------- order tracking ---------- */
+.track-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 1px solid var(--line);
+}
+.track-head b { font-size: 1.25rem; }
+.track-head span { color: var(--muted); font-size: 0.85rem; }
+
+.track-trail { list-style: none; margin: 22px 0 18px; padding: 0; }
+.track-trail li {
+  display: flex; align-items: center; gap: 12px; position: relative;
+  padding-block: 9px; color: var(--muted); font-size: 0.92rem;
+}
+/* connector between the dots */
+.track-trail li:not(:last-child)::before {
+  content: ""; position: absolute; inset-inline-start: 7px; top: 30px;
+  width: 2px; height: calc(100% - 12px); background: var(--line);
+}
+.track-trail li.done:not(:last-child)::before { background: var(--gold); }
+.track-trail .dot {
+  width: 16px; height: 16px; border-radius: 50%; flex: none;
+  border: 2px solid var(--line); background: var(--paper); z-index: 1;
+}
+.track-trail li.done { color: var(--ink); }
+.track-trail li.done .dot { background: var(--gold); border-color: var(--gold); }
+.track-trail li.current { color: var(--navy); font-weight: 700; }
+.track-trail li.current .dot {
+  background: var(--navy); border-color: var(--navy);
+  box-shadow: 0 0 0 4px rgba(17, 26, 46, 0.12);
+}
+
+.track-cancelled {
+  margin: 20px 0 14px; padding: 12px 16px; border-radius: 8px;
+  background: #f3e3e3; color: #9c3434; font-weight: 600; text-align: center;
+}
+
+/* ---------- catalogue toolbar (search + sort) ---------- */
+.shop-tools {
+  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  margin: 4px 0 22px;
+}
+.shop-tools input, .shop-tools select {
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  border-radius: 999px; padding: 9px 18px; font-size: 0.9rem; font-family: inherit;
+}
+.shop-tools input { min-width: 220px; }
+.shop-tools input:focus, .shop-tools select:focus {
+  outline: none; border-color: var(--gold);
+}
+
+.badge-low {
+  background: #fdf0dc; color: #9a6414; font-size: 0.7rem; font-weight: 700;
+  border-radius: 4px; padding: 2px 8px;
+}
+
 /* ---------- floating WhatsApp button ---------- */
 .wa-fab {
   position: fixed; inset-block-end: 22px; inset-inline-end: 22px; z-index: 90;

@@ -232,6 +232,55 @@ end $$;
 revoke all on function public.place_order(text,text,text,text,jsonb) from public;
 grant execute on function public.place_order(text,text,text,text,jsonb) to anon, authenticated;
 
+-- ============================================================
+-- TRACKING AN ORDER
+--
+-- Customers still cannot read the orders table — that would expose every
+-- name, phone and address in the shop. They call this instead, which returns
+-- one order only when the order number AND the phone that placed it match.
+-- Knowing a number alone is not enough.
+--
+-- The phone is compared on its last 8 digits so that 0555 12 34 56 matches
+-- +213555123456: the customer should not have to remember which format they
+-- typed. Name and address are deliberately NOT returned; the customer already
+-- knows them, so there is nothing to gain by echoing them to a lucky guess.
+-- ============================================================
+create or replace function public.track_order(p_id bigint, p_phone text)
+returns jsonb
+language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare
+  o      orders%rowtype;
+  digits text;
+begin
+  digits := regexp_replace(coalesce(p_phone, ''), '\D', '', 'g');
+  if p_id is null or length(digits) < 8 then
+    raise exception 'NOT_FOUND';
+  end if;
+
+  select * into o from orders
+  where id = p_id
+    and right(regexp_replace(phone, '\D', '', 'g'), 8) = right(digits, 8);
+
+  if not found then
+    raise exception 'NOT_FOUND';
+  end if;
+
+  return jsonb_build_object(
+    'id',           o.id,
+    'status',       o.status,
+    'created_at',   o.created_at,
+    'zone',         o.zone,
+    'subtotal',     o.subtotal,
+    'delivery_fee', o.delivery_fee,
+    'total',        o.total,
+    'items',        o.items
+  );
+end $$;
+
+revoke all on function public.track_order(bigint, text) from public;
+grant execute on function public.track_order(bigint, text) to anon, authenticated;
+
 -- Cancelling an order puts the items back on the shelf.
 create or replace function public.restock_cancelled_order()
 returns trigger
