@@ -25,6 +25,8 @@
 </head>
 <body>
   <div class="demo-banner" id="demoBanner" data-i18n="demo_notice"></div>
+  <!-- global sale strip; hidden until the owner switches a promotion on -->
+  <div class="promo-banner" id="promoBanner" hidden></div>
   <div class="topbar">Livraison à domicile — Paiement à la livraison فقط | Cash on delivery</div>
 
   <header class="site">
@@ -64,6 +66,12 @@
       <div class="product-grid" id="featuredGrid" style="margin-top:34px"></div>
     </section>
 
+    <!-- category showcase tiles; photos come from the admin Categories tab -->
+    <section class="block container" id="catTiles" hidden>
+      <h2 class="section-title" data-i18n="browse_categories"></h2>
+      <div class="tile-row" id="tileRow" style="margin-top:30px"></div>
+    </section>
+
     <section class="block container" id="shop">
       <h2 class="section-title" data-i18n="all_products"></h2>
       <div class="chip-row" id="categoryChips"></div>
@@ -76,6 +84,12 @@
         </select>
       </div>
       <div class="product-grid" id="productGrid"></div>
+    </section>
+
+    <!-- keeps the last few products the visitor opened; localStorage only -->
+    <section class="block container" id="recentlyViewed" hidden>
+      <h2 class="section-title" data-i18n="recently_viewed"></h2>
+      <div class="rv-strip" id="rvStrip" style="margin-top:24px"></div>
     </section>
   </main>
 
@@ -110,11 +124,44 @@
           <div class="price-row"><span class="price" id="mPrice"></span><span class="price-old" id="mOld"></span></div>
           <p class="desc" id="mDesc"></p>
           <div id="mSizeBlock">
-            <div class="size-label" data-i18n="select_size"></div>
+            <div class="size-label" style="display:flex;justify-content:space-between;align-items:center">
+              <span data-i18n="select_size"></span>
+              <button class="link-btn" id="sizeGuideBtn" type="button" data-i18n="size_guide"></button>
+            </div>
             <div class="sizes" id="mSizes" style="margin-top:8px"></div>
             <div class="size-error" id="mSizeError" data-i18n="size_required"></div>
           </div>
           <button class="btn-gold" id="mAdd" data-i18n="add_to_cart"></button>
+          <button class="wl-btn" id="mWish" type="button"></button>
+          <!-- same-category suggestions; hidden for products with no neighbours -->
+          <div id="mRelatedBlock" hidden>
+            <div class="size-label" data-i18n="related" style="margin-top:6px"></div>
+            <div class="related-row" id="mRelated"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- size guide: static EU measurements, opens from the product modal -->
+  <div class="modal-overlay" id="sizeGuideModal">
+    <div class="modal-wrap">
+      <button class="modal-close" id="sizeGuideClose" aria-label="Close">&times;</button>
+      <div class="modal" style="grid-template-columns:1fr">
+        <div class="m-body narrow">
+          <h3 data-i18n="size_guide"></h3>
+          <p class="desc" data-i18n="size_guide_note"></p>
+          <table class="size-table">
+            <thead><tr><th></th><th data-i18n="size_guide_chest"></th><th data-i18n="size_guide_waist"></th></tr></thead>
+            <tbody>
+              <tr><td><b>S</b></td><td>88–92</td><td>76–80</td></tr>
+              <tr><td><b>M</b></td><td>93–97</td><td>81–85</td></tr>
+              <tr><td><b>L</b></td><td>98–103</td><td>86–91</td></tr>
+              <tr><td><b>XL</b></td><td>104–110</td><td>92–98</td></tr>
+              <tr><td><b>XXL</b></td><td>111–117</td><td>99–105</td></tr>
+            </tbody>
+          </table>
+          <p class="desc" data-i18n="size_guide_hint"></p>
         </div>
       </div>
     </div>

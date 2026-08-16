@@ -34,14 +34,27 @@
       <div class="checkout-grid">
         <div class="panel" id="cartLines"></div>
         <div class="panel">
+          <div id="freeDeliveryBar" class="fd-bar" hidden></div>
           <div class="totals">
             <div class="row"><span data-i18n="subtotal"></span><span id="subtotalVal">—</span></div>
+            <div class="row" id="promoRow" hidden><span id="promoLabel"></span><span id="promoVal">—</span></div>
             <div class="row"><span data-i18n="delivery"></span><span id="deliveryVal">—</span></div>
             <div class="row grand"><span data-i18n="total"></span><span id="totalVal">—</span></div>
           </div>
+          <div class="promo-entry">
+            <input id="promoInput" type="text" autocomplete="off" data-i18n-placeholder="promo_code" aria-label="promo code">
+            <button class="btn-outline btn-sm" id="promoBtn" type="button" data-i18n="promo_apply"></button>
+          </div>
+          <div class="error-msg" id="promoError"></div>
           <div class="cod-note">💵 <span data-i18n="cod_only"></span></div>
         </div>
       </div>
+
+      <!-- trust builders: delivery / payment / exchange, plain text -->
+      <section class="faq" id="faq">
+        <h2 class="section-title" data-i18n="faq_title" style="font-size:1.4rem"></h2>
+        <div class="faq-list" id="faqList"></div>
+      </section>
     </div>
 
     <!-- ============ SUCCESS VIEW ============ -->

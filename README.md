@@ -3,8 +3,25 @@
 An elegant, trilingual (**FR / AR / EN**) clothing store website with:
 - Customer storefront (categories, product pages, cart)
 - **Cash on delivery only** checkout with per-zone delivery fees
-- Owner admin panel: products, categories, orders, delivery zones, simple stats
+- Owner admin panel: products, categories, orders, delivery zones, promotions, simple stats
 - No build tools, no server — deploy anywhere for free
+
+## ⭐ v1.1 — already installed? ONE required step
+Paste the updated `supabase/schema.sql` into **SQL Editor → Run** again (safe to
+re-run; your products and orders are untouched). It adds promotions (global
+sale, promo codes, free-delivery threshold) and category showcase photos.
+Until you do, the shop keeps working exactly as before — promo codes are
+simply ignored.
+
+### New in v1.1
+- **Promotions tab** (admin): store-wide -% sale with banner, promo codes
+  (e.g. `BIENVENUE10`), free delivery over an amount — all enforced
+  server-side at order time
+- **Category showcase** — photo tiles on the homepage, image upload per
+  category in the admin
+- **Wishlist** (♥ on every product), **recently viewed**, **related
+  products** in the product window
+- **Size guide** and a **delivery/payment/exchange FAQ** at checkout
 
 ---
 

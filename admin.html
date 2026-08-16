@@ -48,6 +48,7 @@
       <button data-tab="products">Produits</button>
       <button data-tab="categories">Catégories</button>
       <button data-tab="zones">Zones de livraison</button>
+      <button data-tab="promotions">Promotions</button>
       <button data-tab="shop">Boutique</button>
       <button data-tab="stats">Statistiques</button>
     </div>
@@ -89,7 +90,7 @@
           <button class="a-btn gold" id="addCatBtn">+ Nouvelle catégorie</button>
         </div>
         <div class="tbl-wrap"><table class="tbl"><thead>
-          <tr><th>Nom (FR)</th><th>العربية</th><th>English</th><th>Ordre</th><th></th></tr>
+          <tr><th></th><th>Nom (FR)</th><th>العربية</th><th>English</th><th>Ordre</th><th></th></tr>
         </thead><tbody id="catsBody"></tbody></table></div>
       </div>
 
@@ -100,6 +101,56 @@
         <button class="a-btn gold" id="addZoneBtn" style="margin-top:14px">+ Ajouter une zone</button>
         <div style="margin-top:20px">
           <button class="a-btn" id="saveZonesBtn">💾 Enregistrer les zones</button>
+        </div>
+      </div>
+
+      <!-- PROMOTIONS (v1.1): global sale, promo codes, free delivery threshold -->
+      <div class="tab-panel" id="tab-promotions">
+        <div class="panel-h"><h2>Promotions</h2></div>
+
+        <div class="panel" style="max-width:560px">
+          <h3 style="margin-bottom:12px;font-size:1.05rem">Soldes boutique (-% sur tout)</h3>
+          <div class="f-grid">
+            <div class="checks">
+              <label><input type="checkbox" id="pr_active"> Soldes actives</label>
+            </div>
+            <div class="f-grid two">
+              <div><label>Réduction (%)</label><input id="pr_percent" type="number" min="1" max="90"></div>
+              <div><label>Libellé (optionnel)</label><input id="pr_label_fr" placeholder="Soldes d'été"></div>
+            </div>
+            <div class="f-grid two">
+              <div><label>Libellé (AR)</label><input id="pr_label_ar" dir="rtl"></div>
+              <div><label>Label (EN)</label><input id="pr_label_en"></div>
+            </div>
+            <small style="color:var(--muted)">
+              Baisse le prix affiché de tous les articles, barré de l'ancien prix.
+              Le prix réellement facturé est recalculé à la commande.
+            </small>
+            <button class="a-btn gold" id="savePromoBtn">💾 Enregistrer les soldes</button>
+          </div>
+        </div>
+
+        <div class="panel" style="max-width:560px;margin-top:18px">
+          <h3 style="margin-bottom:12px;font-size:1.05rem">Livraison gratuite</h3>
+          <div class="f-grid">
+            <div><label>Offerte à partir de (DA) — 0 = désactivé</label>
+              <input id="pr_free_from" type="number" min="0"></div>
+            <button class="a-btn gold" id="saveFreeBtn">💾 Enregistrer</button>
+          </div>
+        </div>
+
+        <div class="panel" style="max-width:560px;margin-top:18px">
+          <div class="panel-h" style="margin-bottom:12px">
+            <h3 style="font-size:1.05rem">Codes promo</h3>
+            <button class="a-btn gold btn-sm" id="addCodeBtn" style="padding:8px 16px">+ Nouveau code</button>
+          </div>
+          <div class="tbl-wrap"><table class="tbl" style="min-width:420px"><thead>
+            <tr><th>Code</th><th>-%</th><th>Min. commande</th><th>État</th><th></th></tr>
+          </thead><tbody id="codesBody"></tbody></table></div>
+          <small style="color:var(--muted);display:block;margin-top:10px">
+            Le client tape le code au moment de la commande ; la remise est vérifiée
+            côté serveur. Un code peut être désactivé sans être supprimé.
+          </small>
         </div>
       </div>
 

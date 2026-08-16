@@ -4,7 +4,8 @@ const STATUSES = [
   ['shipped', 'Expédiée', 'shipped'], ['delivered', 'Livrée', 'delivered'],
   ['cancelled', 'Annulée', 'cancelled'],
 ];
-let A = { cats: [], products: [], orders: [], zones: [], store: {} };
+let A = { cats: [], products: [], orders: [], zones: [], store: {},
+          promo: {}, freeFrom: null, codes: [] };
 
 document.addEventListener('DOMContentLoaded', initAdmin);
 
@@ -32,6 +33,9 @@ async function initAdmin() {
   document.getElementById('addZoneBtn').addEventListener('click', () => addZoneRow('', 600));
   document.getElementById('saveZonesBtn').addEventListener('click', saveZones);
   document.getElementById('saveShopBtn').addEventListener('click', saveShop);
+  document.getElementById('savePromoBtn').addEventListener('click', savePromo);
+  document.getElementById('saveFreeBtn').addEventListener('click', saveFreeDelivery);
+  document.getElementById('addCodeBtn').addEventListener('click', () => editCode(null));
   document.getElementById('editorClose').addEventListener('click', closeEditor);
   document.getElementById('editorModal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeEditor();
@@ -72,10 +76,13 @@ async function openShell() {
 }
 
 async function refreshAll() {
-  [A.cats, A.products, A.orders, A.zones, A.store] = await Promise.all([
+  [A.cats, A.products, A.orders, A.zones, A.store, A.promo, A.codes] = await Promise.all([
     DB.getCategories(), DB.getProducts(false), DB.getOrders(), DB.getZones(), DB.getStore(),
+    DB.getPromo(), DB.getPromoCodes(),
   ]);
-  renderOrders(); renderProducts(); renderCats(); renderZones(); renderShop(); renderStats();
+  A.freeFrom = await DB.getFreeDeliveryFrom();
+  renderOrders(); renderProducts(); renderCats(); renderZones(); renderShop();
+  renderPromotions(); renderCodes(); renderStats();
   const newCount = A.orders.filter(o => o.status === 'new').length;
   const badge = document.getElementById('newOrdersBadge');
   badge.textContent = newCount;
@@ -146,7 +153,8 @@ function viewOrder(o) {
     <ul class="order-items">${itemsHtml}</ul>
     <div class="totals" style="margin-top:14px">
       <div class="row"><span>Sous-total</span><span>${I18N.fmtPrice(o.subtotal)}</span></div>
-      <div class="row"><span>Livraison</span><span>${I18N.fmtPrice(o.delivery_fee)}</span></div>
+      ${Number(o.discount) > 0 ? `<div class="row"><span>Remise${o.promo_code ? ` (${esc(o.promo_code)})` : ''}</span><span>− ${I18N.fmtPrice(o.discount)}</span></div>` : ''}
+      <div class="row"><span>Livraison</span><span>${Number(o.delivery_fee) === 0 ? 'Offerte' : I18N.fmtPrice(o.delivery_fee)}</span></div>
       <div class="row grand"><span>Total (à payer à la livraison)</span><span>${I18N.fmtPrice(o.total)}</span></div>
     </div>
     <div class="cod-note" style="margin-top:10px">💵 Paiement à la livraison</div>
@@ -277,6 +285,7 @@ function renderCats() {
   A.cats.forEach(c => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
+      <td>${c.image ? `<img class="thumb" src="${esc(c.image)}" alt="" style="width:44px;height:44px;border-radius:8px">` : ''}</td>
       <td><b>${esc(c.name_fr)}</b></td><td>${esc(c.name_ar)}</td><td>${esc(c.name_en)}</td><td>${c.sort}</td>
       <td><div class="row-actions">
         <button class="btn-mini" data-a="edit">Modifier</button>
@@ -289,27 +298,56 @@ function renderCats() {
     });
     body.appendChild(tr);
   });
-  if (!body.children.length) body.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:26px">Aucune catégorie</td></tr>';
+  if (!body.children.length) body.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:26px">Aucune catégorie</td></tr>';
 }
 
 function editCategory(c) {
-  const d = c || { name_fr: '', name_ar: '', name_en: '', sort: (A.cats.length + 1) * 10 };
+  const d = c || { name_fr: '', name_ar: '', name_en: '', image: '', sort: (A.cats.length + 1) * 10 };
+  let image = d.image || '';
   openEditor(`
     <h3 style="margin-bottom:16px">${c ? 'Modifier la catégorie' : 'Nouvelle catégorie'}</h3>
     <div class="f-grid">
       <div><label>Nom (FR)</label><input id="c_fr" value="${esc(d.name_fr)}"></div>
       <div><label>الاسم (AR)</label><input id="c_ar" value="${esc(d.name_ar)}" dir="rtl"></div>
       <div><label>Name (EN)</label><input id="c_en" value="${esc(d.name_en)}"></div>
+      <div><label>Photo de la catégorie (grande vignette de la page d'accueil)</label>
+        <div class="photo-up" id="c_photos"></div>
+        <input type="file" id="c_file" accept="image/*" hidden></div>
       <div><label>Ordre d'affichage</label><input id="c_sort" type="number" value="${d.sort}"></div>
       <button class="a-btn gold" id="c_save">💾 Enregistrer</button>
     </div>
   `);
+
+  const photosEl = document.getElementById('c_photos');
+  function renderCatPhoto() {
+    photosEl.innerHTML = '';
+    if (image) {
+      const div = document.createElement('div');
+      div.className = 'ph';
+      div.innerHTML = `<img src="${esc(image)}"><button title="Supprimer">×</button>`;
+      div.querySelector('button').addEventListener('click', () => { image = ''; renderCatPhoto(); });
+      photosEl.appendChild(div);
+    }
+    const add = document.createElement('button');
+    add.className = 'add-photo'; add.textContent = '+';
+    add.addEventListener('click', () => document.getElementById('c_file').click());
+    photosEl.appendChild(add);
+  }
+  renderCatPhoto();
+  document.getElementById('c_file').addEventListener('change', async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try { image = await DB.uploadCategoryPhoto(f); renderCatPhoto(); }
+    catch (err) { alert('Upload : ' + err.message); }
+  });
+
   document.getElementById('c_save').addEventListener('click', async () => {
     const rec = {
       ...(c || {}),
       name_fr: document.getElementById('c_fr').value.trim(),
       name_ar: document.getElementById('c_ar').value.trim() || document.getElementById('c_fr').value.trim(),
       name_en: document.getElementById('c_en').value.trim() || document.getElementById('c_fr').value.trim(),
+      image,
       sort: Number(document.getElementById('c_sort').value) || 0,
     };
     if (!rec.name_fr) { alert('Nom requis'); return; }
@@ -371,6 +409,100 @@ async function saveShop() {
     await DB.saveStore(store);
     A.store = store;
   }, 'Informations enregistrées ✓');
+}
+
+/* ================= PROMOTIONS (v1.1) ================= */
+function renderPromotions() {
+  const p = A.promo || {};
+  document.getElementById('pr_active').checked = !!p.active;
+  document.getElementById('pr_percent').value = p.percent || '';
+  document.getElementById('pr_label_fr').value = p.label_fr || '';
+  document.getElementById('pr_label_ar').value = p.label_ar || '';
+  document.getElementById('pr_label_en').value = p.label_en || '';
+  document.getElementById('pr_free_from').value = A.freeFrom || 0;
+}
+
+async function savePromo() {
+  const percent = Number(document.getElementById('pr_percent').value) || 0;
+  if (percent < 1 || percent > 90) { alert('Réduction entre 1 et 90 %'); return; }
+  const promo = {
+    active: document.getElementById('pr_active').checked,
+    percent,
+    label_fr: document.getElementById('pr_label_fr').value.trim(),
+    label_ar: document.getElementById('pr_label_ar').value.trim(),
+    label_en: document.getElementById('pr_label_en').value.trim(),
+  };
+  await run(async () => {
+    await DB.savePromo(promo);
+    A.promo = promo;
+  }, 'Soldes enregistrées ✓');
+}
+
+async function saveFreeDelivery() {
+  const n = Math.max(0, Number(document.getElementById('pr_free_from').value) || 0);
+  await run(async () => {
+    await DB.saveFreeDeliveryFrom(n || null);
+    A.freeFrom = n || null;
+  }, 'Livraison gratuite enregistrée ✓');
+}
+
+function renderCodes() {
+  const body = document.getElementById('codesBody');
+  body.innerHTML = '';
+  (A.codes || []).forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><b>${esc(c.code)}</b></td>
+      <td>-${c.percent}%</td>
+      <td>${c.min_order ? I18N.fmtPrice(c.min_order) : '—'}</td>
+      <td>${c.active ? '✅ actif' : '⏸ inactif'}</td>
+      <td><div class="row-actions">
+        <button class="btn-mini" data-a="edit">Modifier</button>
+        <button class="btn-mini danger" data-a="del">Supprimer</button>
+      </div></td>`;
+    tr.querySelector('[data-a="edit"]').addEventListener('click', () => editCode(c));
+    tr.querySelector('[data-a="del"]').addEventListener('click', () => {
+      if (!confirm(`Supprimer le code « ${c.code} » ?`)) return;
+      run(async () => { await DB.deletePromoCode(c.id); await refreshAll(); });
+    });
+    body.appendChild(tr);
+  });
+  if (!body.children.length) body.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Aucun code</td></tr>';
+}
+
+function editCode(c) {
+  const d = c || { code: '', percent: 10, min_order: 0, active: true };
+  openEditor(`
+    <h3 style="margin-bottom:16px">${c ? 'Modifier — ' + esc(d.code) : 'Nouveau code promo'}</h3>
+    <div class="f-grid">
+      <div><label>Code (le client le tape tel quel)</label>
+        <input id="cd_code" value="${esc(d.code)}" style="text-transform:uppercase" placeholder="BIENVENUE10"></div>
+      <div class="f-grid two">
+        <div><label>Réduction (%)</label><input id="cd_percent" type="number" min="1" max="90" value="${d.percent}"></div>
+        <div><label>Minimum de commande (DA, 0 = aucun)</label><input id="cd_min" type="number" min="0" value="${d.min_order}"></div>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="cd_active" ${d.active ? 'checked' : ''}> Actif</label>
+      </div>
+      <button class="a-btn gold" id="cd_save">💾 Enregistrer</button>
+    </div>
+  `);
+  document.getElementById('cd_save').addEventListener('click', () => {
+    const rec = {
+      ...(c || {}),
+      code: document.getElementById('cd_code').value.trim().toUpperCase(),
+      percent: Number(document.getElementById('cd_percent').value) || 0,
+      min_order: Number(document.getElementById('cd_min').value) || 0,
+      active: document.getElementById('cd_active').checked,
+    };
+    if (!rec.code) { alert('Code requis'); return; }
+    if (rec.percent < 1 || rec.percent > 90) { alert('Réduction entre 1 et 90 %'); return; }
+    run(async () => {
+      await DB.savePromoCode(rec);
+      closeEditor();
+      await refreshAll();
+    });
+  });
 }
 
 /* ================= STATS ================= */

@@ -1,15 +1,20 @@
-/* Checkout: cart review + COD order form (single page) */
+/* Checkout: cart review + COD order form (single page), v1.1 promos */
 let zones = [];
 let store = {};
-let currentSubtotal = 0;
+let promo = { active: false, percent: 0 };
+let freeFrom = null;
+let appliedCode = null;   // { code, percent } once validated, or null
+let currentBaseSubtotal = 0;   // shelf-price subtotal before any discount
 
 async function initCheckout() {
   document.getElementById('year').textContent = new Date().getFullYear();
   try {
-    [zones, store] = await Promise.all([DB.getZones(), DB.getStore()]);
+    [zones, store, promo, freeFrom] = await Promise.all([
+      DB.getZones(), DB.getStore(), DB.getPromo(), DB.getFreeDeliveryFrom(),
+    ]);
     renderWhatsApp(store);
   } catch (e) {
-    console.error('Could not load delivery zones:', e);
+    console.error('Could not load shop settings:', e);
     document.getElementById('cartView').innerHTML =
       `<p style="text-align:center;color:var(--muted);padding:60px 0">${esc(I18N.t('err_load'))}</p>`;
     return;
@@ -17,9 +22,23 @@ async function initCheckout() {
 
   document.querySelectorAll('.lang-switch button').forEach(b =>
     b.addEventListener('click', () => { I18N.setLang(b.dataset.lang); }));
-  document.addEventListener('langchange', () => { render(); renderWhatsApp(store); });
+  document.addEventListener('langchange', () => { render(); renderFaq(); renderWhatsApp(store); });
 
+  // promo code: applied on click; a re-render keeps it if still valid
+  document.getElementById('promoBtn').addEventListener('click', applyPromoCode);
+  document.getElementById('promoInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); applyPromoCode(); }
+  });
+
+  renderFaq();
   render();
+}
+
+/* The cart stores shelf prices; the global sale lowers them at display time.
+   place_order() recomputes everything server-side — this is the preview. */
+function effUnit(price) {
+  const pct = promo?.active ? Math.min(Math.max(Number(promo.percent) || 0, 0), 90) : 0;
+  return Math.round(Number(price) * (100 - pct)) / 100;
 }
 
 function render() {
@@ -27,26 +46,28 @@ function render() {
   const linesEl = document.getElementById('cartLines');
 
   if (!items.length) {
+    appliedCode = null;
     linesEl.innerHTML = `
       <p style="text-align:center;color:var(--muted);padding:30px 0" data-i18n="cart_empty"></p>
       <div style="text-align:center"><a class="btn-outline" href="index.html" data-i18n="continue_shopping"></a></div>`;
     linesEl.querySelectorAll('[data-i18n]').forEach(el => el.textContent = I18N.t(el.dataset.i18n));
-    document.getElementById('subtotalVal').textContent = '—';
-    document.getElementById('deliveryVal').textContent = '—';
-    document.getElementById('totalVal').textContent = '—';
+    ['subtotalVal', 'deliveryVal', 'totalVal'].forEach(id => document.getElementById(id).textContent = '—');
+    document.getElementById('promoRow').hidden = true;
+    document.getElementById('freeDeliveryBar').hidden = true;
     return;
   }
 
   // ---- cart lines ----
   linesEl.innerHTML = '';
   items.forEach(it => {
+    const unit = effUnit(it.price);
     const row = document.createElement('div');
     row.className = 'cart-line';
     row.innerHTML = `
       <img src="${esc(it.photo)}" alt="">
       <div>
         <div class="name">${esc(I18N.localize(it, 'name'))}</div>
-        <div class="meta">${I18N.t('qty')} · ${I18N.fmtPrice(it.price)}</div>
+        <div class="meta">${I18N.t('qty')} · ${I18N.fmtPrice(unit)}</div>
         <div class="qty-row">
           <button class="qty-btn" data-act="minus">−</button>
           <span>${it.qty}</span>
@@ -54,21 +75,52 @@ function render() {
           <button class="remove-link" data-act="rm" data-i18n="remove"></button>
         </div>
       </div>
-      <div class="price">${I18N.fmtPrice(it.price * it.qty)}</div>`;
-    row.querySelector('[data-act="minus"]').addEventListener('click', () => { Cart.setQty(it.key, it.qty - 1); render(); });
-    row.querySelector('[data-act="plus"]').addEventListener('click', () => { Cart.setQty(it.key, it.qty + 1); render(); });
-    row.querySelector('[data-act="rm"]').addEventListener('click', () => { Cart.remove(it.key); render(); });
+      <div class="price">${I18N.fmtPrice(unit * it.qty)}</div>`;
+    row.querySelector('[data-act="minus"]').addEventListener('click', () => { Cart.setQty(it.key, it.qty - 1); revalidateCode().then(render); });
+    row.querySelector('[data-act="plus"]').addEventListener('click', () => { Cart.setQty(it.key, it.qty + 1); revalidateCode().then(render); });
+    row.querySelector('[data-act="rm"]').addEventListener('click', () => { Cart.remove(it.key); revalidateCode().then(render); });
     row.querySelector('[data-i18n="remove"]').textContent = I18N.t('remove');
     linesEl.appendChild(row);
   });
 
   // ---- order form ----
-  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  buildForm(subtotal);
+  currentBaseSubtotal = items.reduce((s, i) => s + effUnit(i.price) * i.qty, 0);
+  buildForm(currentBaseSubtotal);
+}
+
+/* A saved code may stop qualifying once the basket shrinks below its minimum;
+   drop it quietly rather than blocking the order. */
+async function revalidateCode() {
+  if (!appliedCode) return;
+  try {
+    await DB.checkPromo(appliedCode.code, currentBaseSubtotal);
+  } catch {
+    appliedCode = null;
+  }
+}
+
+async function applyPromoCode() {
+  const input = document.getElementById('promoInput');
+  const errEl = document.getElementById('promoError');
+  errEl.classList.remove('show');
+  const code = input.value.trim();
+  if (!code) { appliedCode = null; updateTotals(); return; }
+  try {
+    appliedCode = await DB.checkPromo(code, currentBaseSubtotal);
+    updateTotals();
+  } catch (e) {
+    appliedCode = null;
+    updateTotals();
+    // the API never echoes the threshold back, so the min-order message asks
+    // the customer to add a little more rather than quoting a wrong number
+    errEl.textContent = String(e?.message || '').includes('PROMO_MIN_ORDER')
+      ? I18N.t('promo_min').replace('{min}', '…')
+      : I18N.t('promo_invalid');
+    errEl.classList.add('show');
+  }
 }
 
 function buildForm(subtotal) {
-  currentSubtotal = subtotal;
   const right = document.getElementById('cartLines').parentElement.querySelector('.panel:not(#cartLines)');
   let form = document.getElementById('orderForm');
   if (!form) {
@@ -92,6 +144,8 @@ function buildForm(subtotal) {
   form.querySelectorAll('[data-i18n]').forEach(el => el.textContent = I18N.t(el.dataset.i18n));
   form.querySelector('#fPhone').placeholder = '05 XX XX XX XX';
   form.querySelector('#fAddress').placeholder = I18N.t('address');
+  document.getElementById('promoBtn').textContent = I18N.t('promo_apply');
+  document.getElementById('promoInput').placeholder = I18N.t('promo_code');
 
   // zones with fee
   const sel = form.querySelector('#fZone');
@@ -115,12 +169,56 @@ function updateTotals() {
   const form = document.getElementById('orderForm');
   if (!form) return;
   const zone = zones.find(z => z.name === form.querySelector('#fZone').value) || zones[0];
-  const fee = Number(zone?.fee) || 0;
-  document.getElementById('subtotalVal').textContent = I18N.fmtPrice(currentSubtotal);
-  document.getElementById('deliveryVal').textContent = I18N.fmtPrice(fee);
-  document.getElementById('totalVal').textContent = I18N.fmtPrice(currentSubtotal + fee);
-  form.dataset.fee = String(fee);
+  const sub = currentBaseSubtotal;
+
+  // promo code discount
+  const discount = appliedCode ? Math.round(sub * appliedCode.percent) / 100 : 0;
+  const promoRow = document.getElementById('promoRow');
+  if (appliedCode) {
+    promoRow.hidden = false;
+    document.getElementById('promoLabel').textContent =
+      I18N.t('promo_applied').replace('{code}', appliedCode.code).replace('{p}', appliedCode.percent);
+    document.getElementById('promoVal').textContent = `− ${I18N.fmtPrice(discount)}`;
+  } else {
+    promoRow.hidden = true;
+  }
+
+  // free delivery above the owner's threshold, after discounts
+  const qualifies = freeFrom > 0 && (sub - discount) >= freeFrom;
+  const fee = qualifies ? 0 : (Number(zone?.fee) || 0);
+  document.getElementById('deliveryVal').textContent = qualifies ? I18N.t('delivery_free') : I18N.fmtPrice(fee);
+
+  // progress nudge toward the threshold
+  const bar = document.getElementById('freeDeliveryBar');
+  if (freeFrom > 0) {
+    bar.hidden = false;
+    const afterDiscount = sub - discount;
+    const pctLeft = Math.max(0, Math.min(100, Math.round((afterDiscount / freeFrom) * 100)));
+    const msg = qualifies
+      ? I18N.t('free_delivery_qualifies')
+      : I18N.t('free_delivery_progress').replace('{x}', I18N.fmtPrice(freeFrom - afterDiscount));
+    bar.innerHTML = `<div class="fd-msg">${esc(msg)}</div><div class="fd-track"><i style="width:${qualifies ? 100 : pctLeft}%"></i></div>`;
+  } else {
+    bar.hidden = true;
+  }
+
+  document.getElementById('subtotalVal').textContent = I18N.fmtPrice(sub);
+  document.getElementById('totalVal').textContent = I18N.fmtPrice(sub - discount + fee);
   form.dataset.zone = zone?.name || '';
+}
+
+/* Delivery / payment / exchange accordion — plain <details>, no JS needed. */
+function renderFaq() {
+  const box = document.getElementById('faqList');
+  box.innerHTML = '';
+  [1, 2, 3].forEach(n => {
+    const d = document.createElement('details');
+    d.className = 'faq-item';
+    d.innerHTML = `
+      <summary>${esc(I18N.t(`faq_q${n}`))}</summary>
+      <p>${esc(I18N.t(`faq_a${n}`))}</p>`;
+    box.appendChild(d);
+  });
 }
 
 async function placeOrder() {
@@ -130,7 +228,7 @@ async function placeOrder() {
   const phone = document.getElementById('fPhone').value.trim();
   const address = document.getElementById('fAddress').value.trim();
   const form = document.getElementById('orderForm');
-  const zone = form.dataset.zone, fee = Number(form.dataset.fee);
+  const zone = form.dataset.zone;
 
   if (!name || !phone || !address || !zone) {
     err.textContent = I18N.t('required'); err.classList.add('show'); return;
@@ -145,9 +243,11 @@ async function placeOrder() {
   try {
     const res = await DB.placeOrder({
       customer_name: name, phone, address, zone, items: Cart.get(),
+      promo_code: appliedCode?.code || '',
     });
     Cart.clear();
     document.getElementById('cartView').style.display = 'none';
+    document.getElementById('faq').style.display = 'none';
     document.getElementById('successView').style.display = '';
     document.getElementById('orderRef').textContent = `#${res.id}`;
     // the total shown here is the one the database computed, which is also the
@@ -199,6 +299,7 @@ function orderErrorMessage(e) {
   if (code.includes('TOO_MANY_ORDERS')) return I18N.t('err_too_many');
   if (code.includes('INVALID_SIZE')) return I18N.t('size_required');
   if (code.includes('INVALID_PHONE')) return I18N.t('invalid_phone');
+  if (code.includes('INVALID_PROMO') || code.includes('PROMO_MIN_ORDER')) return I18N.t('promo_invalid');
   if (code.includes('MISSING_FIELDS') || code.includes('UNKNOWN_ZONE')) return I18N.t('required');
   console.error('place_order failed:', e);
   return I18N.t('err_generic');

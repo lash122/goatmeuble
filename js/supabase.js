@@ -45,6 +45,16 @@ const DB = (() => {
   }
   function demoSaveOrders(orders) { localStorage.setItem('demo_orders', JSON.stringify(orders)); }
 
+  // v1.1 demo promo state — mirrors the settings/table shapes used in
+  // production. Kept in localStorage so the banner survives page changes
+  // while previewing offline, like the real settings table would.
+  function demoLoadJSON(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
+  }
+  function demoSaveJSON(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+  const demoPromoDefault = { active: false, percent: 0, label_fr: '', label_ar: '', label_en: '' };
+  let demoCodes = [{ id: 1, code: 'BIENVENUE10', percent: 10, min_order: 0, active: true }];
+
   // placeholers use a data-URI gradient so demo products are not blank
   function placeholderPhoto(seed) {
     const c1 = 25 + (seed % 5) * 8, c2 = 40 + (seed % 7) * 9;
@@ -67,6 +77,8 @@ const DB = (() => {
   return {
     isDemo: IS_DEMO,
     photoOf,
+    // elegant navy placeholder, used for categories with no tile photo yet
+    placeholderFor: (seed) => placeholderPhoto(Number(seed) || 1),
 
     async getStore() {
       if (IS_DEMO) return demo.store;
@@ -88,6 +100,61 @@ const DB = (() => {
     async saveStore(store) {
       if (IS_DEMO) { Object.assign(demo.store, store); return; }
       must(await sb.from('settings').upsert({ key: 'store', value: store }));
+    },
+
+    // ---- v1.1 promotions ----
+    async getPromo() {
+      if (IS_DEMO) return demoLoadJSON('demo_promo', demoPromoDefault);
+      const data = must(await sb.from('settings').select('value').eq('key', 'promo').maybeSingle());
+      return data?.value || demoPromoDefault;
+    },
+
+    async savePromo(promo) {
+      if (IS_DEMO) { demoSaveJSON('demo_promo', promo); return; }
+      must(await sb.from('settings').upsert({ key: 'promo', value: promo }));
+    },
+
+    async getFreeDeliveryFrom() {
+      if (IS_DEMO) return demoLoadJSON('demo_free_from', null);
+      const data = must(await sb.from('settings').select('value').eq('key', 'free_delivery_from').maybeSingle());
+      const v = data?.value;
+      return typeof v === 'number' ? v : null;
+    },
+
+    async saveFreeDeliveryFrom(n) {
+      if (IS_DEMO) { demoSaveJSON('demo_free_from', n ?? null); return; }
+      must(await sb.from('settings').upsert({ key: 'free_delivery_from', value: n ?? null }));
+    },
+
+    /* Preview of a promo code for the checkout page; place_order() remains
+       the authority on what is actually charged. */
+    async checkPromo(code, subtotal) {
+      if (IS_DEMO) {
+        const c = demoCodes.find(c => c.active && c.code.toUpperCase() === code.trim().toUpperCase());
+        if (!c) throw new Error('INVALID_PROMO');
+        if (subtotal < c.min_order) throw new Error('PROMO_MIN_ORDER');
+        return { code: c.code, percent: c.percent, min_order: c.min_order };
+      }
+      return must(await sb.rpc('check_promo', { p_code: code, p_sub: subtotal }));
+    },
+
+    async getPromoCodes() {
+      if (IS_DEMO) return demoCodes;
+      return must(await sb.from('promo_codes').select('*').order('created_at', { ascending: false })) || [];
+    },
+
+    async savePromoCode(c) {
+      if (IS_DEMO) {
+        if (c.id) { const i = demoCodes.findIndex(x => x.id === c.id); if (i >= 0) demoCodes[i] = c; }
+        else demoCodes.push({ ...c, id: Date.now() });
+        return;
+      }
+      must(await sb.from('promo_codes').upsert(c));
+    },
+
+    async deletePromoCode(id) {
+      if (IS_DEMO) { demoCodes = demoCodes.filter(c => c.id !== id); return; }
+      must(await sb.from('promo_codes').delete().eq('id', id));
     },
 
     async getCategories() {
@@ -131,37 +198,70 @@ const DB = (() => {
     },
 
     /* Sends only what the customer actually chooses — who they are, where they
-       live, and which product/size/quantity. Prices, delivery fee and totals
-       are worked out by place_order() from the products and settings tables,
-       because a number that travels through the browser cannot be trusted.
-       Returns the authoritative { id, subtotal, delivery_fee, total }. */
-    async placeOrder({ customer_name, phone, address, zone, items }) {
+       live, which product/size/quantity, and the promo code they typed. Prices,
+       delivery fee and totals are worked out by place_order() from the products
+       and settings tables, because a number that travels through the browser
+       cannot be trusted. Returns the authoritative
+       { id, subtotal, discount, promo_code, delivery_fee, total }. */
+    async placeOrder({ customer_name, phone, address, zone, items, promo_code }) {
       const lines = items.map(i => ({
         product_id: i.product_id, qty: Number(i.qty) || 0, size: i.size,
       }));
 
       if (IS_DEMO) {
+        // mirrors place_order() in schema.sql so the offline preview behaves
+        // exactly like the live shop: global sale → code → free delivery
+        const promoCfg = demoLoadJSON('demo_promo', demoPromoDefault);
+        const freeFrom = demoLoadJSON('demo_free_from', null);
+        const pct = promoCfg.active ? Math.min(Math.max(promoCfg.percent, 0), 90) : 0;
         const priced = lines.map(l => {
           const p = demo.products.find(x => x.id === l.product_id) || {};
-          return { ...l, price: Number(p.price) || 0, name_fr: p.name_fr, name_ar: p.name_ar, name_en: p.name_en };
+          const base = Number(p.price) || 0;
+          return { ...l, price: Math.round(base * (100 - pct)) / 100, base_price: base,
+                   name_fr: p.name_fr, name_ar: p.name_ar, name_en: p.name_en };
         });
-        const subtotal = priced.reduce((s, l) => s + l.price * l.qty, 0);
-        const fee = Number(demo.zones.find(z => z.name === zone)?.fee) || 0;
+        let subtotal = priced.reduce((s, l) => s + l.price * l.qty, 0);
+        let discount = 0, appliedCode = '';
+        const code = String(promo_code || '').trim().toUpperCase();
+        if (code) {
+          const c = demoCodes.find(c => c.active && c.code.toUpperCase() === code);
+          if (!c) throw new Error('INVALID_PROMO');
+          if (subtotal < c.min_order) throw new Error('PROMO_MIN_ORDER');
+          discount = Math.round(subtotal * c.percent) / 100;
+          appliedCode = c.code;
+        }
+        let fee = Number(demo.zones.find(z => z.name === zone)?.fee) || 0;
+        if (freeFrom > 0 && subtotal >= freeFrom) fee = 0;
         const orders = demoLoadOrders();
         const order = {
           id: (orders.at(-1)?.id || 1000) + 1, created_at: new Date().toISOString(),
           customer_name, phone, address, zone,
-          delivery_fee: fee, items: priced, subtotal, total: subtotal + fee, status: 'new',
+          delivery_fee: fee, items: priced, subtotal, discount,
+          promo_code: appliedCode, total: subtotal - discount + fee, status: 'new',
         };
         orders.push(order);
         demoSaveOrders(orders);
-        return { id: order.id, subtotal, delivery_fee: fee, total: subtotal + fee };
+        return { id: order.id, subtotal, discount, promo_code: appliedCode,
+                 delivery_fee: fee, total: order.total };
       }
 
-      return must(await sb.rpc('place_order', {
-        p_name: customer_name, p_phone: phone, p_address: address,
-        p_zone: zone, p_items: lines,
-      }));
+      try {
+        return must(await sb.rpc('place_order', {
+          p_name: customer_name, p_phone: phone, p_address: address,
+          p_zone: zone, p_items: lines, p_promo_code: promo_code || '',
+        }));
+      } catch (e) {
+        // PGRST202: no function with that signature — the v1.1 schema has not
+        // been pasted into SQL Editor yet. Fall back to the v1.0 call so the
+        // shop keeps taking orders; the promo code is simply ignored.
+        if (e?.code === 'PGRST202' || /does not exist/i.test(e?.message || '')) {
+          return must(await sb.rpc('place_order', {
+            p_name: customer_name, p_phone: phone, p_address: address,
+            p_zone: zone, p_items: lines,
+          }));
+        }
+        throw e;
+      }
     },
 
     /* Customer-facing order lookup. Needs the order number *and* the phone
@@ -205,12 +305,19 @@ const DB = (() => {
     },
     async signOut() { if (!IS_DEMO) await sb.auth.signOut(); },
 
-    // ---- storage (product photos) ----
+    // ---- storage (product photos, category tiles) ----
     async uploadPhoto(file) {
       const name = `${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}`;
       if (IS_DEMO) return URL.createObjectURL(file);
       must(await sb.storage.from('products').upload(name, file));
       return sb.storage.from('products').getPublicUrl(name).data.publicUrl;
+    },
+
+    async uploadCategoryPhoto(file) {
+      const name = `${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}`;
+      if (IS_DEMO) return URL.createObjectURL(file);
+      must(await sb.storage.from('categories').upload(name, file));
+      return sb.storage.from('categories').getPublicUrl(name).data.publicUrl;
     },
   };
 })();

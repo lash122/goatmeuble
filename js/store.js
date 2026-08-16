@@ -1,15 +1,45 @@
-/* Storefront: catalog, category filter, product modal (cart lives in cart.js) */
+/* Storefront: catalog, category filter + tiles, product modal, wishlist,
+   recently viewed, global sale pricing (cart lives in cart.js) */
 let state = { products: [], categories: [], filter: null, current: null, selectedSize: null,
-              store: {}, query: '', sort: 'new' };
+              store: {}, query: '', sort: 'new', promo: { active: false, percent: 0 } };
+
+/* ---- wishlist & recently viewed (localStorage, no account needed) ---- */
+const Wishlist = {
+  get() { try { return JSON.parse(localStorage.getItem('wishlist')) || []; } catch { return []; } },
+  has(id) { return this.get().includes(id); },
+  toggle(id) {
+    let ids = this.get();
+    ids = ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id];
+    localStorage.setItem('wishlist', JSON.stringify(ids));
+  },
+};
+const RecentlyViewed = {
+  get() { try { return JSON.parse(localStorage.getItem('recently_viewed')) || []; } catch { return []; } },
+  push(id) {
+    let ids = this.get().filter(x => x !== id);
+    ids.unshift(id);
+    localStorage.setItem('recently_viewed', JSON.stringify(ids.slice(0, 8)));
+  },
+};
+
+/* The price the customer pays: the shelf price with the global sale applied.
+   place_order() computes the same thing server-side; this is display only. */
+function effPrice(p) {
+  const pct = state.promo?.active ? Math.min(Math.max(Number(state.promo.percent) || 0, 0), 90) : 0;
+  return Math.round(Number(p.price) * (100 - pct)) / 100;
+}
 
 async function initStore() {
   if (DB.isDemo) document.getElementById('demoBanner').classList.add('show');
   document.getElementById('year').textContent = new Date().getFullYear();
 
   try {
-    const [store, cats, prods] = await Promise.all([DB.getStore(), DB.getCategories(), DB.getProducts()]);
+    const [store, cats, prods, promo] = await Promise.all([
+      DB.getStore(), DB.getCategories(), DB.getProducts(), DB.getPromo(),
+    ]);
     state.categories = cats;
     state.products = prods;
+    state.promo = promo || { active: false, percent: 0 };
     if (store?.phone) document.getElementById('footerPhone').textContent = store.phone;
     state.store = store || {};
     renderWhatsApp(state.store);
@@ -22,14 +52,20 @@ async function initStore() {
     return;
   }
 
+  renderPromoBanner();
   renderChips();
+  renderTiles();
   renderFeatured();
   renderGrid();
+  renderRecentlyViewed();
   renderCartCount();
 
   document.querySelectorAll('.lang-switch button').forEach(b =>
     b.addEventListener('click', () => { I18N.setLang(b.dataset.lang); }));
-  document.addEventListener('langchange', () => { renderChips(); renderFeatured(); renderGrid(); renderWhatsApp(state.store); });
+  document.addEventListener('langchange', () => {
+    renderPromoBanner(); renderChips(); renderTiles(); renderFeatured();
+    renderGrid(); renderRecentlyViewed(); renderWhatsApp(state.store);
+  });
 
   const search = document.getElementById('searchBox');
   search.addEventListener('input', () => { state.query = search.value.trim().toLowerCase(); renderGrid(); });
@@ -53,16 +89,44 @@ async function initStore() {
     closeModal();
     toast();
   });
+  document.getElementById('mWish').addEventListener('click', () => {
+    if (!state.current) return;
+    Wishlist.toggle(state.current.id);
+    renderWishButton();
+    renderGrid(); renderFeatured();
+  });
+  document.getElementById('sizeGuideBtn').addEventListener('click', () => {
+    document.getElementById('sizeGuideModal').classList.add('open');
+  });
+  document.getElementById('sizeGuideClose').addEventListener('click', () => {
+    document.getElementById('sizeGuideModal').classList.remove('open');
+  });
+  document.getElementById('sizeGuideModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+  });
+}
+
+/* Global sale strip under the top bar. Uses the owner's label when there is
+   one (in the visitor's language), otherwise a plain "-X% site-wide". */
+function renderPromoBanner() {
+  const el = document.getElementById('promoBanner');
+  if (!state.promo?.active || !(Number(state.promo.percent) > 0)) { el.hidden = true; return; }
+  const label = I18N.localize(state.promo, 'label');
+  el.textContent = label || I18N.t('promo_off').replace('{p}', state.promo.percent);
+  el.hidden = false;
 }
 
 function renderChips() {
   const row = document.getElementById('categoryChips');
   const chips = [{ id: null, label: I18N.t('all') },
     ...state.categories.map(c => ({ id: c.id, label: I18N.localize(c, 'name') }))];
+  // the wishlist lives next to the categories: one tap to see saved hearts
+  const wlCount = Wishlist.get().length;
+  chips.push({ id: 'wishlist', label: `♥ ${I18N.t('wishlist')}${wlCount ? ` (${wlCount})` : ''}` });
   row.innerHTML = '';
   chips.forEach(ch => {
     const b = document.createElement('button');
-    b.className = 'chip' + (state.filter === ch.id ? ' active' : '');
+    b.className = 'chip' + (String(state.filter) === String(ch.id) ? ' active' : '');
     b.textContent = ch.label;
     b.addEventListener('click', () => { state.filter = ch.id; renderChips(); renderGrid(); });
     row.appendChild(b);
@@ -74,25 +138,68 @@ function catName(catId) {
   return c ? I18N.localize(c, 'name') : '';
 }
 
+/* Category showcase tiles. Categories without a photo keep their elegant
+   navy placeholder so the row never breaks when the owner skips images. */
+function renderTiles() {
+  const section = document.getElementById('catTiles');
+  const row = document.getElementById('tileRow');
+  row.innerHTML = '';
+  state.categories.forEach(c => {
+    const count = state.products.filter(p => p.category_id === c.id).length;
+    const tile = document.createElement('button');
+    tile.className = 'cat-tile';
+    tile.innerHTML = `
+      <div class="tile-photo"><img src="${esc(c.image || DB.placeholderFor(c.id))}" alt="" loading="lazy"></div>
+      <span class="tile-name">${esc(I18N.localize(c, 'name'))}</span>
+      <span class="tile-count">${count}</span>`;
+    tile.addEventListener('click', () => {
+      state.filter = c.id;
+      renderChips(); renderGrid();
+      document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
+    });
+    row.appendChild(tile);
+  });
+  section.hidden = !state.categories.length;
+}
+
+function wishHeart(p) {
+  const on = Wishlist.has(p.id);
+  return `<button class="heart${on ? ' on' : ''}" type="button"
+    aria-label="${esc(I18N.t(on ? 'wl_remove' : 'wl_add'))}"
+    title="${esc(I18N.t(on ? 'wl_remove' : 'wl_add'))}">♥</button>`;
+}
+
 function productCard(p) {
   const name = I18N.localize(p, 'name');
-  const onSale = p.compare_at_price && Number(p.compare_at_price) > Number(p.price);
+  const price = effPrice(p);
+  // the "old" price is the shelf price while a sale runs; without a sale it
+  // stays the owner's compare-at price, exactly as before v1.1
+  const old = state.promo?.active && Number(state.promo.percent) > 0
+    ? Number(p.price)
+    : (p.compare_at_price && Number(p.compare_at_price) > price ? Number(p.compare_at_price) : null);
+  const onSale = old && old > price;
   const soldOut = p.stock <= 0;
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = `
-    <div class="photo"><img src="${esc(DB.photoOf(p))}" alt="${esc(name)}" loading="lazy"></div>
+    <div class="photo"><img src="${esc(DB.photoOf(p))}" alt="${esc(name)}" loading="lazy">${wishHeart(p)}</div>
     <div class="info">
       <span class="cat">${esc(catName(p.category_id))}</span>
       <h3>${esc(name)}</h3>
       <div class="price-row">
-        <span class="price">${I18N.fmtPrice(p.price)}</span>
-        ${onSale ? `<span class="price-old">${I18N.fmtPrice(p.compare_at_price)}</span><span class="badge-sale">-${Math.round((1 - p.price / p.compare_at_price) * 100)}%</span>` : ''}
+        <span class="price">${I18N.fmtPrice(price)}</span>
+        ${onSale ? `<span class="price-old">${I18N.fmtPrice(old)}</span><span class="badge-sale">-${Math.round((1 - price / old) * 100)}%</span>` : ''}
         ${soldOut ? `<span class="badge-oos" data-i18n="out_of_stock"></span>` : ''}
         ${!soldOut && p.stock <= 3 ? `<span class="badge-low">${esc(I18N.t('low_stock').replace('{n}', p.stock))}</span>` : ''}
       </div>
     </div>`;
-  card.querySelector('.photo').addEventListener('click', () => openModal(p));
+  card.querySelector('.photo').addEventListener('click', e => {
+    if (e.target.closest('.heart')) return;
+    openModal(p);
+  });
+  card.querySelector('.heart').addEventListener('click', () => {
+    Wishlist.toggle(p.id); renderChips(); renderGrid(); renderFeatured();
+  });
   return card;
 }
 
@@ -119,18 +226,23 @@ function matchesQuery(p) {
 
 function sortList(list) {
   const by = state.sort;
-  if (by === 'price_asc') return [...list].sort((a, b) => a.price - b.price);
-  if (by === 'price_desc') return [...list].sort((a, b) => b.price - a.price);
+  if (by === 'price_asc') return [...list].sort((a, b) => effPrice(a) - effPrice(b));
+  if (by === 'price_desc') return [...list].sort((a, b) => effPrice(b) - effPrice(a));
   return list;   // 'new' — getProducts() already returns newest first
 }
 
 function renderGrid() {
   const grid = document.getElementById('productGrid');
   grid.innerHTML = '';
-  const list = sortList(state.products.filter(p =>
-    (state.filter === null || p.category_id === state.filter) && matchesQuery(p)));
+  let list = state.products;
+  if (state.filter === 'wishlist') list = list.filter(p => Wishlist.has(p.id));
+  else list = list.filter(p => state.filter === null || p.category_id === state.filter);
+  list = sortList(list.filter(matchesQuery));
+
   if (!list.length) {
-    grid.innerHTML = `<p style="color:var(--muted)">${esc(I18N.t(state.query ? 'no_results' : 'all'))}</p>`;
+    grid.innerHTML = `<p style="color:var(--muted)">${esc(
+      state.filter === 'wishlist' ? I18N.t('wishlist_empty')
+      : I18N.t(state.query ? 'no_results' : 'all'))}</p>`;
     return;
   }
   list.forEach(p => grid.appendChild(productCard(p)));
@@ -139,6 +251,27 @@ function renderGrid() {
 }
 function card_badge_i18n() {
   document.querySelectorAll('[data-i18n="out_of_stock"]').forEach(el => el.textContent = I18N.t('out_of_stock'));
+}
+
+/* Recently viewed strip: photo + name + live price, reopens the modal. */
+function renderRecentlyViewed() {
+  const section = document.getElementById('recentlyViewed');
+  const strip = document.getElementById('rvStrip');
+  const items = RecentlyViewed.get()
+    .map(id => state.products.find(p => p.id === id))
+    .filter(Boolean);
+  section.hidden = items.length < 2;   // one item tells the visitor nothing
+  strip.innerHTML = '';
+  items.forEach(p => {
+    const el = document.createElement('button');
+    el.className = 'rv-item';
+    el.innerHTML = `
+      <img src="${esc(DB.photoOf(p))}" alt="" loading="lazy">
+      <span class="rv-name">${esc(I18N.localize(p, 'name'))}</span>
+      <span class="rv-price">${I18N.fmtPrice(effPrice(p))}</span>`;
+    el.addEventListener('click', () => openModal(p));
+    strip.appendChild(el);
+  });
 }
 
 /* Thumbnail strip under the main photo. The admin panel has always accepted
@@ -170,18 +303,53 @@ function renderThumbs(p, mainPhoto) {
   });
 }
 
+/* "Vous aimerez aussi" — same category, still in stock, not the product open. */
+function renderRelated(p) {
+  const block = document.getElementById('mRelatedBlock');
+  const row = document.getElementById('mRelated');
+  const list = state.products
+    .filter(x => x.id !== p.id && x.category_id === p.category_id && x.stock > 0)
+    .slice(0, 4);
+  block.hidden = !list.length;
+  row.innerHTML = '';
+  list.forEach(x => {
+    const b = document.createElement('button');
+    b.className = 'rel-item';
+    b.innerHTML = `
+      <img src="${esc(DB.photoOf(x))}" alt="" loading="lazy">
+      <span class="rv-name">${esc(I18N.localize(x, 'name'))}</span>
+      <span class="rv-price">${I18N.fmtPrice(effPrice(x))}</span>`;
+    b.addEventListener('click', () => openModal(x));   // swaps the modal in place
+    row.appendChild(b);
+  });
+}
+
+function renderWishButton() {
+  const btn = document.getElementById('mWish');
+  if (!state.current) return;
+  const on = Wishlist.has(state.current.id);
+  btn.textContent = on ? `♥ ${I18N.t('wl_remove')}` : `♡ ${I18N.t('wl_add')}`;
+  btn.classList.toggle('on', on);
+}
+
 function openModal(p) {
   state.current = p;
   state.selectedSize = null;
+  RecentlyViewed.push(p.id);
+  renderRecentlyViewed();
   const mainPhoto = document.getElementById('mPhoto');
   mainPhoto.src = DB.photoOf(p);
   mainPhoto.alt = I18N.localize(p, 'name');
   renderThumbs(p, mainPhoto);
   document.getElementById('mCat').textContent = catName(p.category_id);
   document.getElementById('mName').textContent = I18N.localize(p, 'name');
-  document.getElementById('mPrice').textContent = I18N.fmtPrice(p.price);
-  const old = document.getElementById('mOld');
-  old.textContent = p.compare_at_price ? I18N.fmtPrice(p.compare_at_price) : '';
+  const price = effPrice(p);
+  document.getElementById('mPrice').textContent = I18N.fmtPrice(price);
+  const oldEl = document.getElementById('mOld');
+  const old = state.promo?.active && Number(state.promo.percent) > 0
+    ? Number(p.price)
+    : (p.compare_at_price && Number(p.compare_at_price) > price ? Number(p.compare_at_price) : null);
+  oldEl.textContent = old ? I18N.fmtPrice(old) : '';
   document.getElementById('mDesc').textContent = I18N.localize(p, 'description');
   const sizesEl = document.getElementById('mSizes');
   const sizeErr = document.getElementById('mSizeError');
@@ -204,6 +372,8 @@ function openModal(p) {
   const addBtn = document.getElementById('mAdd');
   addBtn.disabled = p.stock <= 0;
   addBtn.style.opacity = p.stock <= 0 ? 0.5 : 1;
+  renderWishButton();
+  renderRelated(p);
   document.getElementById('productModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
