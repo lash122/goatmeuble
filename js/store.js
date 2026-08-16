@@ -1,5 +1,5 @@
 /* Storefront: catalog, category filter, product modal (cart lives in cart.js) */
-let state = { products: [], categories: [], filter: null, current: null, selectedSize: null };
+let state = { products: [], categories: [], filter: null, current: null, selectedSize: null, store: {} };
 
 async function initStore() {
   if (DB.isDemo) document.getElementById('demoBanner').classList.add('show');
@@ -10,6 +10,8 @@ async function initStore() {
     state.categories = cats;
     state.products = prods;
     if (store?.phone) document.getElementById('footerPhone').textContent = store.phone;
+    state.store = store || {};
+    renderWhatsApp(state.store);
   } catch (e) {
     // without this the catalogue would just look empty, which reads as
     // "the shop has no products" rather than "something is broken"
@@ -26,7 +28,7 @@ async function initStore() {
 
   document.querySelectorAll('.lang-switch button').forEach(b =>
     b.addEventListener('click', () => { I18N.setLang(b.dataset.lang); }));
-  document.addEventListener('langchange', () => { renderChips(); renderFeatured(); renderGrid(); });
+  document.addEventListener('langchange', () => { renderChips(); renderFeatured(); renderGrid(); renderWhatsApp(state.store); });
 
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.getElementById('productModal').addEventListener('click', e => {

@@ -4,7 +4,7 @@ const STATUSES = [
   ['shipped', 'Expédiée', 'shipped'], ['delivered', 'Livrée', 'delivered'],
   ['cancelled', 'Annulée', 'cancelled'],
 ];
-let A = { cats: [], products: [], orders: [], zones: [] };
+let A = { cats: [], products: [], orders: [], zones: [], store: {} };
 
 document.addEventListener('DOMContentLoaded', initAdmin);
 
@@ -31,6 +31,7 @@ async function initAdmin() {
   document.getElementById('addCatBtn').addEventListener('click', () => editCategory(null));
   document.getElementById('addZoneBtn').addEventListener('click', () => addZoneRow('', 600));
   document.getElementById('saveZonesBtn').addEventListener('click', saveZones);
+  document.getElementById('saveShopBtn').addEventListener('click', saveShop);
   document.getElementById('editorClose').addEventListener('click', closeEditor);
   document.getElementById('editorModal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeEditor();
@@ -71,10 +72,10 @@ async function openShell() {
 }
 
 async function refreshAll() {
-  [A.cats, A.products, A.orders, A.zones] = await Promise.all([
-    DB.getCategories(), DB.getProducts(false), DB.getOrders(), DB.getZones(),
+  [A.cats, A.products, A.orders, A.zones, A.store] = await Promise.all([
+    DB.getCategories(), DB.getProducts(false), DB.getOrders(), DB.getZones(), DB.getStore(),
   ]);
-  renderOrders(); renderProducts(); renderCats(); renderZones(); renderStats();
+  renderOrders(); renderProducts(); renderCats(); renderZones(); renderShop(); renderStats();
   const newCount = A.orders.filter(o => o.status === 'new').length;
   const badge = document.getElementById('newOrdersBadge');
   badge.textContent = newCount;
@@ -347,6 +348,29 @@ async function saveZones() {
     await DB.saveZones(zones);
     A.zones = zones;
   }, 'Zones enregistrées ✓');
+}
+
+/* ================= SHOP INFO =================
+   The data layer has always had saveStore(), but nothing ever called it, so
+   the phone stayed empty and the footer rendered a dash. */
+function renderShop() {
+  const st = A.store || {};
+  document.getElementById('s_name').value = st.name || '';
+  document.getElementById('s_phone').value = st.phone || '';
+  document.getElementById('s_email').value = st.email || '';
+}
+
+async function saveShop() {
+  const store = {
+    name: document.getElementById('s_name').value.trim(),
+    phone: document.getElementById('s_phone').value.trim(),
+    email: document.getElementById('s_email').value.trim(),
+  };
+  if (!store.name) { alert('Le nom de la boutique est requis'); return; }
+  await run(async () => {
+    await DB.saveStore(store);
+    A.store = store;
+  }, 'Informations enregistrées ✓');
 }
 
 /* ================= STATS ================= */

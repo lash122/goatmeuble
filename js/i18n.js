@@ -8,6 +8,33 @@ function esc(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+/* Builds a wa.me link from whatever the owner typed in the admin panel.
+   Algerian numbers get entered as 0555..., 05 55..., +213 555... — WhatsApp
+   needs bare international digits, so normalise rather than make the owner
+   learn the format. */
+function waLink(phone, text) {
+  let d = String(phone || '').replace(/\D/g, '');
+  if (!d) return '';
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.startsWith('0')) d = '213' + d.slice(1);      // local → Algeria
+  else if (!d.startsWith('213') && d.length <= 9) d = '213' + d;
+  if (d.length < 11) return '';                        // too short to be real
+  return `https://wa.me/${d}${text ? '?text=' + encodeURIComponent(text) : ''}`;
+}
+
+/* Floating WhatsApp button, shown only once a number is saved in the admin. */
+function renderWhatsApp(store) {
+  const fab = document.getElementById('waFab');
+  if (!fab) return;
+  const href = waLink(store?.phone, I18N.t('wa_prefill'));
+  fab.hidden = !href;
+  if (href) {
+    fab.href = href;
+    fab.setAttribute('aria-label', I18N.t('wa_cta'));
+    fab.title = I18N.t('wa_cta');
+  }
+}
+
 const I18N = (() => {
   const translations = {
     fr: {
@@ -26,6 +53,8 @@ const I18N = (() => {
       invalid_phone: 'Num\u00e9ro de t\u00e9l\u00e9phone invalide', demo_notice: 'Mode d\u00e9mo \u2014 connectez Supabase pour de vrais produits',
       contact: 'Contactez-nous', out_of_stock: 'Rupture de stock',
       size_required: 'Choisissez d’abord une taille',
+      wa_cta: 'Écrivez-nous sur WhatsApp', wa_prefill: 'Bonjour, j’ai une question sur un article.',
+      success_contact: 'Une question ? Contactez-nous :',
       err_generic: 'La commande n\u2019a pas pu \u00eatre enregistr\u00e9e. R\u00e9essayez.',
       err_stock: 'Stock insuffisant pour un article de votre panier.',
       err_unavailable: 'Un article de votre panier n\u2019est plus disponible.',
@@ -49,6 +78,8 @@ const I18N = (() => {
       invalid_phone: 'رقم الهاتف غير صالح', demo_notice: 'وضع تجريبي — اربط Supabase لعرض منتجات حقيقية',
       contact: 'اتصل بنا', out_of_stock: 'نفذت الكمية',
       size_required: 'اختر المقاس أولاً',
+      wa_cta: 'راسلنا عبر واتساب', wa_prefill: 'مرحباً، لدي سؤال عن أحد المنتجات.',
+      success_contact: 'لديك سؤال؟ اتصل بنا:',
       err_generic: 'تعذّر تسجيل الطلب. يرجى المحاولة مرة أخرى.',
       err_stock: 'الكمية غير كافية لأحد المنتجات في سلتك.',
       err_unavailable: 'أحد منتجات سلتك لم يعد متوفراً.',
@@ -72,6 +103,8 @@ const I18N = (() => {
       invalid_phone: 'Invalid phone number', demo_notice: 'Demo mode — connect Supabase for real products',
       contact: 'Contact us', out_of_stock: 'Out of stock',
       size_required: 'Please choose a size first',
+      wa_cta: 'Message us on WhatsApp', wa_prefill: 'Hello, I have a question about an item.',
+      success_contact: 'Any questions? Contact us:',
       err_generic: 'The order could not be saved. Please try again.',
       err_stock: 'Not enough stock for an item in your cart.',
       err_unavailable: 'An item in your cart is no longer available.',

@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Admin — Élégance</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/admin.css">
 </head>
@@ -47,6 +48,7 @@
       <button data-tab="products">Produits</button>
       <button data-tab="categories">Catégories</button>
       <button data-tab="zones">Zones de livraison</button>
+      <button data-tab="shop">Boutique</button>
       <button data-tab="stats">Statistiques</button>
     </div>
 
@@ -98,6 +100,32 @@
         <button class="a-btn gold" id="addZoneBtn" style="margin-top:14px">+ Ajouter une zone</button>
         <div style="margin-top:20px">
           <button class="a-btn" id="saveZonesBtn">💾 Enregistrer les zones</button>
+        </div>
+      </div>
+
+      <!-- SHOP INFO -->
+      <div class="tab-panel" id="tab-shop">
+        <div class="panel-h"><h2>Informations de la boutique</h2></div>
+        <div class="panel" style="max-width:480px">
+          <div class="f-grid">
+            <div>
+              <label>Nom de la boutique</label>
+              <input id="s_name" placeholder="Élégance">
+            </div>
+            <div>
+              <label>Téléphone / WhatsApp</label>
+              <input id="s_phone" type="tel" placeholder="0555 12 34 56">
+              <small style="color:var(--muted);display:block;margin-top:6px">
+                Affiché en bas du site et sur la page de confirmation.
+                Active aussi le bouton WhatsApp pour vos clients.
+              </small>
+            </div>
+            <div>
+              <label>Email (optionnel)</label>
+              <input id="s_email" type="email" placeholder="contact@example.com">
+            </div>
+            <button class="a-btn gold" id="saveShopBtn">💾 Enregistrer</button>
+          </div>
         </div>
       </div>
 

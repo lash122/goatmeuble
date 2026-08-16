@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -50,7 +51,9 @@
         <h2 data-i18n="order_success"></h2>
         <div class="order-ref"><span data-i18n="order_number"></span> : <span id="orderRef"></span></div>
         <div class="order-ref"><span data-i18n="total"></span> : <span id="finalTotal"></span></div>
-        <p style="color:var(--muted);margin-bottom:26px" data-i18n="order_success_sub"></p>
+        <p style="color:var(--muted);margin-bottom:10px" data-i18n="order_success_sub"></p>
+        <!-- filled from the store settings; hidden while no number is saved -->
+        <div class="success-contact" id="successContact" hidden></div>
         <a class="btn-outline" href="index.html" data-i18n="continue_shopping"></a>
       </div>
     </div>
@@ -59,6 +62,11 @@
   <footer class="site" style="margin-top:60px">
     <div class="container fine">© <span id="year"></span> Élégance — <span data-i18n="cod_only"></span></div>
   </footer>
+
+  <!-- floating WhatsApp button; stays hidden until a number is saved in the admin -->
+  <a class="wa-fab" id="waFab" hidden target="_blank" rel="noopener noreferrer">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.86 9.86 0 0 0 4.74 1.2c5.46 0 9.9-4.44 9.9-9.9S17.5 2 12.04 2m0 18.05c-1.5 0-2.97-.4-4.25-1.16l-.3-.18-3.15.82.84-3.07-.2-.32a8.16 8.16 0 0 1-1.25-4.35c0-4.5 3.66-8.16 8.16-8.16s8.16 3.66 8.16 8.16-3.66 8.16-8.16 8.16m4.47-6.11c-.24-.12-1.45-.72-1.68-.8-.22-.08-.39-.12-.55.12-.16.25-.63.8-.78.97-.14.16-.29.18-.53.06-.24-.12-1.03-.38-1.97-1.22-.73-.65-1.22-1.45-1.36-1.7-.14-.24-.02-.37.1-.49.11-.11.24-.29.36-.43.12-.14.16-.25.24-.41.08-.16.04-.3-.02-.43-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.43.06-.65.3-.22.25-.85.84-.85 2.04s.87 2.37 1 2.53c.12.16 1.72 2.62 4.16 3.68.58.25 1.03.4 1.39.51.58.19 1.11.16 1.53.1.47-.07 1.45-.59 1.65-1.17.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.46-.28"/></svg>
+  </a>
 
   <!-- Pinned to an exact version with a Subresource Integrity hash: the browser
        refuses the file if its bytes ever change. Without this, whoever controls

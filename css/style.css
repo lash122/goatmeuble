@@ -187,6 +187,25 @@ section.block { padding: 56px 0 30px; }
 }
 .modal-wrap { position: relative; width: 100%; display: flex; justify-content: center; }
 
+/* ---------- floating WhatsApp button ---------- */
+.wa-fab {
+  position: fixed; inset-block-end: 22px; inset-inline-end: 22px; z-index: 90;
+  width: 56px; height: 56px; border-radius: 50%; background: #25d366; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); transition: transform 0.18s;
+}
+.wa-fab:hover { transform: scale(1.08); }
+.wa-fab[hidden] { display: none; }
+.wa-fab svg { width: 32px; height: 32px; }
+
+/* contact line on the order-confirmed screen */
+.success-contact { margin: 18px 0 6px; font-size: 0.92rem; color: var(--muted); }
+.success-contact a {
+  display: inline-flex; align-items: center; gap: 7px; margin-top: 8px;
+  color: #128c4b; font-weight: 600; font-size: 1.02rem;
+}
+.success-contact svg { width: 20px; height: 20px; }
+
 /* ---------- footer ---------- */
 footer.site { background: var(--navy); color: #aeb4c2; margin-top: 60px; padding: 40px 0 30px; }
 footer.site .cols { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px; }

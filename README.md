@@ -51,6 +51,7 @@ Log in at `admin.html` with the owner account created in step 2.4.
 | Add/edit products, upload photos | admin.html → Produits |
 | See orders, mark delivered | admin.html → Commandes |
 | Delivery zones & fees | admin.html → Zones de livraison |
+| Shop name, phone, WhatsApp | admin.html → Boutique |
 | Sales, best sellers | admin.html → Statistiques |
 
 ---
@@ -127,6 +128,18 @@ pages — so **nothing in `js/` protects your data**. All the real rules are in
   settings. Being logged in is not enough.
 
 If you edit `schema.sql`, keep those three properties.
+
+### After deploying: fix the social preview
+`index.html` carries Open Graph tags so the link shows a proper card when
+shared on WhatsApp or Facebook. Their scrapers need **absolute** URLs, so once
+you know your address, edit these two lines in `index.html`:
+
+```html
+<meta property="og:image" content="https://YOUR-SITE.netlify.app/og-image.png">
+<meta property="og:url"   content="https://YOUR-SITE.netlify.app/">
+```
+
+Test the result at [developers.facebook.com/tools/debug](https://developers.facebook.com/tools/debug/).
 
 ### Upgrading the Supabase library
 The three HTML pages load one exact version of `supabase-js`, with an

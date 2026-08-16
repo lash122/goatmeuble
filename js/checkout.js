@@ -1,11 +1,13 @@
 /* Checkout: cart review + COD order form (single page) */
 let zones = [];
+let store = {};
 let currentSubtotal = 0;
 
 async function initCheckout() {
   document.getElementById('year').textContent = new Date().getFullYear();
   try {
-    zones = await DB.getZones();
+    [zones, store] = await Promise.all([DB.getZones(), DB.getStore()]);
+    renderWhatsApp(store);
   } catch (e) {
     console.error('Could not load delivery zones:', e);
     document.getElementById('cartView').innerHTML =
@@ -15,7 +17,7 @@ async function initCheckout() {
 
   document.querySelectorAll('.lang-switch button').forEach(b =>
     b.addEventListener('click', () => { I18N.setLang(b.dataset.lang); }));
-  document.addEventListener('langchange', render);
+  document.addEventListener('langchange', () => { render(); renderWhatsApp(store); });
 
   render();
 }
@@ -152,12 +154,37 @@ async function placeOrder() {
     // one the delivery driver will collect — it can differ from the cart if a
     // price changed while the basket sat in localStorage
     document.getElementById('finalTotal').textContent = I18N.fmtPrice(res.total);
+    renderSuccessContact();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
     err.textContent = orderErrorMessage(e);
     err.classList.add('show');
     btn.disabled = false; btn.style.opacity = 1;
   }
+}
+
+/* Cash on delivery asks the customer to trust a stranger with their address,
+   so give them a way to reach the shop the moment the order lands. */
+function renderSuccessContact() {
+  const box = document.getElementById('successContact');
+  const phone = store?.phone;
+  if (!phone) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = '';
+
+  const label = document.createElement('div');
+  label.textContent = `${I18N.t('success_contact')} ${phone}`;
+  box.appendChild(label);
+
+  const href = waLink(phone, `${I18N.t('order_number')} ${document.getElementById('orderRef').textContent}`);
+  if (!href) return;
+  const a = document.createElement('a');
+  a.href = href;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  a.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.86 9.86 0 0 0 4.74 1.2c5.46 0 9.9-4.44 9.9-9.9S17.5 2 12.04 2m0 18.05c-1.5 0-2.97-.4-4.25-1.16l-.3-.18-3.15.82.84-3.07-.2-.32a8.16 8.16 0 0 1-1.25-4.35c0-4.5 3.66-8.16 8.16-8.16s8.16 3.66 8.16 8.16-3.66 8.16-8.16 8.16"/></svg>';
+  a.appendChild(document.createTextNode(I18N.t('wa_cta')));
+  box.appendChild(a);
 }
 
 /* place_order() raises short codes rather than sentences, so the customer
