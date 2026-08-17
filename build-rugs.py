@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Generates dist-rugs/ — the same site rebuilt as DAR ZARBIA, a rug gallery:
-near-black page, borderless photography, editorial left-aligned headings.
+Generates dist-rugs/ — the same site rebuilt as DAR ZARBIA, a rug shop styled
+after handmadecarpets.com: light grey page, Jost throughout, oxblood accent,
+uppercase lettered labels, square corners, borderless cards, contain-fit photos.
 
 Same approach as build-techdz.py: a generator rather than a third copy of the
 source, so fixes land once and this file is the readable record of what differs.
@@ -27,9 +28,9 @@ BRAND_HTML = 'DAR<em> ZARBIA</em>'      # the accented half of the wordmark
 PAGES = ["index.html", "checkout.html", "admin.html", "track.html"]
 ASSETS = ["css", "js"]
 
-# Marcellus + Lora replace Playfair + Inter; Cairo stays for Arabic.
-FONTS = ("https://fonts.googleapis.com/css2?family=Marcellus"
-         "&family=Lora:wght@400;500;600"
+# Jost throughout, matching the reference design's geometric sans; Cairo stays
+# for Arabic. Replaces Playfair + Inter from the base build.
+FONTS = ("https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600"
          "&family=Cairo:wght@400;600;700&display=swap")
 
 
@@ -168,50 +169,51 @@ def retitle_i18n():
 
 
 def write_favicon():
-    """Kilim diamond in saffron on near-black — the gallery palette."""
+    """Kilim diamond in oxblood on the page grey."""
     (OUT / "favicon.svg").write_text(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
-        '<rect width="64" height="64" fill="#0d0c0b"/>'
-        '<path d="M32 10 L52 32 L32 54 L12 32 Z" fill="none" stroke="#d9a441" stroke-width="3"/>'
-        '<path d="M32 22 L42 32 L32 42 L22 32 Z" fill="#d9a441"/>'
+        '<rect width="64" height="64" fill="#efefef"/>'
+        '<path d="M32 10 L52 32 L32 54 L12 32 Z" fill="none" stroke="#480001" stroke-width="3"/>'
+        '<path d="M32 22 L42 32 L32 42 L22 32 Z" fill="#480001"/>'
         '</svg>\n', encoding="utf-8")
 
 
 def write_og_card():
     from PIL import Image, ImageDraw, ImageFont
     W, H = 1200, 630
-    BLACK, BONE, SAFFRON, MUTED = (13, 12, 11), (236, 231, 221), (217, 164, 65), (141, 133, 122)
+    GREY, INK, OXBLOOD, MUTED = (239, 239, 239), (28, 28, 28), (72, 0, 1), (123, 122, 122)
 
-    img = Image.new("RGB", (W, H), BLACK)
+    img = Image.new("RGB", (W, H), GREY)
     d = ImageDraw.Draw(img)
+    d.rectangle([(0, 0), (W, 8)], fill=OXBLOOD)
+    d.rectangle([(0, H - 8), (W, H)], fill=OXBLOOD)
+    for cy in (150, 480):                      # faint hairline diamonds
+        for cx in range(120, W, 190):
+            d.polygon([(cx, cy - 26), (cx + 26, cy), (cx, cy + 26), (cx - 26, cy)],
+                      outline=(215, 215, 215), width=1)
 
-    # a single column of faint diamonds down the right — gallery, not bazaar
-    for cy in range(70, H, 120):
-        d.polygon([(1040, cy - 34), (1074, cy), (1040, cy + 34), (1006, cy)],
-                  outline=(36, 33, 29), width=2)
+    sans = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    bold = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    f_title, f_sub, f_badge = (ImageFont.truetype(bold, 74),
+                               ImageFont.truetype(sans, 27),
+                               ImageFont.truetype(sans, 21))
 
-    serif = "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"
-    bold = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
-    # DejaVu Serif carries no Arabic glyphs — that line needs the sans face or
-    # it renders as a row of tofu boxes.
-    arabic = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    f_title = ImageFont.truetype(bold, 86)
-    f_sub = ImageFont.truetype(serif, 30)
-    f_ar = ImageFont.truetype(arabic, 28)
-    f_badge = ImageFont.truetype(serif, 22)
+    def centre(text, font, y, fill):
+        d.text(((W - d.textbbox((0, 0), text, font=font)[2]) // 2, y), text, font=font, fill=fill)
 
-    X = 96
-    d.rectangle([(X, 214), (X + 64, 217)], fill=SAFFRON)
-    d.text((X, 256), "DAR ", font=f_title, fill=BONE)
-    d.text((X + d.textbbox((0, 0), "DAR ", font=f_title)[2], 256), "ZARBIA",
-           font=f_title, fill=SAFFRON)
-    d.text((X, 372), "Tapis berbères · Kilims · Tapis modernes", font=f_sub, fill=MUTED)
-    d.text((X, 418), "زرابي أمازيغية · الدفع عند الاستلام", font=f_ar, fill=MUTED)
+    # the wordmark, letter-spaced by hand — PIL has no tracking control
+    spaced = " ".join("DAR ZARBIA")
+    centre(spaced, f_title, 250, INK)
+    d.rectangle([(W // 2 - 22, 356), (W // 2 + 22, 357)], fill=OXBLOOD)
 
-    txt = "PAIEMENT À LA LIVRAISON"
+    centre("TAPIS BERBERES  ·  KILIMS  ·  TAPIS MODERNES", f_sub, 392, MUTED)
+    centre("زرابي أمازيغية · الدفع عند الاستلام", ImageFont.truetype(sans, 26), 438, MUTED)
+
+    txt = "PAIEMENT A LA LIVRAISON"
     bw = d.textbbox((0, 0), txt, font=f_badge)[2]
-    d.rectangle([(X, 486), (X + bw + 44, 486 + 50)], outline=SAFFRON, width=1)
-    d.text((X + 22, 500), txt, font=f_badge, fill=SAFFRON)
+    x0 = (W - bw) // 2 - 24
+    d.rectangle([(x0, 496), (x0 + bw + 48, 546)], outline=OXBLOOD, width=1)
+    d.text((x0 + 24, 510), txt, font=f_badge, fill=OXBLOOD)
 
     img.save(OUT / "og-image.png", optimize=True)
 

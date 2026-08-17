@@ -2,143 +2,169 @@
    DAR ZARBIA — theme overlay (rugs & carpets)
    Loaded AFTER style.css. No markup or JS changes.
 
-   A dark gallery, not a recoloured shop: near-black page, borderless
-   edge-to-edge photography, left-aligned editorial headings, no card
-   chrome. The rug is the only thing with colour on the page.
+   Design language taken from the handmadecarpets.com collection page:
+     page      #efefef light warm grey, white only for raised surfaces
+     text      #504f4f grey body, #1c1c1c for emphasis
+     accent    #480001 deep oxblood, used sparingly
+     rules     #d7d7d7 hairlines instead of boxes
+     type      Jost geometric sans throughout
+     labels    uppercase, ~2px tracking, small
+     corners   none, anywhere
+     cards     no border, no background — the rug sits on the page
+     photos    object-fit: contain, so the whole rug is visible
 
    NOTE on --navy: the base stylesheet uses it for two opposite jobs — the
-   header/footer background AND the primary text/border colour (.price,
-   .btn-outline, .wl-btn, .brand). On a dark page those cannot be the same
-   value, so --navy becomes the light "ink" and every surface that used it
-   as a background is overridden explicitly below.
+   header/footer background AND the primary text colour (.price, .btn-outline,
+   .wl-btn, .brand). Here it becomes the dark ink, and the few surfaces that
+   used it as a background are overridden below.
    ============================================================ */
 :root {
-  --navy: #ece7dd;          /* now the LIGHT contrast colour, see note above */
-  --navy-2: #1c1a17;
-  --ink: #ece7dd;
-  --ivory: #0d0c0b;         /* page: near black */
-  --paper: #171512;         /* raised surfaces: panels, modal, inputs */
-  --gold: #d9a441;          /* saffron — the one warm accent */
-  --gold-soft: rgba(217, 164, 65, 0.16);
-  --muted: #8d857a;
-  --line: #2b2823;
-  --radius: 0px;            /* gallery: nothing is rounded */
+  --navy: #1c1c1c;          /* now the dark INK, see note above */
+  --navy-2: #2a2a2a;
+  --ink: #504f4f;
+  --ivory: #efefef;         /* the page */
+  --paper: #ffffff;         /* raised surfaces only */
+  --gold: #480001;          /* oxblood accent */
+  --gold-soft: rgba(72, 0, 1, 0.08);
+  --muted: #7b7a7a;
+  --line: #d7d7d7;
+  --radius: 0px;
   --shadow: none;
-  --font-display: "Marcellus", "Cairo", Georgia, serif;
-  --font-body: "Lora", "Cairo", Georgia, serif;
+  --font-display: "Jost", "Cairo", system-ui, sans-serif;
+  --font-body: "Jost", "Cairo", system-ui, sans-serif;
 }
 html[lang="ar"] {
-  --font-display: "Cairo", Georgia, serif;
-  --font-body: "Cairo", Georgia, serif;
+  --font-display: "Cairo", system-ui, sans-serif;
+  --font-body: "Cairo", system-ui, sans-serif;
 }
 
-/* the wordmark: nowrap, or the letter-spacing drops "ZARBIA" onto a second
-   line in the narrow mobile header */
-.brand .logo { letter-spacing: 3px; font-size: 1.3rem; white-space: nowrap; }
+body { font-weight: 400; }
+h1, h2, h3 { font-weight: 400; color: #1c1c1c; letter-spacing: 0.02em; }
+
+/* ---- header: hairline rules, generous tracking, no colour ---- */
+.topbar {
+  background: #1c1c1c; color: #efefef; text-transform: uppercase;
+  letter-spacing: 2px; font-size: 0.68rem; padding: 10px 12px;
+}
+header.site { background: var(--ivory); border-bottom: 1px solid var(--line); }
+.brand .logo { font-weight: 500; letter-spacing: 4px; font-size: 1.15rem; white-space: nowrap; }
 .logo em, .brand-w span { font-style: normal; color: var(--gold); }
-h1, h2, h3 { font-weight: 400; }
-
-/* ---- surfaces that used --navy as a BACKGROUND ---- */
-.topbar { background: #17150f; color: #b6ab97; letter-spacing: 1.4px; }
-header.site { background: #0d0c0b; border-bottom: 1px solid var(--line); }
-footer.site { background: #0d0c0b; border-top: 1px solid var(--line); color: #8d857a; }
-.cart-btn { background: var(--gold); color: #16130d; font-weight: 600; }
-.cart-btn:hover { background: #e6b45c; }
-.cart-count { background: #16130d; color: var(--gold); }
+nav.main-nav a { text-transform: uppercase; letter-spacing: 2px; font-size: 0.72rem; color: var(--ink); }
+nav.main-nav a:hover { color: var(--gold); }
 .lang-switch { border-color: var(--line); }
-.lang-switch button.active { background: var(--gold); color: #16130d; }
-.chip { background: transparent; color: var(--muted); border-color: var(--line); }
-.chip.active { background: var(--gold); color: #16130d; border-color: var(--gold); }
-.btn-gold { background: var(--gold); color: #16130d; border-radius: 0; letter-spacing: 2px;
-            text-transform: uppercase; font-size: 0.8rem; padding: 15px 38px; }
-.btn-outline { border-radius: 0; letter-spacing: 1.6px; text-transform: uppercase;
-               font-size: 0.78rem; }
-.btn-outline:hover { background: var(--navy); color: #0d0c0b; }
-.size-btn { background: transparent; color: var(--ink); border-color: var(--line); border-radius: 0; }
-.size-btn.selected { background: var(--gold); border-color: var(--gold); color: #16130d; }
-.wl-btn { border-radius: 0; }
-
-/* ---- editorial layout: headings left, ornament gone ---- */
-.section-title {
-  text-align: start; font-size: clamp(1.6rem, 4vw, 2.4rem);
-  letter-spacing: 0.01em; margin-bottom: 4px;
+.lang-switch button { letter-spacing: 1.4px; font-size: 0.7rem; }
+.lang-switch button.active { background: #1c1c1c; color: #fff; }
+.cart-btn {
+  background: transparent; color: #1c1c1c; border: 1px solid var(--line);
+  text-transform: uppercase; letter-spacing: 2px; font-size: 0.7rem; padding: 10px 16px;
 }
-.section-title::after { display: none; }
-.chip-row { justify-content: flex-start; margin: 22px 0 26px; }
-.shop-tools { justify-content: flex-start; }
-.shop-tools input, .shop-tools select {
-  background: transparent; color: var(--ink); border-color: var(--line); border-radius: 0;
-}
+.cart-btn:hover { background: #1c1c1c; color: #fff; }
+.cart-count { background: var(--gold); color: #fff; font-weight: 400; }
 
-/* ---- hero: full-bleed, no pinstripes, type does the work ----
-   `color: var(--ivory)` in the base was white text on a dark hero. --ivory is
-   now the near-black page, so the headline would be black on black — set the
-   colour explicitly rather than inherit a variable that changed meaning. */
+/* ---- buttons: outlined and lettered, never filled and rounded ---- */
+.btn-gold {
+  background: #1c1c1c; color: #fff; text-transform: uppercase;
+  letter-spacing: 2.2px; font-size: 0.72rem; font-weight: 400; padding: 15px 34px;
+}
+.btn-gold:hover { background: var(--gold); filter: none; }
+.btn-outline, .wl-btn {
+  text-transform: uppercase; letter-spacing: 2px; font-size: 0.7rem;
+  border: 1px solid var(--line); color: #1c1c1c;
+}
+.btn-outline:hover { background: #1c1c1c; color: #fff; border-color: #1c1c1c; }
+.chip {
+  background: transparent; border-color: var(--line); color: var(--ink);
+  text-transform: uppercase; letter-spacing: 1.6px; font-size: 0.7rem; padding: 9px 18px;
+}
+.chip.active { background: #1c1c1c; color: #fff; border-color: #1c1c1c; }
+.size-btn {
+  background: #fff; border-color: var(--line); color: #1c1c1c;
+  letter-spacing: 1.2px; font-size: 0.78rem;
+}
+.size-btn.selected { background: #1c1c1c; border-color: #1c1c1c; color: #fff; }
+
+/* ---- hero: quiet, lettered, no pattern ---- */
 .hero {
-  background: linear-gradient(180deg, #100e0c 0%, #0d0c0b 100%);
-  color: var(--ink);
-  text-align: start; border-bottom: 1px solid var(--line);
-  /* a flex column so the button and badge size to their content — giving
-     every child the container width stretched them edge to edge. The inline
-     padding reproduces .container's left edge so the hero lines up with the
-     sections below it. */
-  display: flex; flex-direction: column; align-items: flex-start;
-  padding: 108px calc((100% - min(1160px, 92%)) / 2) 96px;
+  background: #e6e4e1; color: #1c1c1c; text-align: center;
+  padding: 76px 20px 72px; border-bottom: 1px solid var(--line);
 }
-.hero > * { max-width: 100%; }
-.hero br { display: none; }
-.hero h1 { font-size: clamp(2.2rem, 7vw, 4.2rem); margin: 0 0 18px; max-width: 15ch; }
-.hero p { color: #a89d8c; margin: 0 0 34px; max-width: 44ch; }
+.hero h1 { font-size: clamp(1.7rem, 4.4vw, 2.9rem); font-weight: 300; letter-spacing: 0.04em; }
+.hero p { color: var(--ink); }
 .hero .cod-badge {
-  border-color: var(--line); color: var(--gold); border-radius: 0; letter-spacing: 2px;
+  border-color: var(--gold); color: var(--gold);
+  text-transform: uppercase; letter-spacing: 2px; font-size: 0.68rem;
 }
 
-/* ---- cards: no container at all, just the rug and its caption ---- */
-.product-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 44px 26px; }
-.card { background: transparent; border: none; border-radius: 0; }
+/* ---- section headings: small, uppercase, lettered, centred rule ---- */
+.section-title {
+  font-size: 0.86rem; text-transform: uppercase; letter-spacing: 3px;
+  font-weight: 500; color: #1c1c1c;
+}
+.section-title::after { width: 34px; height: 1px; background: var(--gold); margin-top: 14px; }
+
+/* the filter/sort bar reads as hairline-separated cells, like the reference */
+.shop-tools {
+  border-block: 1px solid var(--line); padding: 4px 0; margin: 20px 0 30px; gap: 0;
+}
+.shop-tools input, .shop-tools select {
+  background: transparent; border: none; color: var(--ink);
+  text-transform: uppercase; letter-spacing: 2px; font-size: 0.7rem; padding: 12px 20px;
+}
+.shop-tools select { border-inline-start: 1px solid var(--line); }
+
+/* ---- cards: no container. The rug sits directly on the grey. ---- */
+.product-grid { grid-template-columns: repeat(auto-fill, minmax(224px, 1fr)); gap: 34px 20px; }
+.card { background: transparent; border: none; }
 .card:hover { box-shadow: none; transform: none; }
-.card .photo { aspect-ratio: 4 / 3; background: #1a1815; border-radius: 0; }
-.card:hover .photo img { transform: scale(1.04); }
-.card .info { padding: 14px 2px 0; }
-.card .cat { color: var(--gold); letter-spacing: 2px; font-size: 0.66rem; }
-.card h3 { font-weight: 400; font-size: 1.02rem; }
-.price { color: var(--ink); font-weight: 400; }
-.price-old { color: #6f665c; }
-.badge-sale { background: #2a2212; color: var(--gold); border-radius: 0; }
-
-/* category tiles: the count pill is a hardcoded white chip with --navy text,
-   which is now light-on-light. Flip it to the accent. */
-.cat-tile { background: #1a1815; }
-.cat-tile .tile-count { background: var(--gold); color: #16130d; border-radius: 0; }
-.cat-tile .tile-name { background: linear-gradient(transparent, rgba(0, 0, 0, 0.88)); }
-.badge-oos { background: #2a1614; color: #e08b7d; border-radius: 0; }
-.badge-low { background: #2a2212; color: var(--gold); border-radius: 0; }
-
-/* ---- modal & panels on the dark surface ---- */
-.modal { background: var(--paper); border-radius: 0; border: 1px solid var(--line); }
-.modal .m-media { background: #1a1815; }
-.panel, .success-box, .cat-tile {
-  background: var(--paper); border-color: var(--line); border-radius: 0;
+/* contain, not cover: a cropped rug hides the border pattern, which is most
+   of what distinguishes one traditional rug from another */
+.card .photo { aspect-ratio: 3 / 4; background: #fff; }
+.card .photo img { object-fit: contain; }
+.card:hover .photo img { transform: none; }
+.card .info { padding: 14px 0 0; }
+.card .cat { color: var(--muted); letter-spacing: 2px; font-size: 0.62rem; }
+.card h3 {
+  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.6px;
+  font-weight: 400; color: var(--ink); line-height: 1.5; margin: 6px 0 8px;
 }
-.form-grid input, .form-grid textarea, .form-grid select,
-.qty-btn { background: #100e0c; color: var(--ink); border-color: var(--line); border-radius: 0; }
-.error-msg { background: #2a1614; color: #e79d90; border-radius: 0; }
-/* inherits --ink on a translucent saffron panel — too close to the accent to
-   read on black; give it a solid ground and the accent as text */
-.cod-note { background: #221c10; color: var(--gold); border-radius: 0; border-style: solid; }
-.track-cancelled { background: #2a1614; color: #e79d90; border-radius: 0; }
-.track-trail .dot { background: var(--paper); border-color: var(--line); }
-.track-trail li.done { color: var(--ink); }
-.track-trail li.done .dot,
-.track-trail li.current .dot { background: var(--gold); border-color: var(--gold); }
-.track-trail li.done:not(:last-child)::before { background: var(--gold); }
-.track-trail li.current { color: var(--gold); }
-.track-trail li.current .dot { box-shadow: 0 0 0 4px rgba(217, 164, 65, 0.18); }
-.m-thumb { border-radius: 0; }
+.price { color: #1c1c1c; font-weight: 400; font-size: 0.92rem; letter-spacing: 0.5px; }
+.price-old { color: var(--muted); }
+.badge-sale { background: var(--gold); color: #fff; letter-spacing: 1px; }
+.badge-oos { background: #e4e0df; color: #6a6a6a; letter-spacing: 1px; }
+.badge-low { background: #f0e9e0; color: #7a5a2a; letter-spacing: 1px; }
+
+/* ---- surfaces ---- */
+.modal, .panel, .success-box, .cat-tile { background: #fff; border: 1px solid var(--line); }
+.modal .m-media { background: #fff; }
+.modal .m-photo img { object-fit: contain; padding: 14px; }
+.m-thumb img { object-fit: contain; background: #fff; }
 .m-thumb.active { border-color: var(--gold); }
-.cart-line img { background: #1a1815; }
-.remove-link { color: #b98b7d; }
-.link-btn { color: var(--gold); }
+.cart-line img { object-fit: contain; background: #fff; }
+.form-grid input, .form-grid textarea, .form-grid select, .qty-btn {
+  background: #fff; border-color: var(--line); color: #1c1c1c;
+}
+.form-grid label { text-transform: uppercase; letter-spacing: 1.6px; font-size: 0.68rem; color: var(--muted); }
+.cod-note { background: var(--gold-soft); border: 1px solid var(--gold); color: var(--gold); }
+.track-trail li.current, .link-btn { color: var(--gold); }
+.track-trail li.current .dot,
+.track-trail li.done .dot { background: var(--gold); border-color: var(--gold); }
+.track-trail li.done:not(:last-child)::before { background: var(--gold); }
+.track-trail li.current .dot { box-shadow: 0 0 0 4px rgba(72, 0, 1, 0.12); }
+.cat-tile .tile-name { background: linear-gradient(transparent, rgba(28, 28, 28, 0.82)); }
+.cat-tile .tile-count { background: #1c1c1c; color: #fff; }
+
+/* The footer is the one dark surface. --gold is a deep oxblood, so the base
+   rules `footer a { color: var(--gold) }` and the footer wordmark's inline
+   var(--gold) both land near-black on near-black — invisible. Light them up. */
+footer.site { background: #1c1c1c; color: #b9b7b7; }
+footer.site h4 { text-transform: uppercase; letter-spacing: 2.4px; font-size: 0.78rem; font-weight: 500; }
+footer.site a { color: #efefef; text-transform: uppercase; letter-spacing: 1.6px; font-size: 0.72rem; }
+footer.site a:hover { color: #c9a58a; }
+footer.site h4 em, footer.site h4 span { color: #c9a58a !important; }
+
+/* Category tiles carry white text over a gradient. With a white tile the text
+   vanishes whenever a category has no photo yet, so keep the tile mid-tone. */
+.cat-tile { background: #ddd9d5; }
 
 /* a chest/waist table means nothing for a carpet — dimensions live on the
    product itself. Hidden rather than removed, so both builds share a source. */
