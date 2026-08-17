@@ -151,6 +151,12 @@ create trigger on_auth_user_created
 --   3. free delivery over a threshold (settings key 'free_delivery_from')
 --      zeroes the zone fee
 -- ============================================================
+-- Adding p_promo_code changed the signature, and `create or replace` cannot do
+-- that — it creates a SECOND function beside the old one. PostgREST then sees
+-- two candidates and refuses every call with PGRST203, which means no orders at
+-- all. Drop the pre-promo version first. Harmless on a fresh install.
+drop function if exists public.place_order(text, text, text, text, jsonb);
+
 create or replace function public.place_order(
   p_name    text,
   p_phone   text,
