@@ -59,6 +59,8 @@ async function initStore() {
   renderGrid();
   renderRecentlyViewed();
   renderCartCount();
+  openFromUrl(false);   // ?p=12 from an ad or a shared link
+
 
   document.querySelectorAll('.lang-switch button').forEach(b =>
     b.addEventListener('click', () => { I18N.setLang(b.dataset.lang); }));
@@ -72,7 +74,11 @@ async function initStore() {
   const sortSel = document.getElementById('sortBy');
   sortSel.addEventListener('change', () => { state.sort = sortSel.value; renderGrid(); });
 
-  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('mShare').addEventListener('click', shareCurrent);
+  window.addEventListener('popstate', () => {
+    if (!openFromUrl(false)) closeModal({ fromPop: true });
+  });
+  document.getElementById('modalClose').addEventListener('click', () => closeModal());
   document.getElementById('productModal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });
@@ -332,9 +338,58 @@ function renderWishButton() {
   btn.classList.toggle('on', on);
 }
 
-function openModal(p) {
+/* ================= DEEP LINKS =================
+   A product is modal state, not a page, so without this every item lives at
+   the same URL — an ad or a WhatsApp share can only ever point at the shop
+   front. Reading the id from the URL costs nothing at build time, so products
+   created long after deployment get working links with no rebuild.
+
+   Two shapes are accepted: ?p=12 works on any static host, and /p/12 is the
+   pretty form a Netlify edge function can rewrite. */
+function readProductId() {
+  const q = new URLSearchParams(location.search).get('p');
+  if (q) return q.replace(/\D/g, '');
+  const m = location.pathname.match(/\/p\/(\d+)\/?$/);
+  return m ? m[1] : null;
+}
+
+function productUrl(id) {
+  return `${location.origin}${location.pathname.replace(/\/p\/\d+\/?$/, '/')}?p=${encodeURIComponent(id)}`;
+}
+
+/* Landing straight on ?p=12 must not push a second entry, or Back would
+   bounce between two copies of the same page instead of leaving. */
+function openFromUrl(push) {
+  const id = readProductId();
+  if (!id) return false;
+  const p = state.products.find(x => String(x.id) === String(id));
+  if (!p) return false;          // deleted or deactivated — just show the shop
+  openModal(p, { push });
+  return true;
+}
+
+async function shareCurrent() {
+  if (!state.current) return;
+  const url = productUrl(state.current.id);
+  const title = I18N.localize(state.current, 'name');
+  // the native sheet is the useful path on the phones customers actually use
+  if (navigator.share) {
+    try { await navigator.share({ title, url }); return; } catch { return; }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast(I18N.t('share_copied'));
+  } catch {
+    prompt(I18N.t('share'), url);   // last resort: let them copy it by hand
+  }
+}
+
+function openModal(p, opts = {}) {
   state.current = p;
   state.selectedSize = null;
+  if (opts.push !== false) {
+    history.pushState({ pid: p.id }, '', productUrl(p.id));
+  }
   RecentlyViewed.push(p.id);
   renderRecentlyViewed();
   const mainPhoto = document.getElementById('mPhoto');
@@ -373,18 +428,26 @@ function openModal(p) {
   addBtn.disabled = p.stock <= 0;
   addBtn.style.opacity = p.stock <= 0 ? 0.5 : 1;
   renderWishButton();
+  document.getElementById('mShare').textContent = `🔗 ${I18N.t('share')}`;
   renderRelated(p);
   document.getElementById('productModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
-function closeModal() {
+function closeModal(opts = {}) {
   document.getElementById('productModal').classList.remove('open');
   document.body.style.overflow = '';
   state.current = null;
+  if (opts.fromPop) return;          // the URL already moved; don't touch it
+
+  // Opened from the grid → step back so the Back button behaves as expected.
+  // Landed here from an ad → there is nothing to go back to, so just clean
+  // the URL in place rather than throwing the visitor off the site.
+  if (history.state?.pid) history.back();
+  else if (readProductId()) history.replaceState({}, '', productUrl('').replace(/\?p=$/, ''));
 }
 
-function toast() {
-  const msg = I18N.t('add_to_cart') + ' ✓';
+function toast(msg) {
+  msg = msg || I18N.t('add_to_cart') + ' ✓';
   let el = document.getElementById('toast');
   if (!el) {
     el = document.createElement('div');
