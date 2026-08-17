@@ -11,3 +11,5 @@ Thumbs.db
 
 # build output for the web host, regenerate with the copy step in README
 dist/
+dist-techdz/
+elegance-deploy.zip
