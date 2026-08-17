@@ -11,7 +11,7 @@
      labels    uppercase, ~2px tracking, small
      corners   none, anywhere
      cards     no border, no background — the rug sits on the page
-     photos    object-fit: contain, so the whole rug is visible
+     photos    filled frames (see the .card .photo note below)
 
    NOTE on --navy: the base stylesheet uses it for two opposite jobs — the
    header/footer background AND the primary text colour (.price, .btn-outline,
@@ -140,11 +140,13 @@ section.block:first-of-type { padding-top: 44px; }
 .product-grid { grid-template-columns: repeat(auto-fill, minmax(224px, 1fr)); gap: 34px 20px; }
 .card { background: transparent; border: none; }
 .card:hover { box-shadow: none; transform: none; }
-/* contain, not cover: a cropped rug hides the border pattern, which is most
-   of what distinguishes one traditional rug from another */
-.card .photo { aspect-ratio: 3 / 4; background: #fff; }
-.card .photo img { object-fit: contain; }
-.card:hover .photo img { transform: none; }
+/* cover, filling the frame, with the base 4/5 portrait crop.
+   `contain` suits a flat-shot rug — nothing is cropped — but with a real
+   catalogue of mixed orientations it leaves landscape photos stranded: a
+   1537x1023 shot painted only 224x149 in a 224x299 box, half the card blank.
+   Filling the frame keeps the grid even whatever shape the owner uploads. */
+.card .photo { aspect-ratio: 4 / 5; background: #fff; }
+.card .photo img { object-fit: cover; }
 .card .info { padding: 14px 0 0; }
 .card .cat { color: var(--muted); letter-spacing: 2px; font-size: 0.62rem; }
 .card h3 {
@@ -160,10 +162,9 @@ section.block:first-of-type { padding-top: 44px; }
 /* ---- surfaces ---- */
 .modal, .panel, .success-box, .cat-tile { background: #fff; border: 1px solid var(--line); }
 .modal .m-media { background: #fff; }
-.modal .m-photo img { object-fit: contain; padding: 14px; }
-.m-thumb img { object-fit: contain; background: #fff; }
+.m-thumb img { background: #fff; }
 .m-thumb.active { border-color: var(--gold); }
-.cart-line img { object-fit: contain; background: #fff; }
+.cart-line img { background: #fff; }
 .form-grid input, .form-grid textarea, .form-grid select, .qty-btn {
   background: #fff; border-color: var(--line); color: #1c1c1c;
 }
