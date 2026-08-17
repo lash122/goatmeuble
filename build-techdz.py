@@ -36,6 +36,12 @@ def build():
         src = ROOT / asset
         (shutil.copytree if src.is_dir() else shutil.copy)(src, OUT / asset)
 
+    # the other variants' themes ride along in css/; drop them so the
+    # deployed folder holds only what this shop actually loads
+    for stale in (OUT / "css").glob("theme-*.css"):
+        if stale.name != "theme-tech.css":
+            stale.unlink()
+
     rebrand_pages()
     retitle_i18n()
     write_favicon()
