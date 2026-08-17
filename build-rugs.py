@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Generates dist-rugs/ — the same site, rebranded and restyled as DAR ZARBIA,
-a rug and carpet shop.
+Generates dist-rugs/ — the same site rebuilt as DAR ZARBIA, a rug gallery:
+near-black page, borderless photography, editorial left-aligned headings.
 
 Same approach as build-techdz.py: a generator rather than a third copy of the
 source, so fixes land once and this file is the readable record of what differs.
@@ -168,61 +168,50 @@ def retitle_i18n():
 
 
 def write_favicon():
-    """A small kilim diamond — the motif the whole theme leans on."""
+    """Kilim diamond in saffron on near-black — the gallery palette."""
     (OUT / "favicon.svg").write_text(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
-        '<rect width="64" height="64" rx="8" fill="#3d2b23"/>'
-        '<path d="M32 12 L50 32 L32 52 L14 32 Z" fill="none" stroke="#b5533a" stroke-width="4"/>'
-        '<path d="M32 24 L40 32 L32 40 L24 32 Z" fill="#c97a53"/>'
+        '<rect width="64" height="64" fill="#0d0c0b"/>'
+        '<path d="M32 10 L52 32 L32 54 L12 32 Z" fill="none" stroke="#d9a441" stroke-width="3"/>'
+        '<path d="M32 22 L42 32 L32 42 L22 32 Z" fill="#d9a441"/>'
         '</svg>\n', encoding="utf-8")
 
 
 def write_og_card():
     from PIL import Image, ImageDraw, ImageFont
     W, H = 1200, 630
-    CLAY, CREAM, TERRA, MUTED = (45, 31, 25), (247, 241, 230), (181, 83, 58), (196, 173, 152)
+    BLACK, BONE, SAFFRON, MUTED = (13, 12, 11), (236, 231, 221), (217, 164, 65), (141, 133, 122)
 
-    img = Image.new("RGB", (W, H), CLAY)
+    img = Image.new("RGB", (W, H), BLACK)
     d = ImageDraw.Draw(img)
 
-    # woven bands top and bottom, the motif from the hero
-    band = [(140, 74, 51), (181, 83, 58), (109, 64, 48), (201, 122, 83)]
-    for i, x in enumerate(range(0, W, 30)):
-        d.rectangle([(x, 0), (x + 30, 46)], fill=band[i % 4])
-        d.rectangle([(x, H - 46), (x + 30, H)], fill=band[(i + 2) % 4])
-
-    # kilim diamonds as a quiet centre motif
-    for cx in range(150, W, 180):
-        for cy in (215, 415):
-            d.polygon([(cx, cy - 26), (cx + 26, cy), (cx, cy + 26), (cx - 26, cy)],
-                      outline=(70, 50, 41), width=2)
+    # a single column of faint diamonds down the right — gallery, not bazaar
+    for cy in range(70, H, 120):
+        d.polygon([(1040, cy - 34), (1074, cy), (1040, cy + 34), (1006, cy)],
+                  outline=(36, 33, 29), width=2)
 
     serif = "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"
     bold = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
     # DejaVu Serif carries no Arabic glyphs — that line needs the sans face or
     # it renders as a row of tofu boxes.
     arabic = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    f_title, f_sub, f_badge = (ImageFont.truetype(bold, 92),
-                               ImageFont.truetype(serif, 33),
-                               ImageFont.truetype(serif, 26))
-    f_ar = ImageFont.truetype(arabic, 31)
+    f_title = ImageFont.truetype(bold, 86)
+    f_sub = ImageFont.truetype(serif, 30)
+    f_ar = ImageFont.truetype(arabic, 28)
+    f_badge = ImageFont.truetype(serif, 22)
 
-    def centre(text, font, y, fill):
-        d.text(((W - d.textbbox((0, 0), text, font=font)[2]) // 2, y), text, font=font, fill=fill)
-
-    tw = d.textbbox((0, 0), BRAND, font=f_title)[2]
-    x = (W - tw) // 2
-    d.text((x, 232), "DAR ", font=f_title, fill=CREAM)
-    d.text((x + d.textbbox((0, 0), "DAR ", font=f_title)[2], 232), "ZARBIA", font=f_title, fill=TERRA)
-
-    centre("Tapis berbères · Kilims · Tapis modernes", f_sub, 356, CREAM)
-    centre("زرابي أمازيغية · توصيل مع الدفع عند الاستلام", f_ar, 408, MUTED)
+    X = 96
+    d.rectangle([(X, 214), (X + 64, 217)], fill=SAFFRON)
+    d.text((X, 256), "DAR ", font=f_title, fill=BONE)
+    d.text((X + d.textbbox((0, 0), "DAR ", font=f_title)[2], 256), "ZARBIA",
+           font=f_title, fill=SAFFRON)
+    d.text((X, 372), "Tapis berbères · Kilims · Tapis modernes", font=f_sub, fill=MUTED)
+    d.text((X, 418), "زرابي أمازيغية · الدفع عند الاستلام", font=f_ar, fill=MUTED)
 
     txt = "PAIEMENT À LA LIVRAISON"
     bw = d.textbbox((0, 0), txt, font=f_badge)[2]
-    x0, y0 = (W - bw) // 2 - 26, 476
-    d.rounded_rectangle([(x0, y0), (x0 + bw + 52, y0 + 56)], radius=4, outline=TERRA, width=2)
-    d.text((x0 + 26, y0 + 14), txt, font=f_badge, fill=TERRA)
+    d.rectangle([(X, 486), (X + bw + 44, 486 + 50)], outline=SAFFRON, width=1)
+    d.text((X + 22, 500), txt, font=f_badge, fill=SAFFRON)
 
     img.save(OUT / "og-image.png", optimize=True)
 
