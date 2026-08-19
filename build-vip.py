@@ -58,6 +58,7 @@ def build():
     # for categories on top on this shop; TECH DZ keeps its products-first)
     reorder_home(['catTiles', 'shop', 'featured'])
     retitle_i18n()
+    write_verification_tags()
     write_favicon()
     write_pwa()
     write_og_card()
@@ -239,6 +240,51 @@ def reorder_home(order):
     last = s.index(marks[-1]) + len(marks[-1])
     s = s[:first] + "".join(blocks[sid] for sid in order) + s[last:]
     p.write_text(s, encoding="utf-8")
+
+
+def write_verification_tags():
+    """Publish the domain-verification tokens from js/config.js into the HTML.
+
+    Meta, TikTok and Google each verify a domain by looking for a meta tag in
+    the page they fetch. Their crawlers read the raw HTML and do not run
+    JavaScript, so the tag has to be in the file — injecting it from a script
+    at runtime looks correct in a browser and fails every check.
+
+    Only the public pages get them: verification is about the domain, and
+    admin.html is noindex anyway. Empty tokens emit nothing, which is the
+    state the repository ships in.
+    """
+    tokens = read_verification_tokens()
+    if not tokens:
+        return
+
+    tags = "".join(
+        f'  <meta name="{name}" content="{value}">\n'
+        for name, value in tokens.items())
+
+    anchor = '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
+    for page in ("index.html", "checkout.html", "track.html", "404.html"):
+        p = OUT / page
+        s = p.read_text(encoding="utf-8")
+        if anchor not in s:
+            raise SystemExit(f"build-vip: no viewport tag to anchor to in {page}")
+        p.write_text(s.replace(anchor, anchor + tags, 1), encoding="utf-8")
+
+    print(f"   domain verification: {', '.join(tokens)}")
+
+
+def read_verification_tokens():
+    """Parse window.SITE_VERIFICATION out of js/config.js.
+
+    Regex rather than a JS runtime, same as build-sitemap.py: config.js is
+    JavaScript, and the alternative is a dependency for reading three strings.
+    """
+    src = (ROOT / "js" / "config.js").read_text(encoding="utf-8")
+    block = re.search(r"window\.SITE_VERIFICATION\s*=\s*\{(.*?)\}", src, re.S)
+    if not block:
+        return {}
+    found = re.findall(r"'([\w-]+)'\s*:\s*'([^']*)'", block.group(1))
+    return {name: value for name, value in found if value.strip()}
 
 
 def write_favicon():

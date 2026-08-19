@@ -36,6 +36,27 @@ window.ADS = {
   tiktokPixelId: '',    // TikTok — starts with C, e.g. 'CXXXXXXXXXXXXXXXXXXX'
 };
 
+/* Domain verification. Meta wants to know the domain is yours before it lets
+   you run conversion campaigns properly on it (and before you can control
+   which events take priority for iOS users); TikTok and Google ask the same
+   in the same way. Each platform gives you a token to publish in the page.
+
+   The key IS the meta tag's name, so adding a fourth platform later means
+   adding a line here and nothing else. Empty values emit no tag.
+
+   These are injected into the HTML at build time by build-vip.py, NOT at
+   runtime: the crawlers that check for them read the raw HTML and do not run
+   JavaScript, so a tag added by a script would never be seen. Fill these in,
+   re-run the build, deploy, then click Verify. */
+window.SITE_VERIFICATION = {
+  // Meta Business Manager → Brand safety and suitability → Domains
+  'facebook-domain-verification': '',
+  // TikTok Ads Manager → Assets → Events → Web events → Verify domain
+  'tiktok-developers-site-verification': '',
+  // Google Search Console → Add property → HTML tag (optional, same mechanism)
+  'google-site-verification': '',
+};
+
 /* Size guide. A clothing feature: the panel measures chest and waist with a
    tape. Set false for a shop that sells anything else — a phone offered in
    "Orange / Bleu / Argent" uses the same chooser, and a size guide beside it

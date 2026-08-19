@@ -284,6 +284,29 @@ Two things to keep in mind:
   switch one on; Meta and TikTok ad review ask for it, and so does the law in
   most of the places your ads will be shown.
 
+**Domain verification.** Meta wants proof the domain is yours before it will
+let you run conversion campaigns properly on it, and before you can control
+which events take priority for iOS users. TikTok and Google verify the same
+way. Paste each platform's token into `js/config.js`:
+```js
+window.SITE_VERIFICATION = {
+  'facebook-domain-verification': '',
+  'tiktok-developers-site-verification': '',
+  'google-site-verification': '',
+};
+```
+The key is the meta tag's name, so a fourth platform is one more line. Empty
+values emit nothing. Then **re-run the build** and deploy before clicking
+Verify — the tokens are written into the HTML by `build-vip.py`, not by the
+page's JavaScript, because the crawlers that check for them read the raw HTML
+and never run scripts. A tag injected at runtime looks right in a browser and
+fails every check.
+
+Where to find each token:
+- **Meta** — Business Manager → Brand safety and suitability → Domains
+- **TikTok** — Ads Manager → Assets → Events → Web events → Verify domain
+- **Google** — Search Console → Add property → HTML tag
+
 If you add another tracker later, add its hosts to the
 `Content-Security-Policy` in `_headers` too — otherwise the browser blocks it
 and it looks exactly like a pixel that was never installed.
