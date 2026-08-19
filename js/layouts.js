@@ -181,6 +181,20 @@ function injectTechDecor() {
   hero.appendChild(chips);
 }
 
+/* Where the shop itself lives, which is not always the current directory: a
+   pre-rendered product page sits at /p/<id>/, so resolving 'css/theme-x.css'
+   against it would ask for /p/24/css/theme-x.css and silently get nothing —
+   the page renders unthemed. Strip the product segment exactly as
+   productPath() in js/store.js does, so a shop installed in a subfolder still
+   resolves correctly. */
+function shopRoot() {
+  // /index.html comes off first: strip it the other way round and
+  // /p/24/index.html leaves "/p/24/" behind as the supposed shop root.
+  return location.pathname
+    .replace(/\/index\.html$/, '/')
+    .replace(/\/p\/\d+\/?$/, '/');
+}
+
 /* Apply a layout. name comes from the shop settings (store.layout); an
    explicit ?layout= URL wins for dashboard previews. Idempotent per layout:
    repeat calls (every catalogue paint) do nothing once applied. */
@@ -204,7 +218,7 @@ function applyLayout(name) {
       theme.id = 'themeCss';
       document.head.appendChild(theme);
     }
-    theme.href = `${L.css}?v=${THEME_CSS_VER}`;
+    theme.href = `${shopRoot()}${L.css}?v=${THEME_CSS_VER}`;
   } else if (theme) {
     // no layout: the build's own look — restore its baked theme (if any),
     // or drop a runtime-created link

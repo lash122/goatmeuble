@@ -149,6 +149,7 @@ _redirects        /index.html → /, and the pretty /p/<id> product links
 robots.txt        Crawler rules — generated, don't hand-edit the Sitemap line
 sitemap.xml       Generated, one entry per product
 build-sitemap.py  Regenerates both of the above from the live catalogue
+shopdata.py       Shared by the build scripts: reads config.js + the catalogue
 ```
 
 ### Brand variants
@@ -210,13 +211,31 @@ too, or the browser will refuse to load it.
   it would silently see nothing. Leave the string empty and the site
   auto-detects the domain from the address bar (fine for sharing; pin it for
   Google).
-- **Per-product pages.** Every product lives at `/?p=<id>` — the link the
-  Share button, WhatsApp and ads point at. Opening a product rewrites the
-  title, description, Open Graph, Twitter card, canonical and JSON-LD to that
-  product (name, photo, price), so a shared link shows the product, not the
-  generic shop card. WhatsApp, Facebook, X and Google all render the page's
-  JavaScript when they fetch a link, so ads and shares pick up the product
-  card without any server.
+- **Per-product pages.** Every product lives at `/p/<id>` — the link the Share
+  button, WhatsApp and ads point at.
+
+  `build-vip.py` writes a real `p/<id>/index.html` for each product, with that
+  product's title, description, photo, canonical and JSON-LD **in the HTML**.
+  Visitors see no difference: the body is the same shop page, and
+  `readProductId()` in `js/store.js` takes the id out of the path and opens
+  that product, exactly as it always did.
+
+  It has to be in the HTML, and this is worth being precise about because an
+  earlier version of this file said the opposite: **link-preview crawlers do
+  not run JavaScript.** Facebook, WhatsApp and X fetch the page and read the
+  raw markup. Only Google renders scripts, and only in a later indexing pass.
+  So the tags `js/store.js` writes when a product opens are perfect for the
+  address bar and invisible to every share — which is why each product needed
+  a file of its own.
+
+  Re-run the build after adding a product. Until you do, its link still works
+  (the `/p/* -> /` rule in `_redirects` is the fallback) but previews as the
+  generic shop card. Static files win over redirect rules, so a generated page
+  always takes precedence.
+
+  One caveat: product photos are portrait and link cards are landscape
+  (1200×630), so they get centre-cropped in previews. Fine, not ideal — worth
+  a landscape shot for the best sellers.
 - **Sitemap.** Don't edit `sitemap.xml` or `robots.txt` by hand — run
   ```bash
   python3 build-sitemap.py

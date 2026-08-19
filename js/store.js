@@ -687,7 +687,10 @@ function renderWishButton() {
 function readProductId() {
   const q = new URLSearchParams(location.search).get('p');
   if (q) return q.replace(/\D/g, '');
-  const m = location.pathname.match(/\/p\/(\d+)\/?$/);
+  // the pre-rendered page is p/<id>/index.html, so the explicit filename is a
+  // real URL a crawler or a pasted link can arrive on
+  const path = location.pathname.replace(/\/index\.html$/, '/');
+  const m = path.match(/\/p\/(\d+)\/?$/);
   return m ? m[1] : null;
 }
 
@@ -696,7 +699,11 @@ function readProductId() {
    and the shareable link below is a separate thing — handing pushState the
    pinned SITE_URL while previewing on localhost throws a SecurityError. */
 function productPath(id) {
-  const base = location.pathname.replace(/\/p\/\d+\/?$/, '/').replace(/\/index\.html$/, '/');
+  // /index.html first: the other order leaves "/p/24/" as the base when the
+  // visitor is on the pre-rendered p/24/index.html
+  const base = location.pathname
+    .replace(/\/index\.html$/, '/')
+    .replace(/\/p\/\d+\/?$/, '/');
   return `${base}p/${encodeURIComponent(id)}`;
 }
 

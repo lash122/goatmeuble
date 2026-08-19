@@ -12,10 +12,14 @@ exactly what differs. Re-run after any change to the source:
 Nothing here touches the database. The shop reads the same Supabase project as
 the other variants.
 """
+import html
+import json
 import re
 import shutil
 import subprocess
 from pathlib import Path
+
+from shopdata import fetch_products, fmt_price, read_config
 
 ROOT = Path(__file__).parent
 OUT = ROOT / "dist-vip"
@@ -64,6 +68,7 @@ def build():
     write_og_card()
     write_robots()
     copy_seo()
+    write_product_pages()
 
     files = sorted(p.relative_to(OUT).as_posix() for p in OUT.rglob("*") if p.is_file())
     print(f"{OUT.name}/ — {len(files)} files")
@@ -240,6 +245,134 @@ def reorder_home(order):
     last = s.index(marks[-1]) + len(marks[-1])
     s = s[:first] + "".join(blocks[sid] for sid in order) + s[last:]
     p.write_text(s, encoding="utf-8")
+
+
+def write_product_pages():
+    """Pre-render p/<id>/index.html so a shared product link shows the product.
+
+    js/store.js already rewrites the title, Open Graph tags and JSON-LD when a
+    product opens — but it does it in JavaScript, and the crawlers that build
+    link previews do not run JavaScript. Facebook, WhatsApp and X fetch the
+    HTML and stop reading. Only Google renders scripts, and only in a later
+    indexing pass. So every /p/<id> link shared anywhere used to preview as the
+    same generic shop card: same photo, same title, whichever product it was.
+
+    The fix is to put the tags in the file. Each product gets a real page whose
+    head is the shop's head with the product's own title, description, photo,
+    canonical and JSON-LD baked in. Visitors are unaffected — the body is the
+    identical shop, and readProductId() in js/store.js picks the id out of the
+    path and opens that product exactly as before.
+
+    The `/p/* -> / 200` rule in _redirects stays as the fallback: a product
+    added after the last build still works, it just previews generically until
+    the next one. Static files win over redirect rules, so these pages take
+    precedence wherever they exist.
+    """
+    site, api, key = read_config()
+    products = fetch_products(
+        api, key,
+        "id,name_fr,description_fr,price,compare_at_price,photos,stock")
+    if not products:
+        return
+
+    shop = (OUT / "index.html").read_text(encoding="utf-8")
+    fallback_img = f"{site}/og-image.png"
+    fallback_desc = meta_content(shop, "description") or ""
+
+    for p in products:
+        page = product_page(shop, p, site, fallback_img, fallback_desc)
+        d = OUT / "p" / str(p["id"])
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "index.html").write_text(page, encoding="utf-8")
+
+    print(f"   product pages: {len(products)} under p/<id>/")
+
+
+def meta_content(src, name):
+    m = re.search(rf'<meta name="{name}" content="([^"]*)"', src)
+    return m.group(1) if m else None
+
+
+def product_page(shop, p, site, fallback_img, fallback_desc):
+    """One product's page: the shop's HTML with its own head."""
+    name = (p.get("name_fr") or "").strip()
+    price = fmt_price(p.get("price"))
+    title = f"{name} — {price} — {BRAND}"
+    desc = " ".join((p.get("description_fr") or "").split())[:155] or fallback_desc
+    url = f"{site}/p/{p['id']}"
+
+    # a photo-less product falls back to the site card: the storefront's
+    # placeholder is a data: URI, which Facebook and WhatsApp refuse as og:image
+    photos = [u for u in (p.get("photos") or []) if str(u).startswith("https://")]
+    image = photos[0] if photos else fallback_img
+
+    e = html.escape          # every value below lands inside an HTML attribute
+    s = shop
+
+    s = re.sub(r"<title>.*?</title>", f"<title>{e(title)}</title>", s, count=1, flags=re.S)
+    s = set_meta(s, "name", "description", desc)
+    s = set_meta(s, "property", "og:title", title)
+    s = set_meta(s, "property", "og:description", desc)
+    s = set_meta(s, "property", "og:image", image)
+    s = set_meta(s, "property", "og:image:alt", name)
+    s = set_meta(s, "property", "og:url", url)
+    s = set_meta(s, "property", "og:type", "product")
+    s = set_meta(s, "name", "twitter:title", title)
+    s = set_meta(s, "name", "twitter:description", desc)
+    s = set_meta(s, "name", "twitter:image", image)
+    s = re.sub(r'<link rel="canonical" href="[^"]*">',
+               f'<link rel="canonical" href="{e(url)}">', s, count=1)
+
+    ld = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": name,
+        "image": photos or [fallback_img],
+        "description": desc or None,
+        "sku": str(p["id"]),
+        "offers": {
+            "@type": "Offer",
+            "url": url,
+            "price": str(round(float(p.get("price") or 0))),
+            "priceCurrency": "DZD",
+            "availability": ("https://schema.org/InStock" if (p.get("stock") or 0) > 0
+                             else "https://schema.org/OutOfStock"),
+        },
+    }
+    ld = {k: v for k, v in ld.items() if v is not None}
+    # escaping < stops a product name containing "</script>" breaking out
+    payload = json.dumps(ld, ensure_ascii=False).replace("<", "\\u003c")
+    s = s.replace("</head>",
+                  f'  <script type="application/ld+json">{payload}</script>\n</head>', 1)
+
+    return rebase_to_root(s)
+
+
+def rebase_to_root(s):
+    """Make every relative asset path absolute from the site root.
+
+    These pages live two directories down at /p/<id>/, so a relative
+    "css/style.css" would resolve to /p/24/css/style.css and 404. Nothing here
+    is served from that folder — only the HTML lives there.
+    """
+    def fix(m):
+        attr, value = m.group(1), m.group(2)
+        if value.startswith(("http://", "https://", "//", "#", "/", "data:", "mailto:", "tel:")):
+            return m.group(0)
+        if value == "./":
+            return f'{attr}="/"'
+        return f'{attr}="/{value}"'
+
+    return re.sub(r'\b(href|src)="([^"]*)"', fix, s)
+
+
+def set_meta(src, attr, name, value):
+    """Replace a meta tag's content, or add the tag if the page lacks it."""
+    esc = html.escape(value or "")
+    pattern = rf'<meta {attr}="{re.escape(name)}" content="[^"]*"'
+    if re.search(pattern, src):
+        return re.sub(pattern, f'<meta {attr}="{name}" content="{esc}"', src, count=1)
+    return src.replace("</head>", f'  <meta {attr}="{name}" content="{esc}">\n</head>', 1)
 
 
 def write_verification_tags():
