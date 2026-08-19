@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://ssnplihsehgjiydlfimo.supabase.co" crossorigin>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css?v=25">
-  <link rel="stylesheet" href="css/admin.css?v=11">
+  <link rel="stylesheet" href="css/admin.css?v=12">
 </head>
 <body class="admin-body">
 
@@ -80,7 +80,11 @@
             <option value="total_asc">Total croissant</option>
           </select>
           <button class="btn-mini" id="orderExportBtn" title="Excel / CSV">⬇ Télécharger CSV</button>
+          <!-- Browsers only grant notification permission from a real click,
+               so this is a button and not something the page asks for on load. -->
+          <button class="btn-mini" id="alertsBtn" title="Alerte sonore et notification à chaque nouvelle commande">🔔 Activer les alertes</button>
         </div>
+        <p class="order-watch" id="orderWatch"></p>
         <p class="order-count" id="orderCount"></p>
         <div class="tbl-wrap"><table class="tbl"><thead>
           <tr><th>#</th><th>Client</th><th>Zone</th><th>Total</th><th>Articles</th><th>Statut</th><th></th></tr>
@@ -273,7 +277,7 @@
     crossorigin="anonymous" defer></script>
   <script src="js/config.js?v=31" defer></script>
   <script src="js/i18n.js?v=32" defer></script>
-  <script src="js/supabase.js?v=29" defer></script>
-  <script src="js/admin.js?v=35" defer></script>
+  <script src="js/supabase.js?v=30" defer></script>
+  <script src="js/admin.js?v=36" defer></script>
 </body>
 </html>

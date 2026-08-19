@@ -77,6 +77,7 @@ Log in at `admin.html` with the owner account created in step 2.4.
 |---|---|
 | Add/edit products, upload photos | admin.html → Produits |
 | See orders, mark delivered | admin.html → Commandes |
+| Be told a new order arrived | admin.html → Commandes → 🔔 Activer les alertes |
 | Delivery zones & fees | admin.html → Zones de livraison |
 | Shop name, phone, WhatsApp | admin.html → Boutique |
 | Customers track their order | track.html (order no. + phone) |
@@ -223,6 +224,31 @@ too, or the browser will refuse to load it.
   It reads the domain and the Supabase keys out of `js/config.js`, fetches the
   active products, and writes both files with one `/p/<id>` entry per product.
   Re-run it after adding or removing products, then redeploy.
+### Knowing an order arrived
+Cash on delivery is a phone business — an order is worth what it is worth only
+if someone rings the customer back while they still remember placing it. Keep
+`admin.html` open on the Commandes tab and it watches for new orders by
+itself, checking every 30 seconds.
+
+When one lands you get three signals at once, because any single one is easy
+to miss:
+- a **chime** (WebAudio, no sound file to go missing from a build),
+- a **desktop notification** — click **🔔 Activer les alertes** once to allow
+  it; browsers only grant that permission from a real click, which is why it
+  is a button and not something the page asks for on load,
+- a **count in the browser tab's title**, `(2) Admin — …`, which is what you
+  actually see when the panel is sitting behind ten other tabs.
+
+Opening the Commandes tab (or returning to the window) clears the counter. The
+red pill on the tab keeps counting every order still awaiting confirmation, so
+it does not reset just because you looked.
+
+Orders that arrived while you were logged out are counted by the pill but not
+announced one by one — that would be noise on every login, not news.
+
+This is the whole notification system: there is no email and no server. If you
+close the dashboard, nothing is watching.
+
 ### Ads (Meta & TikTok pixels)
 The shop's traffic comes from paid social, and an ad platform can only
 optimise for what it can measure. Paste the two IDs into `js/config.js`:

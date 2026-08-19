@@ -95,6 +95,7 @@ async function openShell() {
   document.getElementById('adminShell').classList.add('open');
   if (DB.isDemo) document.getElementById('demoTag').textContent = '(mode démo)';
   await run(refreshAll);
+  startOrderWatch();   // needs A.orders, so it runs after the first load
 }
 
 async function refreshAll() {
@@ -105,15 +106,163 @@ async function refreshAll() {
   A.freeFrom = await DB.getFreeDeliveryFrom();
   renderOrders(); renderProducts(); renderCats(); renderZones(); renderShop();
   renderLayouts(); renderPromotions(); renderCodes(); renderStats();
-  const newCount = A.orders.filter(o => o.status === 'new').length;
+  setNewBadge(A.orders.filter(o => o.status === 'new').length);
+}
+
+function setNewBadge(n) {
   const badge = document.getElementById('newOrdersBadge');
-  badge.textContent = newCount;
-  badge.style.display = newCount ? '' : 'none';
+  badge.textContent = n;
+  badge.style.display = n ? '' : 'none';
+}
+
+/* ================= NEW-ORDER WATCH =================
+
+   Cash on delivery is a phone business: an order is worth what it is worth
+   only if someone rings the customer back while they still remember placing
+   it. Until now the only way to learn an order existed was to reload this
+   page and look, so the dashboard is where the alert goes.
+
+   Every 30 seconds it asks the database two numbers — how many orders are
+   waiting, and the highest id among them (DB.pollNewOrders). A higher id than
+   last time means something arrived, and only then is the full list refetched.
+
+   The alert is three things at once, because any one of them can be missed:
+   a chime, a desktop notification, and a count in the browser tab's title —
+   the last one is what the owner actually sees when the panel is sitting
+   behind ten other tabs. */
+const ORDER_POLL_MS = 30000;
+const BASE_TITLE = document.title;
+let watchTimer = null;
+let unseenCount = 0;
+let audioCtx = null;
+// survives a reload, so re-opening the panel does not re-announce old orders
+let lastSeenOrderId = Number(localStorage.getItem('admin_last_order_id')) || 0;
+
+function startOrderWatch() {
+  if (watchTimer) return;
+
+  /* Seed from what refreshAll() just loaded. Orders that came in while the
+     owner was logged out are already counted by the badge — announcing them
+     one by one on login would be noise, not news. */
+  const maxId = A.orders.reduce((m, o) => Math.max(m, Number(o.id) || 0), 0);
+  lastSeenOrderId = Math.max(lastSeenOrderId, maxId);
+  localStorage.setItem('admin_last_order_id', String(lastSeenOrderId));
+
+  document.getElementById('alertsBtn').addEventListener('click', enableAlerts);
+  updateAlertsButton();
+  setWatchLine('Surveillance active — vérification toutes les 30 secondes.');
+
+  watchTimer = setInterval(checkNewOrders, ORDER_POLL_MS);
+  // coming back to the tab is an acknowledgement; drop the title counter
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) clearUnseen();
+  });
+}
+
+async function checkNewOrders() {
+  let poll;
+  // a dropped connection or a paused free-tier project must not kill the
+  // timer — skip this round and try again in thirty seconds
+  try { poll = await DB.pollNewOrders(); } catch { return; }
+
+  setNewBadge(poll.count);
+  if (poll.latestId <= lastSeenOrderId) return;
+
+  lastSeenOrderId = poll.latestId;
+  localStorage.setItem('admin_last_order_id', String(lastSeenOrderId));
+  unseenCount++;
+  announceOrder(poll.latestId, poll.count);
+
+  // now, and only now, is it worth refetching the orders themselves
+  try {
+    A.orders = await DB.getOrders();
+    renderOrders();
+    renderStats();
+  } catch { /* the alert already fired; the table catches up next round */ }
+}
+
+function announceOrder(id, waiting) {
+  chime();
+  updateTitle();
+  setWatchLine(`Nouvelle commande #${id} reçue à ${new Date().toLocaleTimeString('fr-FR')} — ${waiting} en attente.`);
+
+  if (window.Notification && Notification.permission === 'granted') {
+    try {
+      const n = new Notification('Nouvelle commande', {
+        body: `Commande #${id} — ${waiting} en attente de confirmation`,
+        tag: 'new-order', renotify: true,
+      });
+      n.onclick = () => { window.focus(); switchTab('orders'); clearUnseen(); n.close(); };
+    } catch { /* some browsers refuse constructed notifications; the rest still works */ }
+  }
+}
+
+/* A two-note chime built with WebAudio rather than an audio file: no asset to
+   ship, no request to fail, and nothing to go missing from a build folder. */
+function chime() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, t);
+    osc.frequency.setValueAtTime(1320, t + 0.13);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + 0.42);
+  } catch { /* audio blocked — the badge, title and notification still fire */ }
+}
+
+function updateTitle() {
+  document.title = unseenCount ? `(${unseenCount}) ${BASE_TITLE}` : BASE_TITLE;
+}
+
+function clearUnseen() { unseenCount = 0; updateTitle(); }
+
+function setWatchLine(text) {
+  const el = document.getElementById('orderWatch');
+  if (el) el.textContent = text;
+}
+
+/* Permission can only be requested from a real click, which is why this is a
+   button rather than something the page asks for on load. The same click
+   unlocks the AudioContext, so the test chime doubles as the audio unlock. */
+async function enableAlerts() {
+  if (!window.Notification) {
+    setWatchLine('Ce navigateur ne gère pas les notifications — le son et le compteur restent actifs.');
+    chime();
+    return;
+  }
+  try { await Notification.requestPermission(); } catch { /* older callback-only API */ }
+  chime();
+  updateAlertsButton();
+}
+
+function updateAlertsButton() {
+  const btn = document.getElementById('alertsBtn');
+  if (!btn) return;
+  const state = window.Notification ? Notification.permission : 'unsupported';
+  if (state === 'granted') {
+    btn.textContent = '🔔 Alertes activées';
+    btn.disabled = true;
+  } else if (state === 'denied') {
+    btn.textContent = '🔕 Alertes bloquées';
+    btn.disabled = true;
+    btn.title = 'Autorisez les notifications pour ce site dans les réglages du navigateur.';
+  } else {
+    btn.textContent = '🔔 Activer les alertes';
+  }
 }
 
 function switchTab(name) {
   document.querySelectorAll('.admin-tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
+  // opening the orders tab is the owner acknowledging the alert
+  if (name === 'orders') clearUnseen();
 }
 
 /* `esc` lives in i18n.js so the storefront can use it too. */

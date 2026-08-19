@@ -384,6 +384,29 @@ const DB = (() => {
       return must(await sb.rpc('track_order', { p_id: Number(id), p_phone: phone }));
     },
 
+    /* The dashboard's new-order watch, kept deliberately cheap: how many
+       orders are waiting and the highest id among them. That is enough to
+       tell "still 3 waiting" from "a 4th just arrived", and it runs every
+       half-minute for as long as the panel is open — refetching every order
+       and its items that often would be wasteful for a two-number answer.
+       The full list is only reloaded when something has actually changed. */
+    async pollNewOrders() {
+      if (IS_DEMO) {
+        const waiting = demoLoadOrders().filter(o => o.status === 'new');
+        return {
+          count: waiting.length,
+          latestId: waiting.reduce((m, o) => Math.max(m, Number(o.id) || 0), 0),
+        };
+      }
+      const { data, error, count } = await sb.from('orders')
+        .select('id', { count: 'exact' })
+        .eq('status', 'new')
+        .order('id', { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      return { count: count || 0, latestId: Number(data?.[0]?.id) || 0 };
+    },
+
     async getOrders() {
       if (IS_DEMO) return demoLoadOrders().reverse();
       return must(await sb.from('orders').select('*').order('created_at', { ascending: false })) || [];

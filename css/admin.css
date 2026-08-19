@@ -67,6 +67,11 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width
   padding: 9px 12px; font-size: 0.88rem;
 }
 .order-count { color: var(--muted); font-size: 0.8rem; margin: 6px 0 10px; }
+/* new-order watch status; the dot marks the poll as running at a glance */
+.order-watch { color: var(--muted); font-size: 0.8rem; margin: 8px 0 0; display: flex; align-items: center; gap: 7px; }
+.order-watch::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #22c55e; flex: none; animation: watch-pulse 2.4s ease-in-out infinite; }
+@keyframes watch-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.order-watch:empty { display: none; }
 @media (max-width: 640px) { .order-toolbar input { min-width: 100%; } }
 
 .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
