@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Generates dist-techdz/ — the same site, rebranded and restyled as TECH DZ.
+Generates dist-vip/ — a copy of the TECH DZ shop, rebranded "Société de vente
+privée" with the owner's VP logo image in the header, footer, favicon and
+share card.
 
-Deliberately a generator rather than a second copy of the source: bug fixes and
-features stay in one codebase, and this file records exactly what differs
-between the two shops. Re-run it after any change to the source.
+Same generator philosophy as build-techdz.py: one codebase, this file records
+exactly what differs. Re-run after any change to the source:
 
-    python3 build-techdz.py
+    python3 build-vip.py
 
-Nothing here touches the database. The `sizes` column already accepts any
-comma-separated list, so it carries 128GB/256GB or Noir/Argent just as well as
-S/M/L — only the labels around it change.
+Nothing here touches the database. The shop reads the same Supabase project as
+the other variants.
 """
 import re
 import shutil
@@ -18,17 +18,19 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).parent
-OUT = ROOT / "dist-techdz"
+OUT = ROOT / "dist-vip"
 
-BRAND = "TECH DZ"
+BRAND = "Société de vente privée"
+LOGO_SRC = ROOT / "assets" / "logo-svp.jpg"
 PAGES = ["index.html", "checkout.html", "admin.html", "track.html", "404.html"]
 ASSETS = ["css", "js", "og-image.png"]
 
-# The base pages request Playfair + Inter + Cairo, but TECH DZ sets its display
-# font to Inter — so Playfair (and its weights) would download for nothing.
-# Inter 500 is unused; 400/600/700 cover body, headings and buttons.
+# Same trimmed font stack as TECH DZ (Inter + Cairo, no Playfair).
 FONTS = ("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700"
          "&family=Cairo:wght@400;600;700&display=swap")
+
+# The VP logo is a photo, not a vector — keep it as JPEG in the deploy.
+LOGO_OUT = "logo.jpg"
 
 
 def build():
@@ -42,13 +44,14 @@ def build():
         src = ROOT / asset
         (shutil.copytree if src.is_dir() else shutil.copy)(src, OUT / asset)
 
-    # the other variants' themes ride along in css/; drop them so the
     # every theme ships with the build — the dashboard can switch the shop's
     # template at runtime (js/layouts.js), so all the theme sheets must exist
 
+    shutil.copy(LOGO_SRC, OUT / LOGO_OUT)
+
     rebrand_pages()
-    # the category browse leads, products below — matches the dashboard
-    # tech template so the native look and the saved layout never disagree
+    # categories right after the hero, products below them (the owner asked
+    # for categories on top on this shop; TECH DZ keeps its products-first)
     reorder_home(['catTiles', 'shop', 'featured'])
     retitle_i18n()
     write_favicon()
@@ -63,33 +66,41 @@ def build():
 
 
 def rebrand_pages():
-    """Swap the wordmark, titles and social tags, and load the theme overlay."""
+    """Swap in the VP logo image, the brand name and the tech-flavoured copy."""
     for page in PAGES:
         p = OUT / page
         s = p.read_text(encoding="utf-8")
 
         # theme overlay must come after style.css so it can override
-        # (the base pages carry a ?v= cache-buster on the stylesheet link)
         s = s.replace(
             '<link rel="stylesheet" href="css/style.css?v=25">',
             '<link rel="stylesheet" href="css/style.css?v=25">\n'
             '  <link rel="stylesheet" href="css/theme-tech.css?v=12" id="themeCss" data-native-theme>', 1)
 
-        # swap the font request wholesale: TECH DZ is Inter-only, so Playfair
-        # must not download at all
-        s = re.sub(r'https://fonts\.googleapis\.com/css2\?[^"]+', FONTS, s)
+        # Inter-only font request, like TECH DZ
+        s = re.sub(r'https://fonts\.googleapis\.com/css2\?[^\"]+', FONTS, s)
 
-        # the wordmark is hand-written markup on every page: É<em>l</em>égance
+        # wordmarks become the logo image + store name (index / checkout / track)
         s = s.replace('<span class="logo">É<em>l</em>égance</span>',
-                      '<span class="logo">TECH<em> DZ</em></span>')
-        s = s.replace('<h1>É<span style="color:var(--gold)">l</span>égance</h1>',
-                      f'<h1>TECH <span style="color:var(--gold)">DZ</span></h1>')
+                      f'<span class="brand-lockup">'
+                      f'<img class="logo-img" src="{LOGO_OUT}" alt="{BRAND}">'
+                      f'<span class="brand-name">SOCIÉTÉ<br><em>DE VENTE PRIVÉE</em></span>'
+                      f'</span>')
+        # admin top bar
         s = s.replace('<span class="brand-w">É<span>l</span>égance · Admin</span>',
-                      '<span class="brand-w">TECH<span> DZ</span> · Admin</span>')
+                      f'<span class="brand-w"><img class="logo-img" src="{LOGO_OUT}" '
+                      f'alt="{BRAND}"> · Admin</span>')
+        # admin demo gate heading
+        s = s.replace('<h1>É<span style="color:var(--gold)">l</span>égance</h1>',
+                      f'<h1>{BRAND}</h1>')
+        # index footer wordmark
         s = s.replace('<h4>É<em style="color:var(--gold)">l</em>égance</h4>',
-                      '<h4>TECH<em style="color:var(--gold)"> DZ</em></h4>')
+                      f'<span class="brand-lockup footer-lockup">'
+                      f'<img class="logo-img footer-logo" src="{LOGO_OUT}" alt="{BRAND}">'
+                      f'<span class="brand-name">{BRAND}</span>'
+                      f'</span>')
 
-        # titles, meta, footer line, and the clothing-specific description
+        # titles, meta, footer line and the shop description (tech copy)
         s = s.replace("Élégance — Boutique de costumes", f"{BRAND} — Informatique & high-tech")
         s = s.replace("Élégance", BRAND)
         s = s.replace(
@@ -101,11 +112,44 @@ def rebrand_pages():
             "High-tech livré partout en Algérie. Paiement à la livraison.")
         s = s.replace(f"{BRAND} — Boutique en ligne", f"{BRAND} — Informatique & high-tech")
 
+        # favicon: the tech SVG is replaced by the logo-derived PNG
+        s = s.replace('href="favicon.svg" type="image/svg+xml"',
+                      'href="favicon.png" type="image/png"')
+
         p.write_text(s, encoding="utf-8")
 
+    # logo sizing — appended to the BASE stylesheet so it survives any
+    # theme switch (layouts.js swaps theme-*.css, not style.css)
+    base = OUT / "css" / "style.css"
+    base.write_text(base.read_text(encoding="utf-8") + """
 
-# Only the strings that describe *clothing*. Everything else — cart, checkout,
-# tracking, errors — is already product-agnostic and is left alone.
+/* ————— Société de vente privée : logo image + store name ————— */
+/* !important is intentional: theme-*.css loads after style.css and
+   overrides .brand layout — without it the natural-size photo bleeds
+   through when switching templates. */
+.brand { align-items: center !important; }
+.brand-lockup { display: flex !important; align-items: center; gap: 12px; }
+.logo-img { display: block !important; height: 48px !important; width: auto !important;
+  max-height: 48px !important; border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.32); }
+.brand-name { font-weight: 800; letter-spacing: .08em; line-height: 1.2;
+  color: var(--ink); font-size: .95rem; white-space: nowrap; }
+.brand-name em { font-style: normal; color: var(--gold); }
+.admin-top .brand-w .logo-img { height: 36px !important; max-height: 36px !important; }
+footer .footer-lockup { flex-direction: column; gap: 10px; }
+footer .footer-logo { height: 72px !important; max-height: 72px !important; border-radius: 10px; }
+footer .brand-name { font-size: 1.05rem; }
+@media (max-width: 600px) {
+  .logo-img { height: 40px !important; max-height: 40px !important; }
+  .brand-lockup { gap: 10px; }
+  .brand-name { font-size: .72rem; letter-spacing: .05em; }
+  footer .footer-logo { height: 56px !important; max-height: 56px !important; }
+  footer .brand-name { font-size: .95rem; }
+}
+""", encoding="utf-8")
+
+
+# Same clothing-flavoured i18n swaps as TECH DZ — this is a copy of that shop.
 I18N_SWAPS = {
     "fr": {
         "hero_title": "La tech au meilleur prix",
@@ -141,11 +185,9 @@ I18N_SWAPS = {
 
 
 def retitle_i18n():
-    """Rewrite only the clothing-flavoured strings, per language block."""
     p = OUT / "js" / "i18n.js"
     s = p.read_text(encoding="utf-8")
 
-    # split on the language block headers so a key is replaced in the right one
     for lang, swaps in I18N_SWAPS.items():
         start = s.index(f"    {lang}: {{")
         end = s.index("\n    },", start)
@@ -161,14 +203,10 @@ def retitle_i18n():
 
     p.write_text(s, encoding="utf-8")
 
-    # demo-mode fallback store name — only surfaces if the Supabase keys are
-    # ever cleared, but it shouldn't say Élégance in a TECH DZ build
     db = OUT / "js" / "supabase.js"
     t = db.read_text(encoding="utf-8")
     t = t.replace("store: { name: 'Élégance',", f"store: {{ name: '{BRAND}',")
     db.write_text(t, encoding="utf-8")
-
-    # the admin panel labels the variants field in French only
 
     a = OUT / "js" / "admin.js"
     t = a.read_text(encoding="utf-8")
@@ -176,16 +214,8 @@ def retitle_i18n():
                   "<label>Options / variantes (séparées par virgule)</label>")
     a.write_text(t, encoding="utf-8")
 
-    h = OUT / "admin.html"
-    t = h.read_text(encoding="utf-8")
-    t = t.replace("placeholder=\"0555 12 34 56\"", "placeholder=\"0555 12 34 56\"")
-    h.write_text(t, encoding="utf-8")
-
 
 def reorder_home(order):
-    """Lead the homepage with a different section — each template composes its
-    own front page from the same blocks. The JS addresses every block by id,
-    so the order is purely cosmetic."""
     p = OUT / "index.html"
     s = p.read_text(encoding="utf-8")
     blocks = {}
@@ -203,16 +233,14 @@ def reorder_home(order):
 
 
 def write_favicon():
-    (OUT / "favicon.svg").write_text(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
-        '<rect width="64" height="64" rx="12" fill="#0b1220"/>'
-        '<rect x="12" y="18" width="40" height="24" rx="3" fill="none" '
-        'stroke="#2563eb" stroke-width="4"/>'
-        '<rect x="20" y="46" width="24" height="4" rx="2" fill="#2563eb"/>'
-        '</svg>\n', encoding="utf-8")
+    """Derive a 64×64 favicon from the logo photo."""
+    from PIL import Image
+    img = Image.open(LOGO_SRC).convert("RGB").resize((64, 64), Image.LANCZOS)
+    img.save(OUT / "favicon.png", optimize=True)
 
 
 def write_og_card():
+    """1200×630 share card: the VP logo plaque on a dark tech background."""
     from PIL import Image, ImageDraw, ImageFont
     W, H = 1200, 630
     BLUE, WHITE, MUTED = (37, 99, 235), (241, 245, 249), (148, 163, 184)
@@ -227,29 +255,21 @@ def write_og_card():
     for y in range(0, H, 44):
         d.line([(0, y), (W, y)], fill=(24, 33, 54))
 
+    # the logo plaque, centred, with a soft glow ring behind it
+    logo = Image.open(LOGO_SRC).convert("RGB")
+    logo.thumbnail((400, 400), Image.LANCZOS)
+    lw, lh = logo.size
+    img.paste(logo, ((W - lw) // 2, 78))
+
     sans = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
     reg = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    f_title, f_sub, f_badge = (ImageFont.truetype(sans, 104),
-                               ImageFont.truetype(reg, 34),
-                               ImageFont.truetype(reg, 27))
+    f_sub, f_badge = ImageFont.truetype(reg, 34), ImageFont.truetype(reg, 27)
 
     def centre(text, font, y, fill):
         d.text(((W - d.textbbox((0, 0), text, font=font)[2]) // 2, y), text, font=font, fill=fill)
 
-    tw = d.textbbox((0, 0), "TECH DZ", font=f_title)[2]
-    x = (W - tw) // 2
-    d.text((x, 210), "TECH ", font=f_title, fill=WHITE)
-    d.text((x + d.textbbox((0, 0), "TECH ", font=f_title)[2], 210), "DZ", font=f_title, fill=BLUE)
-
-    d.rectangle([(W // 2 - 50, 175), (W // 2 + 50, 178)], fill=BLUE)
-    centre("Smartphones · PC portables · Accessoires", f_sub, 350, WHITE)
-    centre("توصيل إلى باب منزلك · الدفع عند الاستلام", f_sub, 402, MUTED)
-
-    txt = "PAIEMENT À LA LIVRAISON"
-    bw = d.textbbox((0, 0), txt, font=f_badge)[2]
-    x0, y0 = (W - bw) // 2 - 28, 480
-    d.rounded_rectangle([(x0, y0), (x0 + bw + 56, y0 + 60)], radius=30, outline=BLUE, width=2)
-    d.text((x0 + 28, y0 + 16), txt, font=f_badge, fill=BLUE)
+    centre("Société de vente privée", ImageFont.truetype(sans, 46), 520, WHITE)
+    centre("Smartphones · PC portables · Accessoires", f_sub, 575, MUTED)
 
     img.save(OUT / "og-image.png", optimize=True)
 
@@ -262,8 +282,6 @@ def write_robots():
 
 
 def copy_seo():
-    """The sitemap and cache headers are deployment files, not page assets —
-    copy them so a variant folder can be deployed as-is."""
     shutil.copy(ROOT / "sitemap.xml", OUT / "sitemap.xml")
     shutil.copy(ROOT / "_headers", OUT / "_headers")
     shutil.copy(ROOT / "_redirects", OUT / "_redirects")

@@ -7,24 +7,67 @@
   <meta name="description" content="Costumes et vêtements formels pour hommes. Livraison à domicile, paiement à la livraison.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Fonts load without blocking first paint: the stylesheet is applied after
+       the page renders and display=swap swaps the webfonts in. Only the
+       weights actually used are fetched — no Playfair italic, no Inter 500. -->
+  <link id="fontsCss" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <!-- warm the connection to the Supabase project (must match js/config.js) so
+       the first catalogue request does not wait on a fresh TLS handshake -->
+  <link rel="preconnect" href="https://ssnplihsehgjiydlfimo.supabase.co" crossorigin>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <!-- Social preview. og:image MUST be an absolute URL for WhatsApp and Facebook
-       to fetch it — after deploying, prefix both og:image and og:url with your
-       real domain, e.g. https://elegance-dz.netlify.app/og-image.png -->
+  <!-- Search + social. og:image/og:url and the canonical MUST be absolute URLs
+       for WhatsApp, Facebook, Google and ad platforms. Set SITE_URL in
+       js/config.js to pin a domain; otherwise the snippet below derives it
+       from the       address bar. Product pages (?p=<id>) get their own title, photo,
+       price and JSON-LD from the shop JS, so shared links and ads show the
+       product card. -->
+  <link rel="canonical" href="https://vptech.dzstor.shop/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Élégance">
   <meta property="og:title" content="Élégance — Boutique en ligne">
   <meta property="og:description" content="Livraison à domicile partout en Algérie. Paiement à la livraison.">
-  <meta property="og:image" content="og-image.png">
-  <meta property="og:url" content="index.html">
+  <meta property="og:image" content="https://vptech.dzstor.shop/og-image.png">
+  <meta property="og:image:alt" content="Élégance — Boutique en ligne">
+  <meta property="og:url" content="https://vptech.dzstor.shop/">
   <meta property="og:locale" content="fr_FR">
   <meta property="og:locale:alternate" content="ar_DZ">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="css/style.css">
+  <meta name="twitter:title" content="Élégance — Boutique en ligne">
+  <meta name="twitter:description" content="Livraison à domicile partout en Algérie. Paiement à la livraison.">
+  <meta name="twitter:image" content="https://vptech.dzstor.shop/og-image.png">
+  <script>
+    /* Absolutize social URLs at load, before the app scripts run (SITE_URL
+       from js/config.js wins, otherwise the live origin is used). A relative
+       og:image/og:url is invisible to WhatsApp, Facebook and search engines. */
+    (function () {
+      function absolutizeSeo() {
+        var base = (window.SITE_URL || location.origin).replace(/\/+$/, '');
+        // og: tags use property=, twitter: tags use name= — check both
+        ['og:url', 'og:image', 'twitter:image'].forEach(function (prop) {
+          var el = document.querySelector('meta[property="' + prop + '"], meta[name="' + prop + '"]');
+          if (el && el.content && !/^https?:/i.test(el.content)) {
+            el.content = base + '/' + el.content.replace(/^\/+/, '');
+          }
+        });
+        // canonical MUST be absolute for Google's first-pass crawler
+        var can = document.querySelector('link[rel="canonical"]');
+        if (can && can.href && !/^https?:/i.test(can.getAttribute('href') || '')) {
+          can.href = base + '/' + (can.getAttribute('href') || '').replace(/^\/+/, '');
+        }
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', absolutizeSeo);
+      else absolutizeSeo();
+    })();
+  </script>
+  <!-- ?v= is a cache-buster: bump it when css/style.css changes so browsers
+       and CDNs that cached the old sheet re-fetch it. Without it, a redeploy
+       can keep serving stale CSS to returning visitors. -->
+  <link rel="stylesheet" href="css/style.css?v=25">
 </head>
 <body>
   <div class="demo-banner" id="demoBanner" data-i18n="demo_notice"></div>
+  <!-- shown only when the live catalogue could not be fetched and the cached copy is on screen -->
+  <div class="stale-banner" id="staleBanner" data-i18n="stale_notice"></div>
   <!-- global sale strip; hidden until the owner switches a promotion on -->
   <div class="promo-banner" id="promoBanner" hidden></div>
   <div class="topbar">Livraison à domicile — Paiement à la livraison فقط | Cash on delivery</div>
@@ -62,15 +105,15 @@
       <span class="cod-badge" data-i18n="cod_only"></span>
     </section>
 
-    <section class="block container" id="featured" hidden>
-      <h2 class="section-title" data-i18n="featured"></h2>
-      <div class="product-grid" id="featuredGrid" style="margin-top:34px"></div>
-    </section>
-
     <!-- category showcase tiles; photos come from the admin Categories tab -->
     <section class="block container" id="catTiles" hidden>
       <h2 class="section-title" data-i18n="browse_categories"></h2>
       <div class="tile-row" id="tileRow" style="margin-top:30px"></div>
+    </section>
+
+    <section class="block container" id="featured" hidden>
+      <h2 class="section-title" data-i18n="featured"></h2>
+      <div class="product-grid" id="featuredGrid" style="margin-top:34px"></div>
     </section>
 
     <section class="block container" id="shop">
@@ -103,6 +146,8 @@
       <div>
         <h4 data-i18n="nav_contact"></h4>
         <p id="footerPhone">—</p>
+        <!-- social icons from the shop settings; stays empty until the owner saves a link -->
+        <div class="social-links" id="socialLinks"></div>
         <a href="track.html" data-i18n="track"></a><br>
         <a href="admin.html">Espace propriétaire</a>
       </div>
@@ -111,7 +156,7 @@
   </footer>
 
   <!-- product modal -->
-  <div class="modal-overlay" id="productModal">
+  <div class="modal-overlay" id="productModal" role="dialog" aria-modal="true" aria-labelledby="mName">
     <div class="modal-wrap">
       <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
       <div class="modal">
@@ -147,13 +192,24 @@
     </div>
   </div>
 
+  <!-- mobile-only sticky add-to-cart bar: follows the product modal so the
+       buy button is always thumb-reachable while a product is open -->
+  <div class="sticky-cart" id="stickyCart">
+    <img id="stickyPhoto" alt="">
+    <div class="sticky-info">
+      <span class="sticky-name" id="stickyName"></span>
+      <span class="sticky-price" id="stickyPrice"></span>
+    </div>
+    <button class="btn-gold" id="stickyAdd" type="button" data-i18n="add_to_cart"></button>
+  </div>
+
   <!-- size guide: static EU measurements, opens from the product modal -->
-  <div class="modal-overlay" id="sizeGuideModal">
+  <div class="modal-overlay" id="sizeGuideModal" role="dialog" aria-modal="true" aria-labelledby="sizeGuideTitle">
     <div class="modal-wrap">
       <button class="modal-close" id="sizeGuideClose" aria-label="Close">&times;</button>
       <div class="modal" style="grid-template-columns:1fr">
         <div class="m-body narrow">
-          <h3 data-i18n="size_guide"></h3>
+          <h3 id="sizeGuideTitle" data-i18n="size_guide"></h3>
           <p class="desc" data-i18n="size_guide_note"></p>
           <table class="size-table">
             <thead><tr><th></th><th data-i18n="size_guide_chest"></th><th data-i18n="size_guide_waist"></th></tr></thead>
@@ -171,6 +227,17 @@
     </div>
   </div>
 
+  <!-- full-screen photo gallery: opens by tapping the main photo when the
+       product has several photos; swipe, drag, arrows or the keyboard move
+       between them. Slides render natural-size, like the modal photo. -->
+  <div class="gallery-overlay" id="galleryModal" role="dialog" aria-modal="true">
+    <button class="gallery-close" id="galleryClose" aria-label="Close">&times;</button>
+    <div class="gallery-track" id="galleryTrack"></div>
+    <button class="gallery-nav gallery-prev" id="galleryPrev" type="button" aria-label="Previous">&lsaquo;</button>
+    <button class="gallery-nav gallery-next" id="galleryNext" type="button" aria-label="Next">&rsaquo;</button>
+    <div class="gallery-count" id="galleryCount" aria-live="polite"></div>
+  </div>
+
   <!-- floating WhatsApp button; stays hidden until a number is saved in the admin -->
   <a class="wa-fab" id="waFab" hidden target="_blank" rel="noopener noreferrer">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.86 9.86 0 0 0 4.74 1.2c5.46 0 9.9-4.44 9.9-9.9S17.5 2 12.04 2m0 18.05c-1.5 0-2.97-.4-4.25-1.16l-.3-.18-3.15.82.84-3.07-.2-.32a8.16 8.16 0 0 1-1.25-4.35c0-4.5 3.66-8.16 8.16-8.16s8.16 3.66 8.16 8.16-3.66 8.16-8.16 8.16m4.47-6.11c-.24-.12-1.45-.72-1.68-.8-.22-.08-.39-.12-.55.12-.16.25-.63.8-.78.97-.14.16-.29.18-.53.06-.24-.12-1.03-.38-1.97-1.22-.73-.65-1.22-1.45-1.36-1.7-.14-.24-.02-.37.1-.49.11-.11.24-.29.36-.43.12-.14.16-.25.24-.41.08-.16.04-.3-.02-.43-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.43.06-.65.3-.22.25-.85.84-.85 2.04s.87 2.37 1 2.53c.12.16 1.72 2.62 4.16 3.68.58.25 1.03.4 1.39.51.58.19 1.11.16 1.53.1.47-.07 1.45-.59 1.65-1.17.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.46-.28"/></svg>
@@ -184,11 +251,13 @@
   <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
-    crossorigin="anonymous"></script>
-  <script src="js/config.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/cart.js"></script>
-  <script src="js/store.js"></script>
+    crossorigin="anonymous" defer></script>
+  <script src="js/config.js?v=30" defer></script>
+  <script src="js/i18n.js?v=32" defer></script>
+  <script src="js/supabase.js?v=29" defer></script>
+  <script src="js/cart.js?v=28" defer></script>
+  <!-- runtime layout switcher: applies the template saved in the dashboard -->
+  <script src="js/layouts.js?v=31" defer></script>
+  <script src="js/store.js?v=33" defer></script>
 </body>
 </html>

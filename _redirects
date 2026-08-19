@@ -1,0 +1,11 @@
+# One canonical URL for the home page: /index.html folds into /.
+/index.html  /  301
+
+# Pretty product links. A product lives at /?p=<id>, but /p/<id> is nicer in an
+# ad — serve the shopfront for it (200, not a redirect, so the path survives)
+# and let openFromUrl() in js/store.js read the id back out of it.
+/p/*         /  200
+
+# Anything else falls through to 404.html, which Netlify and Cloudflare Pages
+# both serve automatically for an unmatched path. No rule needed here — but
+# adding a catch-all /* rule WOULD break it, so don't.

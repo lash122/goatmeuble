@@ -1,0 +1,43 @@
+# Netlify / Cloudflare Pages headers.
+#
+# Caching: versioned assets never change at the same URL (the pages carry a
+# ?v= cache-buster, bumped whenever a file changes), so browsers and CDN edges
+# can cache them forever. HTML pages are intentionally NOT listed: they are
+# served revalidated, so a redeploy is picked up immediately.
+#
+# Security: the checkout collects a name, a phone number and a home address.
+# The database rules in supabase/schema.sql decide who may read that; these
+# headers decide what may run on the page that collects it in the first place.
+
+/*
+  # The catalogue is public, but the checkout and the admin panel must never be
+  # rendered inside someone else's page (clickjacking a "Commander" button).
+  X-Frame-Options: DENY
+  # No MIME sniffing: a JPEG in the products bucket stays a JPEG.
+  X-Content-Type-Options: nosniff
+  # Don't leak the order number in ?id= to whatever the customer clicks next.
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), interest-cohort=()
+  # Content Security Policy — the allow-list of what this site may load:
+  #   script  self + cdn.jsdelivr.net (supabase-js, pinned with an SRI hash)
+  #   style   self + fonts.googleapis.com    font  fonts.gstatic.com
+  #   img     self + data: (SVG placeholders) + blob: (upload previews)
+  #           + the Supabase project (product photos in Storage)
+  #   connect the Supabase REST/auth/storage API, wss: for its realtime socket
+  # 'unsafe-inline' is required and not removable yet: the SEO snippets in the
+  # page heads are inline, and the font <link> uses an inline onload handler.
+  # Even with it, an injected <script src> from an unlisted host is refused.
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ssnplihsehgjiydlfimo.supabase.co; connect-src 'self' https://ssnplihsehgjiydlfimo.supabase.co wss://ssnplihsehgjiydlfimo.supabase.co
+
+# The owner's panel is not a search result and not a shareable link.
+/admin.html
+  X-Robots-Tag: noindex, nofollow
+
+/checkout.html
+  X-Robots-Tag: noindex, nofollow
+
+/css/*
+  Cache-Control: max-age=31536000, immutable
+
+/js/*
+  Cache-Control: max-age=31536000, immutable

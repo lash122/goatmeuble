@@ -6,7 +6,17 @@ An elegant, trilingual (**FR / AR / EN**) clothing store website with:
 - Owner admin panel: products, categories, orders, delivery zones, promotions, simple stats
 - No build tools, no server — deploy anywhere for free
 
-## ⭐ v1.1 — already installed? ONE required step
+## ⭐ v1.2 — already installed? ONE required step
+Paste `supabase/schema.sql` into **SQL Editor → Run** again. It corrects when
+free delivery kicks in: the threshold is now measured **after** the promo-code
+discount, which is what the checkout page has always shown the customer. Until
+you re-run it, a basket that only crosses the threshold *before* the code is
+applied is quoted a delivery fee it is not charged.
+
+Nothing else about the database changes, and your products and orders are
+untouched.
+
+## v1.1 — already installed? ONE required step
 Paste the updated `supabase/schema.sql` into **SQL Editor → Run** again (safe to
 re-run; your products and orders are untouched). It adds promotions (global
 sale, promo codes, free-delivery threshold) and category showcase photos.
@@ -114,17 +124,48 @@ index.html        Storefront (search, sort, categories)
 track.html        Customer order tracking
 checkout.html     Cart + cash-on-delivery order form
 admin.html        Owner panel (login required)
+404.html          Trilingual "page not found" (no JS, no database)
 css/style.css     Elegant theme, LTR + RTL (Arabic)
 css/admin.css     Admin styles
-js/config.js      ← the only file you edit (Supabase keys)
+css/theme-*.css   Template skins the dashboard can switch between at runtime
+js/config.js      ← the file you edit (Supabase keys + SITE_URL)
 js/i18n.js        FR/AR/EN translations
-js/supabase.js    Database layer (+ demo mode)
-js/store.js       Storefront logic, cart
+js/supabase.js    Database layer (+ demo mode, image compression, Storage)
+js/cart.js        localStorage basket, shared by every page
+js/layouts.js     Runtime template switcher (the dashboard's Templates tab)
+js/store.js       Storefront logic, product deep links, per-product SEO
 js/checkout.js    Order placement (COD only)
 js/track.js       Order tracking lookup
 js/admin.js       Admin panel logic
 supabase/schema.sql  Tables, security rules, default zones — paste into Supabase SQL Editor
 ```
+
+### Deployment files
+```
+_headers          Cache policy + security headers (CSP, frame/sniff/referrer)
+_redirects        /index.html → /, and the pretty /p/<id> product links
+robots.txt        Crawler rules — generated, don't hand-edit the Sitemap line
+sitemap.xml       Generated, one entry per product
+build-sitemap.py  Regenerates both of the above from the live catalogue
+```
+
+### Brand variants
+One codebase, several shops. Each generator writes a self-contained `dist-*/`
+folder you can deploy on its own; the file itself records exactly what differs
+from the source. They all read the same Supabase project.
+
+```bash
+python3 build-vip.py       # dist-vip/     — Société de vente privée (VP logo)
+python3 build-techdz.py    # dist-techdz/  — TECH DZ
+python3 build-rugs.py      # dist-rugs/    — DAR ZARBIA, dark rug gallery
+python3 build-femme.py     # dist-femme/
+python3 build-gallery.py   # dist-gallery/
+python3 build-app.py       # dist-app/
+```
+
+Run `build-sitemap.py` **before** a variant build: the generators copy the
+root's `robots.txt`, `sitemap.xml`, `_headers` and `_redirects` into the
+output, so a stale sitemap propagates into every folder.
 
 ## Notes
 - **Payment:** cash on delivery only — there is no online payment anywhere in the code.
@@ -149,17 +190,40 @@ pages — so **nothing in `js/` protects your data**. All the real rules are in
 
 If you edit `schema.sql`, keep those three properties.
 
-### After deploying: fix the social preview
-`index.html` carries Open Graph tags so the link shows a proper card when
-shared on WhatsApp or Facebook. Their scrapers need **absolute** URLs, so once
-you know your address, edit these two lines in `index.html`:
+`_headers` covers the other half: the database decides who may *read* the
+customer's name, phone and address; the Content-Security-Policy there decides
+what may run on the page that *collects* them. It is an allow-list — the
+Supabase project, Google Fonts, and the pinned supabase-js on jsDelivr. Add a
+new external script, font or image host to the site and you must add it there
+too, or the browser will refuse to load it.
 
-```html
-<meta property="og:image" content="https://YOUR-SITE.netlify.app/og-image.png">
-<meta property="og:url"   content="https://YOUR-SITE.netlify.app/">
-```
-
-Test the result at [developers.facebook.com/tools/debug](https://developers.facebook.com/tools/debug/).
+### Search & sharing (SEO)
+- **One config value.** Open Graph tags and the canonical need an absolute
+  domain. Set it once in `js/config.js`:
+  ```js
+  window.SITE_URL = 'https://vptech.dzstor.shop';
+  ```
+  It must be `window.SITE_URL`, not `const SITE_URL` — a top-level `const` in a
+  plain `<script>` never becomes a property of `window`, so the pages that read
+  it would silently see nothing. Leave the string empty and the site
+  auto-detects the domain from the address bar (fine for sharing; pin it for
+  Google).
+- **Per-product pages.** Every product lives at `/?p=<id>` — the link the
+  Share button, WhatsApp and ads point at. Opening a product rewrites the
+  title, description, Open Graph, Twitter card, canonical and JSON-LD to that
+  product (name, photo, price), so a shared link shows the product, not the
+  generic shop card. WhatsApp, Facebook, X and Google all render the page's
+  JavaScript when they fetch a link, so ads and shares pick up the product
+  card without any server.
+- **Sitemap.** Don't edit `sitemap.xml` or `robots.txt` by hand — run
+  ```bash
+  python3 build-sitemap.py
+  ```
+  It reads the domain and the Supabase keys out of `js/config.js`, fetches the
+  active products, and writes both files with one `/p/<id>` entry per product.
+  Re-run it after adding or removing products, then redeploy.
+- Test cards at
+  [developers.facebook.com/tools/debug](https://developers.facebook.com/tools/debug/).
 
 ### Upgrading the Supabase library
 The three HTML pages load one exact version of `supabase-js`, with an

@@ -294,8 +294,12 @@ begin
     v_applied_code := v_code.code;
   end if;
 
-  -- free delivery above the threshold, decided after the discounts
-  if v_free_from > 0 and v_sub >= v_free_from then
+  -- Free delivery above the threshold, measured on what the customer actually
+  -- pays for the goods — so after the promo code, not before it. The checkout
+  -- preview (updateTotals() in js/checkout.js) compares the same
+  -- after-discount figure; if the two ever disagree the customer is quoted one
+  -- delivery fee and charged another.
+  if v_free_from > 0 and (v_sub - v_discount) >= v_free_from then
     v_fee := 0;
   end if;
 

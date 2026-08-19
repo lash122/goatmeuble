@@ -61,6 +61,14 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width
 .status-delivered { background: #e3f0e3; color: #2c6e2c; }
 .status-cancelled { background: #f6e4e4; color: #9c3434; }
 
+.order-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 14px 0 4px; }
+.order-toolbar input {
+  flex: 1; min-width: 200px; border: 1px solid var(--line); border-radius: 8px;
+  padding: 9px 12px; font-size: 0.88rem;
+}
+.order-count { color: var(--muted); font-size: 0.8rem; margin: 6px 0 10px; }
+@media (max-width: 640px) { .order-toolbar input { min-width: 100%; } }
+
 .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .btn-mini {
   border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 5px 11px; font-size: 0.8rem;
@@ -116,3 +124,35 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width
 .order-items li { margin-inline-start: 18px; font-size: 0.88rem; }
 
 @media (max-width: 640px) { .f-grid.two { grid-template-columns: 1fr; } }
+
+/* ---- Apparence tab: template picker ---- */
+.layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; max-width: 780px; }
+.layout-card {
+  border: 2px solid var(--line); border-radius: 14px; padding: 14px; background: #fff; cursor: pointer;
+  display: flex; flex-direction: column; gap: 6px; text-align: start;
+  transition: border-color .15s, box-shadow .15s;
+}
+.layout-card:hover { border-color: #b8b3c8; }
+.layout-card.selected { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212, 175, 55, .18); }
+.layout-card b { font-size: .95rem; color: var(--navy); }
+.layout-card small { color: var(--muted); line-height: 1.4; }
+.layout-card .mini { position: relative; display: block; height: 120px; border-radius: 10px; overflow: hidden; margin-bottom: 4px; }
+.layout-card .mini i { position: absolute; display: block; }
+
+/* tech — navy, technical grid, blue chip */
+.mini.tech { background: #0b1220; }
+.mini.tech .m-grid {
+  top: 18px; left: 12px; right: 12px; bottom: 14px; border: 1px solid rgba(37, 99, 235, .45);
+  background: repeating-linear-gradient(0deg, transparent 0 8px, rgba(37, 99, 235, .22) 8px 9px),
+              repeating-linear-gradient(90deg, transparent 0 8px, rgba(37, 99, 235, .22) 8px 9px);
+}
+.mini.tech .m-chip { left: 20px; top: 32px; width: 56px; height: 20px; border-radius: 6px; background: #2563eb; }
+
+/* sharp — black bar, masonry tiles, violet dot */
+.mini.sharp { background: #fff; }
+.mini.sharp .m-top { top: 0; left: 0; right: 0; height: 16px; background: #141414; }
+.mini.sharp .m-tile { background: #e3e3e6; border-radius: 2px; }
+.mini.sharp .m-tile.a { top: 26px; left: 12px; width: 44%; height: 52px; }
+.mini.sharp .m-tile.b { top: 26px; right: 12px; width: 40%; height: 34px; }
+.mini.sharp .m-tile.c { top: 86px; left: 12px; width: 40%; height: 24px; }
+.mini.sharp .m-dot { bottom: 10px; right: 12px; width: 10px; height: 10px; border-radius: 50%; background: #6d28d9; }

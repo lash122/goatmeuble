@@ -22,6 +22,25 @@ function waLink(phone, text) {
   return `https://wa.me/${d}${text ? '?text=' + encodeURIComponent(text) : ''}`;
 }
 
+/* WhatsApp order-confirmation message: order number, every line item, the
+   total, and the tracking link. Used on the TRACKING page — after the shop
+   has confirmed the order by phone — never at checkout time. The checkout
+   keeps a plain contact line instead. */
+function waOrderMessage(order) {
+  if (!order) return '';
+  const trackUrl = `${location.origin}${location.pathname.replace(/[^/]*$/, '')}` +
+    `track.html?id=${encodeURIComponent(order.id)}`;
+  const lines = (order.items || []).map(it =>
+    `• ${it.qty}× ${I18N.localize(it, 'name')}${it.size ? ` (${it.size})` : ''}` +
+    ` — ${I18N.fmtPrice(Number(it.price) * it.qty)}`);
+  return [
+    `${I18N.t('wa_order_hello')} #${order.id}`,
+    ...lines,
+    `${I18N.t('total')}: ${I18N.fmtPrice(order.total)}`,
+    `${I18N.t('track')}: ${trackUrl}`,
+  ].join('\n');
+}
+
 /* Floating WhatsApp button, shown only once a number is saved in the admin. */
 function renderWhatsApp(store) {
   const fab = document.getElementById('waFab');
@@ -55,7 +74,11 @@ const I18N = (() => {
       size_required: 'Choisissez d’abord une taille',
       share: 'Partager', share_copied: 'Lien copié ✓',
       wa_cta: 'Écrivez-nous sur WhatsApp', wa_prefill: 'Bonjour, j’ai une question sur un article.',
+      wa_order_hello: 'Bonjour, je viens de passer la commande',
       success_contact: 'Une question ? Contactez-nous :',
+      tech_delivery: 'Livraison 24-72h', tech_chip_cod: 'Paiement à la livraison',
+      tech_exchange: 'Échange sous 7 jours',
+      badge_new: 'Nouveau', badge_bestseller: 'Bestseller',
       sort_by: 'Trier', sort_new: 'Nouveautés', sort_price_asc: 'Prix croissant',
       sort_price_desc: 'Prix décroissant', search_ph: 'Rechercher un article…',
       no_results: 'Aucun article ne correspond à votre recherche.',
@@ -92,6 +115,11 @@ const I18N = (() => {
       faq_q1: 'Quels sont les délais de livraison ?', faq_a1: '24 à 72 heures selon votre wilaya. Nous vous appelons pour confirmer avant l’envoi.',
       faq_q2: 'Comment payer ?', faq_a2: 'À la livraison, en espèces, au moment où vous recevez votre commande. Aucun paiement en ligne.',
       faq_q3: 'Puis-je échanger un article ?', faq_a3: 'Oui, sous 7 jours, article non porté et dans son emballage. Contactez-nous par téléphone ou WhatsApp.',
+      cart_updated: 'Certains prix ont été mis à jour depuis que vous avez ajouté ces articles.',
+      cart_removed: 'Un article n’est plus disponible et a été retiré de votre panier.',
+      view_product: 'Ouvrir {name}',
+      gallery_open: 'Voir les photos', gallery_prev: 'Photo précédente', gallery_next: 'Photo suivante',
+      stale_notice: 'Connexion impossible — affichage des produits enregistrés.',
       currency: 'DA', lang_name: 'Fran\u00e7ais',
     },
     ar: {
@@ -112,7 +140,11 @@ const I18N = (() => {
       size_required: 'اختر المقاس أولاً',
       share: 'مشاركة', share_copied: 'تم نسخ الرابط ✓',
       wa_cta: 'راسلنا عبر واتساب', wa_prefill: 'مرحباً، لدي سؤال عن أحد المنتجات.',
+      wa_order_hello: 'مرحباً، لقد قمت للتو بتأكيد الطلب',
       success_contact: 'لديك سؤال؟ اتصل بنا:',
+      tech_delivery: 'توصيل 24-72 ساعة', tech_chip_cod: 'الدفع عند الاستلام',
+      tech_exchange: 'استبدال خلال 7 أيام',
+      badge_new: 'جديد', badge_bestseller: 'الأكثر مبيعاً',
       sort_by: 'ترتيب', sort_new: 'الأحدث', sort_price_asc: 'السعر: من الأقل',
       sort_price_desc: 'السعر: من الأعلى', search_ph: 'ابحث عن منتج…',
       no_results: 'لا يوجد منتج مطابق لبحثك.',
@@ -149,6 +181,11 @@ const I18N = (() => {
       faq_q1: 'ما هي مدة التوصيل؟', faq_a1: 'من 24 إلى 72 ساعة حسب الولاية. نتصل بك للتأكيد قبل الإرسال.',
       faq_q2: 'كيف يتم الدفع؟', faq_a2: 'نقداً عند الاستلام عند وصول طلبك. لا يوجد دفع إلكتروني.',
       faq_q3: 'هل يمكنني استبدال منتج؟', faq_a3: 'نعم، خلال 7 أيام، بشرط عدم الاستعمال. اتصل بنا أو راسلنا على واتساب.',
+      cart_updated: 'تم تحديث بعض الأسعار منذ إضافة هذه المنتجات إلى السلة.',
+      cart_removed: 'أحد المنتجات لم يعد متوفراً وتمت إزالته من السلة.',
+      view_product: 'عرض {name}',
+      gallery_open: 'عرض الصور', gallery_prev: 'الصورة السابقة', gallery_next: 'الصورة التالية',
+      stale_notice: 'تعذّر الاتصال — يتم عرض المنتجات المحفوظة.',
       currency: 'دج', lang_name: 'العربية',
     },
     en: {
@@ -169,7 +206,11 @@ const I18N = (() => {
       size_required: 'Please choose a size first',
       share: 'Share', share_copied: 'Link copied ✓',
       wa_cta: 'Message us on WhatsApp', wa_prefill: 'Hello, I have a question about an item.',
+      wa_order_hello: 'Hello, I just placed order',
       success_contact: 'Any questions? Contact us:',
+      tech_delivery: 'Delivery 24-72h', tech_chip_cod: 'Cash on delivery',
+      tech_exchange: '7-day exchange',
+      badge_new: 'New', badge_bestseller: 'Bestseller',
       sort_by: 'Sort', sort_new: 'Newest', sort_price_asc: 'Price: low to high',
       sort_price_desc: 'Price: high to low', search_ph: 'Search products…',
       no_results: 'No products match your search.',
@@ -206,6 +247,11 @@ const I18N = (() => {
       faq_q1: 'How long does delivery take?', faq_a1: '24 to 72 hours depending on your wilaya. We call you to confirm before shipping.',
       faq_q2: 'How do I pay?', faq_a2: 'Cash on delivery, when you receive your order. No online payment.',
       faq_q3: 'Can I exchange an item?', faq_a3: 'Yes, within 7 days, unworn and in its packaging. Contact us by phone or WhatsApp.',
+      cart_updated: 'Some prices were updated since you added these items to your cart.',
+      cart_removed: 'An item is no longer available and was removed from your cart.',
+      view_product: 'Open {name}',
+      gallery_open: 'View photos', gallery_prev: 'Previous photo', gallery_next: 'Next photo',
+      stale_notice: 'Connection failed — showing saved products.',
       currency: 'DA', lang_name: 'English',
     },
   };
@@ -247,10 +293,29 @@ const I18N = (() => {
       el.placeholder = t(el.dataset.i18nPlaceholder);
     });
     document.querySelectorAll('.lang-switch button').forEach(b => {
-      b.classList.toggle('active', b.dataset.lang === lang);
+      const active = b.dataset.lang === lang;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-pressed', String(active));
     });
     document.dispatchEvent(new CustomEvent('langchange'));
   }
 
-  return { t, fmtPrice, localize, getLang, setLang, apply };
+  /* The runtime layout switcher (layouts.js) swaps a few shopfront strings
+     per template (hero title, section names…). snapshot() captures the
+     current values so a layout can be undone, override() replaces them. */
+  function snapshot(keys) {
+    const out = {};
+    for (const lang in translations) {
+      out[lang] = {};
+      keys.forEach(k => { out[lang][k] = translations[lang][k]; });
+    }
+    return out;
+  }
+  function override(map) {
+    for (const lang in map) {
+      if (translations[lang]) Object.assign(translations[lang], map[lang]);
+    }
+  }
+
+  return { t, fmtPrice, localize, getLang, setLang, apply, snapshot, override };
 })();

@@ -25,7 +25,7 @@ OUT = ROOT / "dist-rugs"
 
 BRAND = "DAR ZARBIA"
 BRAND_HTML = 'DAR<em> ZARBIA</em>'      # the accented half of the wordmark
-PAGES = ["index.html", "checkout.html", "admin.html", "track.html"]
+PAGES = ["index.html", "checkout.html", "admin.html", "track.html", "404.html"]
 ASSETS = ["css", "js"]
 
 # Jost throughout, matching the reference design's geometric sans; Cairo stays
@@ -45,17 +45,20 @@ def build():
         shutil.copytree(ROOT / asset, OUT / asset)
 
     # the other variants' themes ride along in css/; drop them so the
-    # deployed folder holds only what this shop actually loads
-    for stale in (OUT / "css").glob("theme-*.css"):
-        if stale.name != "theme-rugs.css":
-            stale.unlink()
+    # every theme ships with the build — the dashboard can switch the shop's
+    # template at runtime (js/layouts.js), so all the theme sheets must exist
 
     rebrand_pages()
+    # a carpet shopper browses by type — the tiles lead the page
+    reorder_home(['catTiles', 'featured', 'shop'])
     retitle_i18n()
     write_favicon()
     write_og_card()
-    (OUT / "robots.txt").write_text(
-        "User-agent: *\nAllow: /\nDisallow: /admin.html\n", encoding="utf-8")
+    # robots.txt carries the site's own domain, so it is generated once at
+    # the root by build-sitemap.py and copied here rather than hardcoded
+    # per variant — six copies of a domain is six chances to ship a stale one.
+    shutil.copy(ROOT / "robots.txt", OUT / "robots.txt")
+    copy_seo()
 
     files = sorted(p.relative_to(OUT).as_posix() for p in OUT.rglob("*") if p.is_file())
     print(f"{OUT.name}/ — {len(files)} files")
@@ -69,10 +72,11 @@ def rebrand_pages():
         s = p.read_text(encoding="utf-8")
 
         # theme overlay must load after style.css so it can override
+        # (the base pages carry a ?v= cache-buster on the stylesheet link)
         s = s.replace(
-            '<link rel="stylesheet" href="css/style.css">',
-            '<link rel="stylesheet" href="css/style.css">\n'
-            '  <link rel="stylesheet" href="css/theme-rugs.css">', 1)
+            '<link rel="stylesheet" href="css/style.css?v=25">',
+            '<link rel="stylesheet" href="css/style.css?v=25">\n'
+            '  <link rel="stylesheet" href="css/theme-rugs.css?v=14" id="themeCss" data-native-theme>', 1)
 
         # swap the font request wholesale — the type is half the identity
         s = re.sub(r'https://fonts\.googleapis\.com/css2\?[^"]+', FONTS, s)
@@ -166,6 +170,34 @@ def retitle_i18n():
     t = t.replace("<label>Tailles (séparées par virgule)</label>",
                   "<label>Dimensions (ex : 160x230 cm, 200x300 cm)</label>")
     a.write_text(t, encoding="utf-8")
+
+
+def copy_seo():
+    """The sitemap and cache headers are deployment files, not page assets —
+    copy them so a variant folder can be deployed as-is."""
+    shutil.copy(ROOT / "sitemap.xml", OUT / "sitemap.xml")
+    shutil.copy(ROOT / "_headers", OUT / "_headers")
+    shutil.copy(ROOT / "_redirects", OUT / "_redirects")
+
+
+def reorder_home(order):
+    """Lead the homepage with a different section — each template composes its
+    own front page from the same blocks. The JS addresses every block by id,
+    so the order is purely cosmetic."""
+    p = OUT / "index.html"
+    s = p.read_text(encoding="utf-8")
+    blocks = {}
+    s = re.sub(
+        r'<section class="block container" id="(featured|catTiles|shop)"[^>]*>.*?</section>',
+        lambda m: blocks.__setitem__(m.group(1), m.group(0)) or f"@@SEC-{m.group(1)}@@",
+        s, flags=re.S)
+    marks = re.findall(r"@@SEC-(?:featured|catTiles|shop)@@", s)
+    if len(marks) != 3:
+        raise SystemExit("reorder_home: homepage sections not found")
+    first = s.index(marks[0])
+    last = s.index(marks[-1]) + len(marks[-1])
+    s = s[:first] + "".join(blocks[sid] for sid in order) + s[last:]
+    p.write_text(s, encoding="utf-8")
 
 
 def write_favicon():

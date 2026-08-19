@@ -6,9 +6,35 @@
   <title>Suivi de commande — Élégance</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link id="fontsCss" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link rel="preconnect" href="https://ssnplihsehgjiydlfimo.supabase.co" crossorigin>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/style.css">
+  <!-- Social tags for shared links; the snippet absolutizes og:url/og:image
+       from SITE_URL (js/config.js) or the live origin. -->
+  <link rel="canonical" href="/track.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Élégance">
+  <meta property="og:title" content="Suivi de commande — Élégance">
+  <meta property="og:description" content="Suivez votre commande en ligne — paiement à la livraison.">
+  <meta property="og:image" content="og-image.png">
+  <meta property="og:url" content="/track.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <script>
+    (function () {
+      function absolutizeSeo() {
+        var base = (window.SITE_URL || location.origin).replace(/\/+$/, '');
+        ['og:url', 'og:image'].forEach(function (prop) {
+          var el = document.querySelector('meta[property="' + prop + '"], meta[name="' + prop + '"]');
+          if (el && el.content && !/^https?:/i.test(el.content)) {
+            el.content = base + '/' + el.content.replace(/^\/+/, '');
+          }
+        });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', absolutizeSeo);
+      else absolutizeSeo();
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css?v=25">
 </head>
 <body>
   <div class="topbar">Livraison à domicile — Paiement à la livraison | الدفع عند الاستلام</div>
@@ -63,11 +89,12 @@
   <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
-    crossorigin="anonymous"></script>
-  <script src="js/config.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/cart.js"></script>
-  <script src="js/track.js"></script>
+    crossorigin="anonymous" defer></script>
+  <script src="js/config.js?v=30" defer></script>
+  <script src="js/i18n.js?v=32" defer></script>
+  <script src="js/supabase.js?v=29" defer></script>
+  <script src="js/cart.js?v=28" defer></script>
+  <script src="js/layouts.js?v=31" defer></script>
+  <script src="js/track.js?v=33" defer></script>
 </body>
 </html>

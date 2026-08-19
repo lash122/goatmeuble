@@ -6,10 +6,22 @@ const STATUSES = [
 ];
 let A = { cats: [], products: [], orders: [], zones: [], store: {},
           promo: {}, freeFrom: null, codes: [] };
+let orderQuery = '';      // orders search box
+let orderSort = 'date_desc';
+let chosenLayout = '';    // Apparence tab — pending template choice
+let layoutDirty = false;  // true once the owner picks a card on this screen
+
+/* The templates the dashboard can apply (keys match layouts.js). */
+const LAYOUT_CHOICES = [
+  { key: 'tech', label: 'Tech', desc: 'Navy & bleu électrique — accueil design, produits en avant.', mini: 'tech' },
+  { key: 'sharp', label: 'Sharp', desc: 'Minimaliste noir & blanc — mur masonry, sans héros.', mini: 'sharp' },
+];
 
 document.addEventListener('DOMContentLoaded', initAdmin);
 
 async function initAdmin() {
+  // the owner must always see what is actually saved — never cached data
+  DB.setCacheEnabled(false);
   if (DB.isDemo) {
     // Deliberately does NOT open straight into the panel. If the site is ever
     // deployed with js/config.js still unfilled, an admin page that greets
@@ -28,11 +40,21 @@ async function initAdmin() {
   document.querySelectorAll('.admin-tabs button').forEach(b =>
     b.addEventListener('click', () => switchTab(b.dataset.tab)));
   document.getElementById('orderStatusFilter').addEventListener('change', renderOrders);
+  document.getElementById('orderSearch').addEventListener('input', e => { orderQuery = e.target.value; renderOrders(); });
+  document.getElementById('orderSort').addEventListener('change', e => { orderSort = e.target.value; renderOrders(); });
+  document.getElementById('orderExportBtn').addEventListener('click', exportOrdersCsv);
   document.getElementById('addProductBtn').addEventListener('click', () => editProduct(null));
   document.getElementById('addCatBtn').addEventListener('click', () => editCategory(null));
   document.getElementById('addZoneBtn').addEventListener('click', () => addZoneRow('', 600));
   document.getElementById('saveZonesBtn').addEventListener('click', saveZones);
   document.getElementById('saveShopBtn').addEventListener('click', saveShop);
+  document.getElementById('saveLayoutBtn').addEventListener('click', () => saveLayout(false));
+  // back to the build's own look — clears the saved layout entirely
+  document.getElementById('resetLayoutBtn').addEventListener('click', () => {
+    chosenLayout = '';
+    layoutDirty = true;
+    saveLayout(true);
+  });
   document.getElementById('savePromoBtn').addEventListener('click', savePromo);
   document.getElementById('saveFreeBtn').addEventListener('click', saveFreeDelivery);
   document.getElementById('addCodeBtn').addEventListener('click', () => editCode(null));
@@ -82,7 +104,7 @@ async function refreshAll() {
   ]);
   A.freeFrom = await DB.getFreeDeliveryFrom();
   renderOrders(); renderProducts(); renderCats(); renderZones(); renderShop();
-  renderPromotions(); renderCodes(); renderStats();
+  renderLayouts(); renderPromotions(); renderCodes(); renderStats();
   const newCount = A.orders.filter(o => o.status === 'new').length;
   const badge = document.getElementById('newOrdersBadge');
   badge.textContent = newCount;
@@ -102,11 +124,34 @@ function statusTag(s) {
   return `<span class="status-tag status-${st?.[2] || 'new'}">${st?.[1] || s}</span>`;
 }
 
-function renderOrders() {
+/* The orders the table currently shows: status filter + search + sort.
+   The CSV export uses the same list, so the download always matches the
+   screen. */
+function filteredOrders() {
   const filter = document.getElementById('orderStatusFilter').value;
+  const q = orderQuery.trim().toLowerCase();
+  let list = A.orders.filter(o => {
+    if (filter && o.status !== filter) return false;
+    if (!q) return true;
+    return [String(o.id), o.customer_name, o.phone, o.zone]
+      .some(v => String(v || '').toLowerCase().includes(q));
+  });
+  if (orderSort === 'date_asc') list = [...list].reverse();
+  else if (orderSort === 'total_desc')
+    list = [...list].sort((a, b) => (Number(b.total) || 0) - (Number(a.total) || 0));
+  else if (orderSort === 'total_asc')
+    list = [...list].sort((a, b) => (Number(a.total) || 0) - (Number(b.total) || 0));
+  return list;
+}
+
+function renderOrders() {
+  const list = filteredOrders();
   const body = document.getElementById('ordersBody');
   body.innerHTML = '';
-  A.orders.filter(o => !filter || o.status === filter).forEach(o => {
+  document.getElementById('orderCount').textContent =
+    `${list.length} commande${list.length > 1 ? 's' : ''} affichée${list.length > 1 ? 's' : ''}` +
+    (list.length !== A.orders.length ? ` sur ${A.orders.length}` : '');
+  list.forEach(o => {
     const tr = document.createElement('tr');
     // qty arrives from the public order form: a non-number would make `+`
     // concatenate, dropping raw text straight into the HTML below
@@ -124,6 +169,7 @@ function renderOrders() {
           <select class="btn-mini" data-a="status" style="padding:5px 8px">
             ${STATUSES.map(s => `<option value="${s[0]}" ${s[0] === o.status ? 'selected' : ''}>${s[1]}</option>`).join('')}
           </select>
+          <button class="btn-mini danger" data-a="del" title="Supprimer définitivement">🗑</button>
         </div>
       </td>`;
     tr.querySelector('[data-a="view"]').addEventListener('click', () => viewOrder(o));
@@ -132,15 +178,63 @@ function renderOrders() {
         await DB.updateOrderStatus(o.id, e.target.value);
         await refreshAll();
       }));
+    tr.querySelector('[data-a="del"]').addEventListener('click', () => deleteOrder(o));
     body.appendChild(tr);
   });
   if (!body.children.length) body.innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:26px">Aucune commande</td></tr>';
 }
 
+async function deleteOrder(o) {
+  if (!confirm(`Supprimer définitivement la commande #${o.id} (${o.customer_name}) ?\nCette action est irréversible.`)) return;
+  await run(async () => {
+    await DB.deleteOrder(o.id);
+    await refreshAll();
+  }, 'Commande supprimée');
+}
+
+/* Export the current view (filter + search + sort) to an Excel-friendly CSV.
+   The UTF-8 BOM makes Excel read the Arabic names correctly. */
+function exportOrdersCsv() {
+  const rows = filteredOrders();
+  if (!rows.length) { alert('Aucune commande à exporter'); return; }
+  const csvEsc = v => {
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const header = ['ID', 'Date', 'Client', 'Téléphone', 'Zone', 'Adresse',
+    'Articles', 'Sous-total (DA)', 'Remise (DA)', 'Livraison (DA)', 'Total (DA)', 'Statut'];
+  const lines = [header.join(',')];
+  rows.forEach(o => {
+    const items = (o.items || []).map(i =>
+      `${i.name_fr || i.name_en || i.name_ar || ''}${i.size ? ' [' + i.size + ']' : ''} ×${Number(i.qty) || 1}`
+    ).join('; ');
+    const status = (STATUSES.find(s => s[0] === o.status) || [])[1] || o.status;
+    lines.push([
+      o.id,
+      new Date(o.created_at || Date.now()).toLocaleDateString('fr-FR'),
+      o.customer_name, o.phone, o.zone, o.address, items,
+      o.subtotal, o.discount || 0, o.delivery_fee || 0, o.total, status,
+    ].map(csvEsc).join(','));
+  });
+  const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `commandes-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
 function viewOrder(o) {
   const itemsHtml = (o.items || []).map(i => {
     const qty = Number(i.qty) || 0;
-    return `<li>${esc(I18N.localize(i, 'name'))} — ${esc(i.size)} × ${qty} = ${I18N.fmtPrice(i.price * qty)}</li>`;
+    const img = i.photo
+      ? `<img src="${esc(i.photo)}" alt="" loading="lazy">`
+      : '<img alt="" hidden>';
+    return `<li class="order-item">${img}<div class="order-item-info"><b>${esc(I18N.localize(i, 'name'))}</b>` +
+      `<span>${esc(i.size || '')}${i.size ? ' · ' : ''}× ${qty}</span></div>` +
+      `<span class="order-item-price">${I18N.fmtPrice(i.price * qty)}</span></li>`;
   }).join('');
   openEditor(`
     <h3 style="margin-bottom:14px">Commande #${o.id}</h3>
@@ -185,7 +279,8 @@ function renderProducts() {
     tr.querySelector('[data-a="edit"]').addEventListener('click', () => editProduct(p));
     tr.querySelector('[data-a="del"]').addEventListener('click', () => {
       if (!confirm(`Supprimer « ${p.name_fr} » ?`)) return;
-      run(async () => { await DB.deleteProduct(p.id); await refreshAll(); });
+      // pass the photos so their files leave Storage with the row
+      run(async () => { await DB.deleteProduct(p.id, p.photos); await refreshAll(); });
     });
     body.appendChild(tr);
   });
@@ -294,7 +389,7 @@ function renderCats() {
     tr.querySelector('[data-a="edit"]').addEventListener('click', () => editCategory(c));
     tr.querySelector('[data-a="del"]').addEventListener('click', () => {
       if (!confirm(`Supprimer « ${c.name_fr} » ?`)) return;
-      run(async () => { await DB.deleteCategory(c.id); await refreshAll(); });
+      run(async () => { await DB.deleteCategory(c.id, c.image); await refreshAll(); });
     });
     body.appendChild(tr);
   });
@@ -396,6 +491,9 @@ function renderShop() {
   document.getElementById('s_name').value = st.name || '';
   document.getElementById('s_phone').value = st.phone || '';
   document.getElementById('s_email').value = st.email || '';
+  document.getElementById('s_facebook').value = st.facebook || '';
+  document.getElementById('s_instagram').value = st.instagram || '';
+  document.getElementById('s_tiktok').value = st.tiktok || '';
 }
 
 async function saveShop() {
@@ -403,12 +501,67 @@ async function saveShop() {
     name: document.getElementById('s_name').value.trim(),
     phone: document.getElementById('s_phone').value.trim(),
     email: document.getElementById('s_email').value.trim(),
+    // social links are optional; they appear as icon links in the site footer
+    facebook: document.getElementById('s_facebook').value.trim(),
+    instagram: document.getElementById('s_instagram').value.trim(),
+    tiktok: document.getElementById('s_tiktok').value.trim(),
+    // the template choice from the Apparence tab must survive a save here
+    layout: A.store?.layout || null,
   };
   if (!store.name) { alert('Le nom de la boutique est requis'); return; }
   await run(async () => {
     await DB.saveStore(store);
     A.store = store;
   }, 'Informations enregistrées ✓');
+}
+
+/* ================= APPEARANCE =================
+   The dashboard picks one of the three templates; the choice travels with
+   the shop settings and the storefront applies it at runtime (layouts.js).
+   The Aperçu link forces ?layout=<key> without saving — safe to try freely. */
+function renderLayouts() {
+  const grid = document.getElementById('layoutGrid');
+  if (!grid) return;
+  // a card picked on this screen wins over the saved value; otherwise the
+  // picker reflects what is actually saved
+  if (!layoutDirty) {
+    const current = A.store?.layout || '';
+    chosenLayout = LAYOUT_CHOICES.some(l => l.key === current) ? current : '';
+  }
+  grid.innerHTML = '';
+  const minis = {
+    tech: '<i class="m-grid"></i><i class="m-chip"></i>',
+    sharp: '<i class="m-top"></i><i class="m-tile a"></i><i class="m-tile b"></i><i class="m-tile c"></i><i class="m-dot"></i>',
+  };
+  LAYOUT_CHOICES.forEach(l => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'layout-card' + (l.key === chosenLayout ? ' selected' : '');
+    card.setAttribute('aria-pressed', String(l.key === chosenLayout));
+    card.innerHTML = `
+      <span class="mini ${l.mini}">${minis[l.mini]}</span>
+      <b>${esc(l.label)}</b>
+      <small>${esc(l.desc)}</small>`;
+    card.addEventListener('click', () => { chosenLayout = l.key; layoutDirty = true; renderLayouts(); });
+    grid.appendChild(card);
+  });
+  document.getElementById('previewLayoutLink').href = chosenLayout
+    ? `index.html?layout=${chosenLayout}` : 'index.html';
+}
+
+async function saveLayout(skipConfirm) {
+  if (!chosenLayout && !skipConfirm) {
+    if (!confirm('Aucun thème sélectionné — la boutique gardera son apparence actuelle. Continuer ?')) return;
+  }
+  await run(async () => {
+    const store = { ...(A.store || {}), layout: chosenLayout || null };
+    await DB.saveStore(store);
+    A.store = store;
+    layoutDirty = false;
+    renderLayouts();
+  }, chosenLayout
+    ? 'Thème enregistré ✓ — la boutique l’affiche maintenant'
+    : 'Apparence d’origine restaurée ✓');
 }
 
 /* ================= PROMOTIONS (v1.1) ================= */

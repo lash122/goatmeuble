@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <title>Admin — Élégance</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link rel="preconnect" href="https://ssnplihsehgjiydlfimo.supabase.co" crossorigin>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/style.css?v=25">
+  <link rel="stylesheet" href="css/admin.css?v=11">
 </head>
 <body class="admin-body">
 
@@ -50,6 +53,7 @@
       <button data-tab="zones">Zones de livraison</button>
       <button data-tab="promotions">Promotions</button>
       <button data-tab="shop">Boutique</button>
+      <button data-tab="appearance">Apparence</button>
       <button data-tab="stats">Statistiques</button>
     </div>
 
@@ -67,6 +71,17 @@
             <option value="cancelled">Annulées</option>
           </select>
         </div>
+        <div class="order-toolbar">
+          <input id="orderSearch" placeholder="Rechercher : nom, téléphone, n° de commande…">
+          <select id="orderSort" class="btn-mini" style="padding:9px 12px">
+            <option value="date_desc">Plus récentes</option>
+            <option value="date_asc">Plus anciennes</option>
+            <option value="total_desc">Total décroissant</option>
+            <option value="total_asc">Total croissant</option>
+          </select>
+          <button class="btn-mini" id="orderExportBtn" title="Excel / CSV">⬇ Télécharger CSV</button>
+        </div>
+        <p class="order-count" id="orderCount"></p>
         <div class="tbl-wrap"><table class="tbl"><thead>
           <tr><th>#</th><th>Client</th><th>Zone</th><th>Total</th><th>Articles</th><th>Statut</th><th></th></tr>
         </thead><tbody id="ordersBody"></tbody></table></div>
@@ -175,9 +190,50 @@
               <label>Email (optionnel)</label>
               <input id="s_email" type="email" placeholder="contact@example.com">
             </div>
+            <div>
+              <label>Facebook (optionnel)</label>
+              <input id="s_facebook" type="url" placeholder="https://facebook.com/votre-page">
+            </div>
+            <div>
+              <label>Instagram (optionnel)</label>
+              <input id="s_instagram" type="url" placeholder="https://instagram.com/votre-compte">
+            </div>
+            <div>
+              <label>TikTok (optionnel)</label>
+              <input id="s_tiktok" type="url" placeholder="https://tiktok.com/@votre-compte">
+              <small style="color:var(--muted);display:block;margin-top:6px">
+                Affichés en bas du site sous vos coordonnées, avec des icônes.
+              </small>
+            </div>
             <button class="a-btn gold" id="saveShopBtn">💾 Enregistrer</button>
           </div>
         </div>
+      </div>
+
+      <!-- APPEARANCE: the dashboard controls which of the three templates
+           the storefront renders. Nothing is baked at build time — the
+           choice is saved with the shop settings and applied at runtime. -->
+      <div class="tab-panel" id="tab-appearance">
+        <div class="panel-h"><h2>Apparence de la boutique</h2></div>
+        <p style="color:var(--muted);max-width:680px;margin-bottom:20px">
+          Choisissez le thème du site. Le changement s'applique immédiatement
+          à toutes les pages (accueil, panier, suivi) sans redéploiement.
+          Si aucun thème n'est choisi, la boutique garde son apparence actuelle.
+        </p>
+        <div class="layout-grid" id="layoutGrid"></div>
+        <div style="margin-top:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <button class="a-btn gold" id="saveLayoutBtn">💾 Enregistrer le thème</button>
+          <a class="btn-outline" id="previewLayoutLink" href="index.html" target="_blank" rel="noopener">
+            Aperçu dans un nouvel onglet
+          </a>
+          <button class="a-btn ghost" id="resetLayoutBtn" title="Retirer le thème enregistré — la boutique reprend son apparence d’origine">
+            ↩ Apparence d’origine
+          </button>
+        </div>
+        <small style="color:var(--muted);display:block;margin-top:14px">
+          Astuce : le lien « Aperçu » force le thème sélectionné sans l'enregistrer.
+          Le thème enregistré s'applique aussi au site publié, pas seulement à l'aperçu.
+        </small>
       </div>
 
       <!-- STATS -->
@@ -214,10 +270,10 @@
   <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
-    crossorigin="anonymous"></script>
-  <script src="js/config.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/admin.js"></script>
+    crossorigin="anonymous" defer></script>
+  <script src="js/config.js?v=30" defer></script>
+  <script src="js/i18n.js?v=32" defer></script>
+  <script src="js/supabase.js?v=29" defer></script>
+  <script src="js/admin.js?v=34" defer></script>
 </body>
 </html>

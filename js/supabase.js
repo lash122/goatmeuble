@@ -5,7 +5,7 @@ const DB = (() => {
 
   // ---------------- demo data ----------------
   const demo = {
-    store: { name: 'Élégance', phone: '+213 555 000 000', email: '' },
+    store: { name: 'Élégance', phone: '+213 555 000 000', email: '', facebook: '', instagram: '', tiktok: '' },
     zones: [
       { name: 'Alger', fee: 600 }, { name: 'Oran', fee: 800 },
       { name: 'Constantine', fee: 800 }, { name: 'Blida', fee: 600 },
@@ -55,6 +55,40 @@ const DB = (() => {
   const demoPromoDefault = { active: false, percent: 0, label_fr: '', label_ar: '', label_en: '' };
   let demoCodes = [{ id: 1, code: 'BIENVENUE10', percent: 10, min_order: 0, active: true }];
 
+  /* Phone cameras produce 4-12 MP files; serving one raw is the heaviest
+     thing on the storefront (a 4 MB JPEG for a 300px thumbnail costs real
+     money and time on the 3G/4G networks this shop's customers use). Every
+     upload is re-encoded before it reaches Storage: downscaled to a sane
+     maximum dimension and compressed as JPEG on a white backdrop (so a
+     transparent PNG doesn't come back with a black background). Products
+     keep enough pixels for the desktop modal; category tiles only ever
+     render small, so they get a tighter cap. */
+  function compressImage(file, maxDim) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+          const w = Math.max(1, Math.round(img.naturalWidth * scale));
+          const h = Math.max(1, Math.round(img.naturalHeight * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(b => {
+            URL.revokeObjectURL(url);
+            b ? resolve(b) : reject(new Error('Image compression failed'));
+          }, 'image/jpeg', 0.82);
+        } catch (err) { URL.revokeObjectURL(url); reject(err); }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read the image')); };
+      img.src = url;
+    });
+  }
+
   // placeholers use a data-URI gradient so demo products are not blank
   function placeholderPhoto(seed) {
     const c1 = 25 + (seed % 5) * 8, c2 = 40 + (seed % 7) * 9;
@@ -73,6 +107,59 @@ const DB = (() => {
     return data;
   }
 
+  /* ---- Storage cleanup ----------------------------------------------------
+     Deleting a product removes the row, but the JPEGs it pointed at live in a
+     Storage bucket that knows nothing about it — left alone they accumulate
+     forever on a free-tier quota, invisible from the admin panel.
+
+     A stored photo is a public URL; the bucket needs the object name back out
+     of it. Anything that is not one of our own Storage URLs (a placeholder
+     data: URI, a blob: preview, a photo pasted from elsewhere) has no object
+     to remove and is skipped. */
+  function storageNameOf(url, bucket) {
+    const marker = `/storage/v1/object/public/${bucket}/`;
+    const s = String(url || '');
+    const i = s.indexOf(marker);
+    if (i < 0) return null;
+    return decodeURIComponent(s.slice(i + marker.length).split('?')[0]);
+  }
+
+  /* Best effort, and always after the row is gone: the delete the owner asked
+     for has already succeeded, so a bucket that refuses is a warning in the
+     console, not a failed delete they would retry. */
+  async function removeStored(bucket, urls) {
+    const names = (Array.isArray(urls) ? urls : [urls])
+      .map(u => storageNameOf(u, bucket)).filter(Boolean);
+    if (!names.length) return;
+    const { error } = await sb.storage.from(bucket).remove(names);
+    if (error) console.warn(`Could not remove ${bucket} photos:`, error.message);
+  }
+
+  /* ---- catalogue cache (storefront only) ----------------------------------
+     A short-TTL copy of the public catalogue in localStorage. A returning
+     visitor gets the shopfront instantly, and the live fetch refreshes the
+     copy in the background; if Supabase is unreachable (or a free-tier
+     project has paused) the stale copy still renders, labelled as such.
+     The checkout — which must show exactly what place_order() will charge —
+     and the owner's admin panel call setCacheEnabled(false) and always read
+     live data. */
+  const CACHE_KEY = 'shop_catalogue_v1';
+  const CACHE_TTL = 10 * 60 * 1000;   // 10 minutes
+  let cacheEnabled = true;
+
+  function cacheRead() {
+    try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch { return null; }
+  }
+  function cacheSave(entry) {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(entry)); } catch { /* full or blocked */ }
+  }
+  function cacheMerge(patch) {
+    const entry = cacheRead() || {};
+    entry.ts = Date.now();
+    Object.assign(entry, patch);
+    cacheSave(entry);
+  }
+
   // ---------------- public API (same shape in both modes) ----------------
   return {
     isDemo: IS_DEMO,
@@ -83,13 +170,17 @@ const DB = (() => {
     async getStore() {
       if (IS_DEMO) return demo.store;
       const data = must(await sb.from('settings').select('value').eq('key', 'store').maybeSingle());
-      return data?.value || demo.store;
+      const value = data?.value || demo.store;
+      if (cacheEnabled) cacheMerge({ store: value });
+      return value;
     },
 
     async getZones() {
       if (IS_DEMO) return demo.zones;
       const data = must(await sb.from('settings').select('value').eq('key', 'zones').maybeSingle());
-      return data?.value || demo.zones;
+      const value = data?.value || demo.zones;
+      if (cacheEnabled) cacheMerge({ zones: value });
+      return value;
     },
 
     async saveZones(zones) {
@@ -106,7 +197,9 @@ const DB = (() => {
     async getPromo() {
       if (IS_DEMO) return demoLoadJSON('demo_promo', demoPromoDefault);
       const data = must(await sb.from('settings').select('value').eq('key', 'promo').maybeSingle());
-      return data?.value || demoPromoDefault;
+      const value = data?.value || demoPromoDefault;
+      if (cacheEnabled) cacheMerge({ promo: value });
+      return value;
     },
 
     async savePromo(promo) {
@@ -118,7 +211,9 @@ const DB = (() => {
       if (IS_DEMO) return demoLoadJSON('demo_free_from', null);
       const data = must(await sb.from('settings').select('value').eq('key', 'free_delivery_from').maybeSingle());
       const v = data?.value;
-      return typeof v === 'number' ? v : null;
+      const value = typeof v === 'number' ? v : null;
+      if (cacheEnabled) cacheMerge({ freeFrom: value });
+      return value;
     },
 
     async saveFreeDeliveryFrom(n) {
@@ -159,7 +254,9 @@ const DB = (() => {
 
     async getCategories() {
       if (IS_DEMO) return demo.categories;
-      return must(await sb.from('categories').select('*').order('sort')) || [];
+      const data = must(await sb.from('categories').select('*').order('sort')) || [];
+      if (cacheEnabled) cacheMerge({ categories: data });
+      return data;
     },
 
     async saveCategory(cat) {
@@ -171,16 +268,22 @@ const DB = (() => {
       must(await sb.from('categories').upsert(cat));
     },
 
-    async deleteCategory(id) {
+    // `image` is the category's showcase tile, passed by the admin panel so the
+    // file can go with the row instead of lingering in the bucket
+    async deleteCategory(id, image = '') {
       if (IS_DEMO) { demo.categories = demo.categories.filter(c => c.id !== id); return; }
       must(await sb.from('categories').delete().eq('id', id));
+      await removeStored('categories', image);
     },
 
     async getProducts(activeOnly = true) {
       if (IS_DEMO) return activeOnly ? demo.products.filter(p => p.active) : demo.products;
       let q = sb.from('products').select('*').order('created_at', { ascending: false });
       if (activeOnly) q = q.eq('active', true);
-      return must(await q) || [];
+      const data = must(await q) || [];
+      // only the storefront shape (active products) is cached
+      if (cacheEnabled && activeOnly) cacheMerge({ products: data });
+      return data;
     },
 
     async saveProduct(p) {
@@ -192,9 +295,12 @@ const DB = (() => {
       must(await sb.from('products').upsert(p));
     },
 
-    async deleteProduct(id) {
+    // `photos` is the product's photo array, passed by the admin panel so the
+    // uploaded files go with the row instead of lingering in the bucket
+    async deleteProduct(id, photos = []) {
       if (IS_DEMO) { demo.products = demo.products.filter(p => p.id !== id); return; }
       must(await sb.from('products').delete().eq('id', id));
+      await removeStored('products', photos);
     },
 
     /* Sends only what the customer actually chooses — who they are, where they
@@ -231,7 +337,8 @@ const DB = (() => {
           appliedCode = c.code;
         }
         let fee = Number(demo.zones.find(z => z.name === zone)?.fee) || 0;
-        if (freeFrom > 0 && subtotal >= freeFrom) fee = 0;
+        // threshold measured after the promo code, exactly as place_order() does
+        if (freeFrom > 0 && (subtotal - discount) >= freeFrom) fee = 0;
         const orders = demoLoadOrders();
         const order = {
           id: (orders.at(-1)?.id || 1000) + 1, created_at: new Date().toISOString(),
@@ -293,6 +400,28 @@ const DB = (() => {
       must(await sb.from('orders').update({ status }).eq('id', id));
     },
 
+    // the owner can clean up old/test orders from the admin panel
+    async deleteOrder(id) {
+      if (IS_DEMO) {
+        demoSaveOrders(demoLoadOrders().filter(o => String(o.id) !== String(id)));
+        return;
+      }
+      must(await sb.from('orders').delete().eq('id', id));
+    },
+
+    /* Storefront first paint: the whole cached entry, synchronously, when it
+       is fresh enough to trust. The live fetch still runs and replaces it. */
+    getCachedCatalogue() {
+      if (!cacheEnabled) return null;
+      const entry = cacheRead();
+      if (!entry || !entry.products || !entry.categories) return null;
+      if (Date.now() - entry.ts > CACHE_TTL) return null;
+      return entry;
+    },
+
+    /* Live-only mode for the checkout and the admin panel. */
+    setCacheEnabled(on) { cacheEnabled = !!on; },
+
     // ---- auth (admin only; no-ops in demo, always "logged in") ----
     async getSession() {
       if (IS_DEMO) return true;
@@ -307,17 +436,23 @@ const DB = (() => {
 
     // ---- storage (product photos, category tiles) ----
     async uploadPhoto(file) {
-      const name = `${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}`;
-      if (IS_DEMO) return URL.createObjectURL(file);
-      must(await sb.storage.from('products').upload(name, file));
+      const name = `${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}.jpg`;
+      const blob = await compressImage(file, 1200);
+      if (IS_DEMO) return URL.createObjectURL(blob);
+      // a File, not a bare Blob, so Supabase stores the right content-type
+      const upload = new File([blob], name, { type: 'image/jpeg' });
+      must(await sb.storage.from('products').upload(name, upload));
       return sb.storage.from('products').getPublicUrl(name).data.publicUrl;
     },
 
     async uploadCategoryPhoto(file) {
-      const name = `${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}`;
-      if (IS_DEMO) return URL.createObjectURL(file);
-      must(await sb.storage.from('categories').upload(name, file));
+      const name = `${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}.jpg`;
+      const blob = await compressImage(file, 800);
+      if (IS_DEMO) return URL.createObjectURL(blob);
+      const upload = new File([blob], name, { type: 'image/jpeg' });
+      must(await sb.storage.from('categories').upload(name, upload));
       return sb.storage.from('categories').getPublicUrl(name).data.publicUrl;
     },
+
   };
 })();

@@ -4,6 +4,7 @@
 
 const TRACK_STEPS = ['new', 'confirmed', 'shipped', 'delivered'];
 let lastResult = null;
+let shopPhone = null;   // the shop's WhatsApp number, for the confirmation button
 
 async function initTrack() {
   document.getElementById('year').textContent = new Date().getFullYear();
@@ -18,7 +19,13 @@ async function initTrack() {
   document.getElementById('tPhone').addEventListener('keydown', e => { if (e.key === 'Enter') lookup(); });
   document.getElementById('tId').addEventListener('keydown', e => { if (e.key === 'Enter') lookup(); });
 
-  try { renderWhatsApp(await DB.getStore()); } catch { /* button simply stays hidden */ }
+  try {
+    const st = await DB.getStore();
+    shopPhone = st?.phone || null;
+    renderWhatsApp(st);
+    // the dashboard-saved template themes the tracking page too
+    applyLayout(st?.layout);
+  } catch { /* button simply stays hidden */ }
 
   // deep link from the order-confirmed screen: track.html?id=42
   const id = new URLSearchParams(location.search).get('id');
@@ -73,8 +80,24 @@ function renderResult(o) {
   (o.items || []).forEach(i => {
     const qty = Number(i.qty) || 0;
     const li = document.createElement('li');
-    li.textContent = `${I18N.localize(i, 'name')}${i.size ? ' — ' + i.size : ''} × ${qty}`
-      + ` = ${I18N.fmtPrice(i.price * qty)}`;
+    li.className = 'order-item';
+    const img = document.createElement('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    if (i.photo) img.src = i.photo;
+    li.appendChild(img);
+    const info = document.createElement('div');
+    info.className = 'order-item-info';
+    const name = document.createElement('b');
+    name.textContent = I18N.localize(i, 'name');
+    const meta = document.createElement('span');
+    meta.textContent = [i.size, `× ${qty}`].filter(Boolean).join(' · ');
+    info.append(name, meta);
+    li.appendChild(info);
+    const price = document.createElement('span');
+    price.className = 'order-item-price';
+    price.textContent = I18N.fmtPrice(i.price * qty);
+    li.appendChild(price);
     items.appendChild(li);
   });
   box.appendChild(items);
@@ -93,6 +116,21 @@ function renderResult(o) {
   cod.style.marginTop = '12px';
   cod.textContent = '💵 ' + I18N.t('cod_only');
   box.appendChild(cod);
+
+  // the WhatsApp confirmation lives HERE, after the order is real — the
+  // customer looks the order up post-conversation and sends the shop a
+  // prefilled message with the summary and this page's tracking link
+  const href = waLink(shopPhone, waOrderMessage(o));
+  if (href) {
+    const wa = document.createElement('a');
+    wa.className = 'wa-confirm';
+    wa.href = href;
+    wa.target = '_blank';
+    wa.rel = 'noopener noreferrer';
+    wa.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.86 9.86 0 0 0 4.74 1.2c5.46 0 9.9-4.44 9.9-9.9S17.5 2 12.04 2m0 18.05c-1.5 0-2.97-.4-4.25-1.16l-.3-.18-3.15.82.84-3.07-.2-.32a8.16 8.16 0 0 1-1.25-4.35c0-4.5 3.66-8.16 8.16-8.16s8.16 3.66 8.16 8.16-3.66 8.16-8.16 8.16"/></svg>';
+    wa.appendChild(document.createTextNode(I18N.t('wa_cta')));
+    box.appendChild(wa);
+  }
 }
 
 /* new → confirmed → shipped → delivered, with everything up to the current

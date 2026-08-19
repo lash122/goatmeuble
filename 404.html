@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page introuvable — Élégance</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css?v=25">
+  <!-- Deliberately no Supabase, no config, no app JS: the one job of this page
+       is to load when something else did not. A trilingual static message
+       costs nothing and cannot itself fail. -->
+</head>
+<body>
+  <div class="topbar">Livraison à domicile — Paiement à la livraison فقط | Cash on delivery</div>
+
+  <header class="site">
+    <div class="container site-inner">
+      <a class="brand" href="/">
+        <span class="logo">É<em>l</em>égance</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="container" style="text-align:center;padding:90px 20px 110px">
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(64px,14vw,120px);line-height:1;color:var(--gold)">404</div>
+
+    <p style="font-size:20px;margin:18px 0 6px">Cette page n'existe pas.</p>
+    <p style="color:var(--muted);margin:0 0 4px" dir="rtl" lang="ar">هذه الصفحة غير موجودة.</p>
+    <p style="color:var(--muted);margin:0 0 34px" lang="en">This page does not exist.</p>
+
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a class="btn-gold" href="/">Retour à la boutique</a>
+      <a class="btn-outline" href="/track.html">Suivre ma commande</a>
+    </div>
+  </main>
+
+  <footer class="site">
+    <div class="container">
+      <div class="fine"><span id="year"></span> — Élégance</div>
+    </div>
+  </footer>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

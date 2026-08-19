@@ -5,14 +5,20 @@ let promo = { active: false, percent: 0 };
 let freeFrom = null;
 let appliedCode = null;   // { code, percent } once validated, or null
 let currentBaseSubtotal = 0;   // shelf-price subtotal before any discount
+let cartNotes = [];   // user-facing notices from revalidateCartPrices()
 
 async function initCheckout() {
+  // checkout must show exactly what place_order() will charge, and the cart
+  // revalidation needs live prices — never serve cached data here
+  DB.setCacheEnabled(false);
   document.getElementById('year').textContent = new Date().getFullYear();
   try {
     [zones, store, promo, freeFrom] = await Promise.all([
       DB.getZones(), DB.getStore(), DB.getPromo(), DB.getFreeDeliveryFrom(),
     ]);
     renderWhatsApp(store);
+    // the dashboard-saved template themes the checkout header/footer too
+    applyLayout(store?.layout);
   } catch (e) {
     console.error('Could not load shop settings:', e);
     document.getElementById('cartView').innerHTML =
@@ -22,7 +28,11 @@ async function initCheckout() {
 
   document.querySelectorAll('.lang-switch button').forEach(b =>
     b.addEventListener('click', () => { I18N.setLang(b.dataset.lang); }));
-  document.addEventListener('langchange', () => { render(); renderFaq(); renderWhatsApp(store); });
+  document.addEventListener('langchange', () => { render(); renderFaq(); renderCartNotice(); renderWhatsApp(store); });
+
+  /* the preview must show what the driver will actually collect */
+  await revalidateCartPrices();
+  renderCartNotice();
 
   // promo code: applied on click; a re-render keeps it if still valid
   document.getElementById('promoBtn').addEventListener('click', applyPromoCode);
@@ -32,6 +42,53 @@ async function initCheckout() {
 
   renderFaq();
   render();
+}
+
+/* The cart stores the shelf price from the moment the item was added; the
+   preview shows that number, but place_order() charges the *current* database
+   price. A price the owner changed (or a product they hid, or a size they
+   dropped) while the basket sat in localStorage would otherwise make the
+   preview disagree with what the delivery driver collects. Rebuild the basket
+   from the live catalogue before the customer reads any number, and tell them
+   when something had to change. */
+async function revalidateCartPrices() {
+  cartNotes = [];
+  let live;
+  try { live = await DB.getProducts(); } catch { return; }   // keep stored prices
+  const byId = new Map(live.map(p => [String(p.id), p]));
+  const items = Cart.get();
+  let changed = false, removed = false;
+  const kept = [];
+
+  for (const it of items) {
+    const p = byId.get(String(it.product_id));
+    const gone = !p || !p.active ||
+      (p.sizes && p.sizes.length && !p.sizes.includes(it.size));
+    if (gone) { removed = true; continue; }
+    if (Number(p.price) !== Number(it.price) ||
+        it.name_fr !== p.name_fr || it.photo !== DB.photoOf(p)) {
+      it.price = Number(p.price);
+      it.name_fr = p.name_fr; it.name_ar = p.name_ar; it.name_en = p.name_en;
+      it.photo = DB.photoOf(p);
+      changed = true;
+    }
+    kept.push(it);
+  }
+
+  if (changed || removed) {
+    Cart.save(kept);
+    // keys, not strings: renderCartNotice() re-translates on language change
+    if (changed) cartNotes.push('cart_updated');
+    if (removed) cartNotes.push('cart_removed');
+  }
+}
+
+function renderCartNotice() {
+  const el = document.getElementById('cartNotice');
+  if (!el) return;
+  if (!cartNotes.length) { el.hidden = true; el.textContent = ''; return; }
+  el.textContent = cartNotes.map(k => I18N.t(k)).join(' ');
+  el.hidden = false;
 }
 
 /* The cart stores shelf prices; the global sale lowers them at display time.
@@ -267,7 +324,9 @@ async function placeOrder() {
 }
 
 /* Cash on delivery asks the customer to trust a stranger with their address,
-   so give them a way to reach the shop the moment the order lands. */
+   so give them a way to reach the shop — a plain contact line, not the order
+   confirmation: that belongs on the tracking page, after the shop has
+   confirmed the order by phone. */
 function renderSuccessContact() {
   const box = document.getElementById('successContact');
   const phone = store?.phone;

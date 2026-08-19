@@ -1,5 +1,6 @@
 # agent planning notes, not part of the site
 .zcode/
+.freebuff/
 
 # OS / editor junk
 .DS_Store
@@ -8,9 +9,14 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+__pycache__/
 
-# build output for the web host, regenerate with the copy step in README
+# build output for the web host, regenerate with `python3 build-<name>.py`
 dist/
 dist-techdz/
-elegance-deploy.zip
 dist-rugs/
+dist-femme/
+dist-gallery/
+dist-app/
+dist-vip/
+elegance-deploy.zip
