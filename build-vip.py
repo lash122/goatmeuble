@@ -24,8 +24,8 @@ from shopdata import fetch_products, fmt_price, read_config
 ROOT = Path(__file__).parent
 OUT = ROOT / "dist-vip"
 
-BRAND = "Société de vente privée"
-LOGO_SRC = ROOT / "assets" / "logo-svp.jpg"
+BRAND = "Sydneat"
+LOGO_SRC = ROOT / "assets" / "logo-sydneat.png"
 # product.html is a TEMPLATE, not a page: it is branded like the rest, then
 # consumed by write_product_pages() and deleted from the output.
 PAGES = ["index.html", "checkout.html", "admin.html", "track.html", "404.html",
@@ -36,8 +36,9 @@ ASSETS = ["css", "js", "og-image.png"]
 FONTS = ("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700"
          "&family=Cairo:wght@400;600;700&display=swap")
 
-# The VP logo is a photo, not a vector — keep it as JPEG in the deploy.
-LOGO_OUT = "/logo.jpg"
+# A flat monogram, so PNG rather than JPEG — no photo artefacts on the
+# walnut background at favicon sizes.
+LOGO_OUT = "/logo.png"
 
 # Dark slate, matching the theme's top bar — used for the phone's browser
 # chrome and as the splash background when the shop is installed.
@@ -110,7 +111,7 @@ def rebrand_pages():
         s = s.replace('<span class="logo">É<em>l</em>égance</span>',
                       f'<span class="brand-lockup">'
                       f'<img class="logo-img" src="{LOGO_OUT}" alt="{BRAND}">'
-                      f'<span class="brand-name">SOCIÉTÉ<br><em>DE VENTE PRIVÉE</em></span>'
+                      f'<span class="brand-name">SYD<em>NEAT</em></span>'
                       f'</span>')
         # admin top bar
         s = s.replace('<span class="brand-w">É<span>l</span>égance · Admin</span>',
@@ -127,16 +128,16 @@ def rebrand_pages():
                       f'</span>')
 
         # titles, meta, footer line and the shop description (tech copy)
-        s = s.replace("Élégance — Boutique de costumes", f"{BRAND} — Informatique & high-tech")
+        s = s.replace("Élégance — Boutique de costumes", f"{BRAND} — Meubles & décoration")
         s = s.replace("Élégance", BRAND)
         s = s.replace(
             "Costumes et vêtements formels pour hommes. Livraison à domicile, paiement à la livraison.",
-            "Smartphones, ordinateurs et accessoires. Livraison partout en Algérie, "
-            "paiement à la livraison.")
+            "Meubles de salon, chambre et bureau. Livraison et montage partout en "
+            "Algérie, paiement à la livraison.")
         s = s.replace(
             "Livraison à domicile partout en Algérie. Paiement à la livraison.",
-            "High-tech livré partout en Algérie. Paiement à la livraison.")
-        s = s.replace(f"{BRAND} — Boutique en ligne", f"{BRAND} — Informatique & high-tech")
+            "Meubles livrés et montés partout en Algérie. Paiement à la livraison.")
+        s = s.replace(f"{BRAND} — Boutique en ligne", f"{BRAND} — Meubles & décoration")
 
         # favicon: the tech SVG is replaced by the logo-derived PNG
         s = re.sub(r'href="/?favicon\.svg" type="image/svg\+xml"',
@@ -150,7 +151,7 @@ def rebrand_pages():
     base = OUT / "css" / "style.css"
     base.write_text(base.read_text(encoding="utf-8") + """
 
-/* ————— Société de vente privée : logo image + store name ————— */
+/* ————— Sydneat : logo mark + wordmark ————— */
 /* !important is intentional: theme-*.css loads after style.css and
    overrides .brand layout — without it the natural-size photo bleeds
    through when switching templates. */
@@ -176,37 +177,38 @@ footer .brand-name { font-size: 1.05rem; }
 """, encoding="utf-8")
 
 
-# Same clothing-flavoured i18n swaps as TECH DZ — this is a copy of that shop.
+# The shopfront's own copy. The Atelier template overrides these at runtime
+# when it is the chosen layout; this is what shows when no layout is set.
 I18N_SWAPS = {
     "fr": {
-        "hero_title": "La tech au meilleur prix",
-        "hero_sub": "Smartphones, PC portables et accessoires — livrés chez vous, paiement à la livraison.",
-        "all_products": "Nos produits",
-        "select_size": "Choisir une option",
-        "size_required": "Choisissez d’abord une option",
-        "search_ph": "Rechercher un produit…",
-        "no_results": "Aucun produit ne correspond à votre recherche.",
-        "wa_prefill": "Bonjour, j’ai une question sur un produit.",
+        "hero_title": "Des meubles qui durent",
+        "hero_sub": "Salon, chambre, bureau — livrés et montés chez vous, paiement à la livraison.",
+        "all_products": "Notre mobilier",
+        "select_size": "Choisir une finition",
+        "size_required": "Choisissez d’abord une finition",
+        "search_ph": "Rechercher un meuble…",
+        "no_results": "Aucun meuble ne correspond à votre recherche.",
+        "wa_prefill": "Bonjour, j’ai une question sur un meuble.",
     },
     "ar": {
-        "hero_title": "أفضل الأسعار في عالم التقنية",
-        "hero_sub": "هواتف ذكية، حواسيب محمولة وملحقات — توصيل إلى باب منزلك مع الدفع عند الاستلام.",
-        "all_products": "منتجاتنا",
-        "select_size": "اختر الخيار",
-        "size_required": "اختر الخيار أولاً",
-        "search_ph": "ابحث عن منتج…",
-        "no_results": "لا يوجد منتج مطابق لبحثك.",
-        "wa_prefill": "مرحباً، لدي سؤال عن أحد المنتجات.",
+        "hero_title": "أثاث يدوم طويلاً",
+        "hero_sub": "صالون، غرفة نوم، مكتب — التوصيل والتركيب في منزلك مع الدفع عند الاستلام.",
+        "all_products": "أثاثنا",
+        "select_size": "اختر التشطيب",
+        "size_required": "اختر التشطيب أولاً",
+        "search_ph": "ابحث عن قطعة أثاث…",
+        "no_results": "لا توجد قطعة أثاث تطابق بحثك.",
+        "wa_prefill": "مرحباً، لدي سؤال عن قطعة أثاث.",
     },
     "en": {
-        "hero_title": "Tech at the right price",
-        "hero_sub": "Smartphones, laptops and accessories — delivered to your door, cash on delivery.",
-        "all_products": "Our products",
-        "select_size": "Choose an option",
-        "size_required": "Please choose an option first",
-        "search_ph": "Search products…",
-        "no_results": "No products match your search.",
-        "wa_prefill": "Hello, I have a question about a product.",
+        "hero_title": "Furniture built to last",
+        "hero_sub": "Living room, bedroom, office — delivered and assembled at home, cash on delivery.",
+        "all_products": "Our furniture",
+        "select_size": "Choose a finish",
+        "size_required": "Please choose a finish first",
+        "search_ph": "Search furniture…",
+        "no_results": "No furniture matches your search.",
+        "wa_prefill": "Hello, I have a question about a piece of furniture.",
     },
 }
 
@@ -505,10 +507,24 @@ def read_verification_tokens():
     return {name: value for name, value in found if value.strip()}
 
 
+def flatten(img, background):
+    """RGBA -> RGB over a solid colour.
+
+    A transparent PNG written straight to RGB turns its clear pixels black, so
+    the rounded corners of the mark would come back as black triangles on the
+    favicon and the home-screen icon.
+    """
+    from PIL import Image      # PIL is imported per-function in this file
+    img = img.convert("RGBA")
+    base = Image.new("RGB", img.size, background)
+    base.paste(img, (0, 0), img)
+    return base
+
+
 def write_favicon():
     """Derive a 64×64 favicon from the logo photo."""
     from PIL import Image
-    img = Image.open(LOGO_SRC).convert("RGB").resize((64, 64), Image.LANCZOS)
+    img = flatten(Image.open(LOGO_SRC), (247, 243, 236)).resize((64, 64), Image.LANCZOS)
     img.save(OUT / "favicon.png", optimize=True)
 
 
@@ -525,16 +541,16 @@ def write_pwa():
     import json
     from PIL import Image
 
-    logo = Image.open(LOGO_SRC).convert("RGB")
+    logo = flatten(Image.open(LOGO_SRC), (247, 243, 236))
     for size in (180, 192, 512):
         logo.resize((size, size), Image.LANCZOS).save(
             OUT / f"icon-{size}.png", optimize=True)
 
     (OUT / "manifest.json").write_text(json.dumps({
         "name": BRAND,
-        "short_name": "VP Tech",
-        "description": "Smartphones, ordinateurs et accessoires — "
-                       "livraison partout en Algérie, paiement à la livraison.",
+        "short_name": "Sydneat",
+        "description": "Meubles de salon, chambre et bureau — livraison et "
+                       "montage partout en Algérie, paiement à la livraison.",
         "start_url": "./",
         "scope": "./",
         "display": "standalone",
@@ -552,36 +568,53 @@ def write_pwa():
 
 
 def write_og_card():
-    """1200×630 share card: the VP logo plaque on a dark tech background."""
+    """1200×630 share card — the first impression of every shared link.
+
+    Warm linen with a walnut band, not the dark circuit-board card the tech
+    build used: a furniture shop that previews as an electronics store on
+    WhatsApp is a worse mismatch than no card at all. The monogram is pasted
+    on the band it was designed for, so its own background disappears instead
+    of showing as a white square.
+    """
     from PIL import Image, ImageDraw, ImageFont
     W, H = 1200, 630
-    BLUE, WHITE, MUTED = (37, 99, 235), (241, 245, 249), (148, 163, 184)
+    LINEN, WALNUT, TERRA = (247, 243, 236), (59, 47, 38), (169, 96, 63)
+    MUTED = (139, 125, 112)
 
-    img = Image.new("RGB", (W, H), (11, 18, 32))
+    img = Image.new("RGB", (W, H), LINEN)
     d = ImageDraw.Draw(img)
-    for i in range(H):                       # vertical slate gradient
-        t = i / H
-        d.line([(0, i), (W, i)], fill=(int(11 + t * 8), int(18 + t * 10), int(32 + t * 16)))
-    for x in range(0, W, 44):                # faint technical grid
-        d.line([(x, 0), (x, H)], fill=(24, 33, 54))
-    for y in range(0, H, 44):
-        d.line([(0, y), (W, y)], fill=(24, 33, 54))
 
-    # the logo plaque, centred, with a soft glow ring behind it
-    logo = Image.open(LOGO_SRC).convert("RGB")
-    logo.thumbnail((400, 400), Image.LANCZOS)
-    lw, lh = logo.size
-    img.paste(logo, ((W - lw) // 2, 78))
+    # a walnut band across the top third, the way the site wears its header
+    d.rectangle([0, 0, W, 232], fill=WALNUT)
+    d.rectangle([0, 232, W, 238], fill=TERRA)
 
     sans = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
     reg = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    f_sub, f_badge = ImageFont.truetype(reg, 34), ImageFont.truetype(reg, 27)
+    serif = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
+
+    # A missing system font must not fail the build — the share card is worth
+    # less than the deploy it would block.
+    def truetype(path, size):
+        try:
+            return ImageFont.truetype(path, size)
+        except OSError:
+            print("   ! font missing, share card falls back to the default face")
+            return ImageFont.load_default()
+
+    # the monogram, sitting on the walnut band so its own walnut ground merges
+    logo = Image.open(LOGO_SRC).convert("RGBA")
+    logo.thumbnail((236, 236), Image.LANCZOS)
+    lw, lh = logo.size
+    img.paste(logo, ((W - lw) // 2, 232 - lh // 2 + 3), logo)   # alpha as mask
 
     def centre(text, font, y, fill):
-        d.text(((W - d.textbbox((0, 0), text, font=font)[2]) // 2, y), text, font=font, fill=fill)
+        box = d.textbbox((0, 0), text, font=font)
+        d.text(((W - (box[2] - box[0])) // 2 - box[0], y), text, font=font, fill=fill)
 
-    centre("Société de vente privée", ImageFont.truetype(sans, 46), 520, WHITE)
-    centre("Smartphones · PC portables · Accessoires", f_sub, 575, MUTED)
+    centre(BRAND, truetype(serif, 76), 396, WALNUT)
+    centre("Meubles · Salon · Chambre · Bureau", truetype(reg, 34), 494, MUTED)
+    centre("Livraison et montage — paiement à la livraison",
+           truetype(reg, 27), 548, TERRA)
 
     img.save(OUT / "og-image.png", optimize=True)
 
