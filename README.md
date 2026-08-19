@@ -215,10 +215,19 @@ too, or the browser will refuse to load it.
   button, WhatsApp and ads point at.
 
   `build-vip.py` writes a real `p/<id>/index.html` for each product, with that
-  product's title, description, photo, canonical and JSON-LD **in the HTML**.
-  Visitors see no difference: the body is the same shop page, and
-  `readProductId()` in `js/store.js` takes the id out of the path and opens
-  that product, exactly as it always did.
+  product's title, description, photo, canonical and JSON-LD **in the HTML** —
+  and the product itself already drawn into the page: name, price, old price,
+  category, description, photo and options, with the window open.
+
+  So the page is readable at first paint instead of after four Supabase calls.
+  That gap is ~150 ms on a desk and a second or two on the mobile data an ad
+  click actually arrives over, which is the moment someone decides whether to
+  stay. `js/store.js` then loads the catalogue as usual and rewrites all of it,
+  so nothing is frozen: a price edited since the last build shows the old
+  figure for that first moment and corrects itself — the same bargain
+  `getCachedCatalogue()` already makes for returning visitors. And whatever is
+  on screen, `place_order()` recomputes the real total from the database, so
+  the displayed number can never become the charged number.
 
   It has to be in the HTML, and this is worth being precise about because an
   earlier version of this file said the opposite: **link-preview crawlers do

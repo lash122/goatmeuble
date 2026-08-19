@@ -271,16 +271,17 @@ def write_product_pages():
     site, api, key = read_config()
     products = fetch_products(
         api, key,
-        "id,name_fr,description_fr,price,compare_at_price,photos,stock")
+        "id,name_fr,description_fr,price,compare_at_price,photos,stock,sizes,category_id")
     if not products:
         return
+    cats = {c["id"]: c["name_fr"] for c in fetch_categories(api, key)}
 
     shop = (OUT / "index.html").read_text(encoding="utf-8")
     fallback_img = f"{site}/og-image.png"
     fallback_desc = meta_content(shop, "description") or ""
 
     for p in products:
-        page = product_page(shop, p, site, fallback_img, fallback_desc)
+        page = product_page(shop, p, site, fallback_img, fallback_desc, cats)
         d = OUT / "p" / str(p["id"])
         d.mkdir(parents=True, exist_ok=True)
         (d / "index.html").write_text(page, encoding="utf-8")
@@ -288,13 +289,24 @@ def write_product_pages():
     print(f"   product pages: {len(products)} under p/<id>/")
 
 
+def fetch_categories(api, key):
+    import json as _json
+    import urllib.request
+    req = urllib.request.Request(
+        f"{api}/rest/v1/categories?select=id,name_fr",
+        headers={"apikey": key, "Authorization": f"Bearer {key}"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return _json.load(r)
+
+
 def meta_content(src, name):
     m = re.search(rf'<meta name="{name}" content="([^"]*)"', src)
     return m.group(1) if m else None
 
 
-def product_page(shop, p, site, fallback_img, fallback_desc):
-    """One product's page: the shop's HTML with its own head."""
+def product_page(shop, p, site, fallback_img, fallback_desc, cats):
+    """One product's page: the shop's HTML with its own head and its own
+    product already drawn into the body."""
     name = (p.get("name_fr") or "").strip()
     price = fmt_price(p.get("price"))
     title = f"{name} — {price} — {BRAND}"
@@ -345,7 +357,61 @@ def product_page(shop, p, site, fallback_img, fallback_desc):
     s = s.replace("</head>",
                   f'  <script type="application/ld+json">{payload}</script>\n</head>', 1)
 
+    s = prefill_modal(s, p, cats, name, price)
     return rebase_to_root(s)
+
+
+def prefill_modal(s, p, cats, name, price):
+    """Draw the product into the modal markup so it is on screen at first paint.
+
+    Without this the page is blank until four Supabase calls come back — about
+    150ms on a desk, but a second or two on the mobile data an ad click
+    actually arrives over, which is exactly the moment someone decides whether
+    to stay. The tags being static fixed the link preview; this fixes the wait.
+
+    Nothing is frozen: js/store.js still fetches the catalogue and calls
+    openModal(), which rewrites every one of these elements. A price edited in
+    the dashboard since the last build shows the old figure for that first
+    moment and then corrects itself — the same bargain getCachedCatalogue()
+    already makes for returning visitors, extended to first-time ones. And no
+    matter what is drawn here, place_order() recomputes the real total from the
+    database, so the number on screen can never become the number charged.
+    """
+    e = html.escape
+    photos = [u for u in (p.get("photos") or []) if str(u).startswith("https://")]
+    old = p.get("compare_at_price")
+    old_txt = fmt_price(old) if old and float(old) > float(p.get("price") or 0) else ""
+    sizes = p.get("sizes") or []
+
+    if photos:
+        s = s.replace('<img id="mPhoto" alt="">',
+                      f'<img id="mPhoto" src="{e(photos[0])}" alt="{e(name)}">', 1)
+
+    s = fill(s, "mCat", cats.get(p.get("category_id"), ""))
+    s = fill(s, "mName", name)
+    s = fill(s, "mPrice", price)
+    s = fill(s, "mOld", old_txt)
+    s = fill(s, "mDesc", " ".join((p.get("description_fr") or "").split()))
+
+    # the chooser's buttons carry no listeners — openModal() replaces them
+    # wholesale a moment later. They are here to occupy the right space.
+    if sizes:
+        btns = "".join(f'<button class="size-btn">{e(str(x))}</button>' for x in sizes)
+        s = s.replace('<div class="sizes" id="mSizes" style="margin-top:8px"></div>',
+                      f'<div class="sizes" id="mSizes" style="margin-top:8px">{btns}</div>', 1)
+    else:
+        s = s.replace('<div id="mSizeBlock">', '<div id="mSizeBlock" hidden>', 1)
+
+    # open the modal, and lock the page behind it as openModal() would
+    s = s.replace('<div class="modal-overlay" id="productModal"',
+                  '<div class="modal-overlay open" id="productModal"', 1)
+    return s.replace("<body>", '<body style="overflow:hidden">', 1)
+
+
+def fill(s, element_id, text):
+    """Put text inside the (empty) element with this id."""
+    return re.sub(rf'(<[^<>]*\bid="{element_id}"[^<>]*>)</',
+                  lambda m: m.group(1) + html.escape(text or "") + "</", s, count=1)
 
 
 def rebase_to_root(s):
