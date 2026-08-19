@@ -27,7 +27,7 @@ OUT = ROOT / "dist-vip"
 BRAND = "Société de vente privée"
 LOGO_SRC = ROOT / "assets" / "logo-svp.jpg"
 # product.html is a TEMPLATE, not a page: it is branded like the rest, then
-# consumed by write_pdp_prototype() and deleted from the output.
+# consumed by write_product_pages() and deleted from the output.
 PAGES = ["index.html", "checkout.html", "admin.html", "track.html", "404.html",
          "product.html"]
 ASSETS = ["css", "js", "og-image.png"]
@@ -259,79 +259,62 @@ def reorder_home(order):
 
 
 def write_product_pages():
-    """Pre-render p/<id>/index.html so a shared product link shows the product.
+    """Write a real page per product at p/<id>/index.html.
 
-    js/store.js already rewrites the title, Open Graph tags and JSON-LD when a
-    product opens — but it does it in JavaScript, and the crawlers that build
-    link previews do not run JavaScript. Facebook, WhatsApp and X fetch the
-    HTML and stop reading. Only Google renders scripts, and only in a later
-    indexing pass. So every /p/<id> link shared anywhere used to preview as the
-    same generic shop card: same photo, same title, whichever product it was.
+    Two problems, one file. The crawlers that build link previews — Facebook,
+    WhatsApp, X — fetch the HTML and never run scripts, so a shop that titles
+    itself in JavaScript previews every product as the same generic card. And
+    a page assembled from four database calls is blank for a second or two on
+    the mobile data an ad click actually arrives over, which is exactly when
+    someone decides whether to stay.
 
-    The fix is to put the tags in the file. Each product gets a real page whose
-    head is the shop's head with the product's own title, description, photo,
-    canonical and JSON-LD baked in. Visitors are unaffected — the body is the
-    identical shop, and readProductId() in js/store.js picks the id out of the
-    path and opens that product exactly as before.
+    So the head is written here, and so is the product: name, price, photos,
+    options and description travel in the page as JSON, and js/product.js reads
+    them from there. Nothing loads the catalogue. Only the shop settings and a
+    few related products are fetched afterwards, and neither blocks what the
+    customer came to read.
 
-    The `/p/* -> / 200` rule in _redirects stays as the fallback: a product
-    added after the last build still works, it just previews generically until
-    the next one. Static files win over redirect rules, so these pages take
-    precedence wherever they exist.
-    """
-    site, api, key = read_config()
-    products = fetch_products(
-        api, key,
-        "id,name_fr,description_fr,price,compare_at_price,photos,stock,sizes,category_id")
-    if not products:
-        return
-    cats = {c["id"]: c["name_fr"] for c in fetch_categories(api, key)}
-
-    shop = (OUT / "index.html").read_text(encoding="utf-8")
-    fallback_img = f"{site}/og-image.png"
-    fallback_desc = meta_content(shop, "description") or ""
-
-    for p in products:
-        page = product_page(shop, p, site, fallback_img, fallback_desc, cats)
-        d = OUT / "p" / str(p["id"])
-        d.mkdir(parents=True, exist_ok=True)
-        (d / "index.html").write_text(page, encoding="utf-8")
-
-    print(f"   product pages: {len(products)} under p/<id>/")
-    write_pdp_prototype(products, cats, site, fallback_img, fallback_desc)
-
-
-def write_pdp_prototype(products, cats, site, fallback_img, fallback_desc):
-    """PROTOTYPE — the dedicated product template, at p2/<id>/.
-
-    Deliberately a second address rather than a replacement: p/<id>/ is the
-    shop page with the modal opened, p2/<id>/ is a page built for one product.
-    Same data, same build, so the two can be compared before anything is
-    decided. Delete this function and product.html to drop the experiment.
-
-    Unlike p/<id>/, nothing here loads the catalogue: the product is written
-    into the page as JSON and js/product.js reads it from there.
+    The `/p/* -> / 200` rule in _redirects stays as the fallback for a product
+    added since the last build: it lands on the shop, which still opens that
+    product in its modal. Static files win over redirect rules, so a real page
+    takes precedence wherever one exists.
     """
     tpl_path = OUT / "product.html"
     if not tpl_path.exists():
+        raise SystemExit("build-vip: product.html missing — it must be in PAGES")
+
+    site, api, key = read_config()
+    products = fetch_products(
+        api, key,
+        "id,name_fr,name_ar,name_en,description_fr,description_ar,description_en,"
+        "price,compare_at_price,photos,stock,sizes,category_id")
+    if not products:
+        tpl_path.unlink()
         return
+    cats = {c["id"]: c["name_fr"] for c in fetch_categories(api, key)}
+
     tpl = tpl_path.read_text(encoding="utf-8")
+    fallback_img = f"{site}/og-image.png"
+    fallback_desc = meta_content((OUT / "index.html").read_text(encoding="utf-8"),
+                                "description") or ""
 
-    for p in products:
-        p = dict(p)
-        p["category_name"] = cats.get(p.get("category_id"), "")
-        s = product_page(tpl, p, site, fallback_img, fallback_desc, cats,
-                         prefill=False, path_prefix="p2")
-        payload = json.dumps(p, ensure_ascii=False).replace("<", "\\u003c")
-        s = s.replace("</body>",
-                      f'  <script type="application/json" id="pdpData">{payload}</script>\n</body>', 1)
-        d = OUT / "p2" / str(p["id"])
+    for row in products:
+        prod = dict(row)
+        prod["category_name"] = cats.get(prod.get("category_id"), "")
+        page = product_page(tpl, prod, site, fallback_img, fallback_desc, cats)
+        # the payload the page draws itself from; \u003c so a name containing
+        # "</script>" cannot break out of the JSON island
+        payload = json.dumps(prod, ensure_ascii=False).replace("<", "\\u003c")
+        page = page.replace(
+            "</body>",
+            f'  <script type="application/json" id="pdpData">{payload}</script>\n</body>', 1)
+        d = OUT / "p" / str(prod["id"])
         d.mkdir(parents=True, exist_ok=True)
-        (d / "index.html").write_text(s, encoding="utf-8")
+        (d / "index.html").write_text(page, encoding="utf-8")
 
-    # the template itself is not a page anyone should land on
+    # a template is not a page anyone should land on
     tpl_path.unlink()
-    print(f"   PROTOTYPE product template: {len(products)} under p2/<id>/")
+    print(f"   product pages: {len(products)} under p/<id>/")
 
 
 def fetch_categories(api, key):
@@ -349,10 +332,9 @@ def meta_content(src, name):
     return m.group(1) if m else None
 
 
-def product_page(shop, p, site, fallback_img, fallback_desc, cats,
-                 prefill=True, path_prefix="p"):
+def product_page(shop, p, site, fallback_img, fallback_desc, cats):
     """One product's page: the shop's HTML with its own head and its own
-    product already drawn into the body.
+    own head. The body draws itself from the JSON payload appended after.
 
     `prefill` is off for the dedicated template, which draws itself from the
     JSON payload instead of from the shop's modal markup.
@@ -361,7 +343,7 @@ def product_page(shop, p, site, fallback_img, fallback_desc, cats,
     price = fmt_price(p.get("price"))
     title = f"{name} — {price} — {BRAND}"
     desc = " ".join((p.get("description_fr") or "").split())[:155] or fallback_desc
-    url = f"{site}/{path_prefix}/{p['id']}"
+    url = f"{site}/p/{p['id']}"
 
     # a photo-less product falls back to the site card: the storefront's
     # placeholder is a data: URI, which Facebook and WhatsApp refuse as og:image
@@ -407,62 +389,9 @@ def product_page(shop, p, site, fallback_img, fallback_desc, cats,
     s = s.replace("</head>",
                   f'  <script type="application/ld+json">{payload}</script>\n</head>', 1)
 
-    if prefill:
-        s = prefill_modal(s, p, cats, name, price)
     return rebase_to_root(s)
 
 
-def prefill_modal(s, p, cats, name, price):
-    """Draw the product into the modal markup so it is on screen at first paint.
-
-    Without this the page is blank until four Supabase calls come back — about
-    150ms on a desk, but a second or two on the mobile data an ad click
-    actually arrives over, which is exactly the moment someone decides whether
-    to stay. The tags being static fixed the link preview; this fixes the wait.
-
-    Nothing is frozen: js/store.js still fetches the catalogue and calls
-    openModal(), which rewrites every one of these elements. A price edited in
-    the dashboard since the last build shows the old figure for that first
-    moment and then corrects itself — the same bargain getCachedCatalogue()
-    already makes for returning visitors, extended to first-time ones. And no
-    matter what is drawn here, place_order() recomputes the real total from the
-    database, so the number on screen can never become the number charged.
-    """
-    e = html.escape
-    photos = [u for u in (p.get("photos") or []) if str(u).startswith("https://")]
-    old = p.get("compare_at_price")
-    old_txt = fmt_price(old) if old and float(old) > float(p.get("price") or 0) else ""
-    sizes = p.get("sizes") or []
-
-    if photos:
-        s = s.replace('<img id="mPhoto" alt="">',
-                      f'<img id="mPhoto" src="{e(photos[0])}" alt="{e(name)}">', 1)
-
-    s = fill(s, "mCat", cats.get(p.get("category_id"), ""))
-    s = fill(s, "mName", name)
-    s = fill(s, "mPrice", price)
-    s = fill(s, "mOld", old_txt)
-    s = fill(s, "mDesc", " ".join((p.get("description_fr") or "").split()))
-
-    # the chooser's buttons carry no listeners — openModal() replaces them
-    # wholesale a moment later. They are here to occupy the right space.
-    if sizes:
-        btns = "".join(f'<button class="size-btn">{e(str(x))}</button>' for x in sizes)
-        s = s.replace('<div class="sizes" id="mSizes" style="margin-top:8px"></div>',
-                      f'<div class="sizes" id="mSizes" style="margin-top:8px">{btns}</div>', 1)
-    else:
-        s = s.replace('<div id="mSizeBlock">', '<div id="mSizeBlock" hidden>', 1)
-
-    # open the modal, and lock the page behind it as openModal() would
-    s = s.replace('<div class="modal-overlay" id="productModal"',
-                  '<div class="modal-overlay open" id="productModal"', 1)
-    return s.replace("<body>", '<body style="overflow:hidden">', 1)
-
-
-def fill(s, element_id, text):
-    """Put text inside the (empty) element with this id."""
-    return re.sub(rf'(<[^<>]*\bid="{element_id}"[^<>]*>)</',
-                  lambda m: m.group(1) + html.escape(text or "") + "</", s, count=1)
 
 
 def rebase_to_root(s):

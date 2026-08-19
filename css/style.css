@@ -430,6 +430,15 @@ footer.site .fine { border-top: 1px solid rgba(255,255,255,0.12); margin-top: 28
 }
 .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus { outline: 2px solid var(--gold-soft); border-color: var(--gold); }
 
+/* Cards and the recently-viewed strip became real links when each product got
+   its own page. They were a div and a button, so they need the block layout
+   and the inherited colour back — otherwise the photo collapses to an inline
+   box and every product name turns blue and underlined. */
+.card .photo { display: block; }
+.card .info h3 a { color: inherit; text-decoration: none; }
+.card .info h3 a:hover { color: var(--gold); }
+a.rv-item { display: block; text-decoration: none; color: inherit; }
+
 /* Courier parcel number on the tracking page */
 .parcel-box { margin-top: 14px; padding: 12px 14px; border: 1px dashed var(--line); border-radius: 10px; }
 .parcel-box .row { display: flex; justify-content: space-between; gap: 12px; font-size: 0.88rem; padding: 3px 0; }

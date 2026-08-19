@@ -457,17 +457,21 @@ function productCard(p) {
   // the heart is a sibling of the photo button, not a child: an interactive
   // element inside a role="button" would confuse screen readers, and it keeps
   // the whole card keyboard-operable (tab to it, Enter/Space to open)
+  // A real link, not a scripted div: each product is its own page now, so the
+  // card should be openable in a new tab, followable by a crawler, and
+  // keyboard-operable without us reimplementing Enter and Space.
+  const href = esc(productPath(p.id));
   card.innerHTML = `
     ${wishHeart(p)}
-    <div class="photo" role="button" tabindex="0"
-         aria-label="${esc(I18N.t('view_product').replace('{name}', name))}">
+    <a class="photo" href="${href}"
+       aria-label="${esc(I18N.t('view_product').replace('{name}', name))}">
       <img class="ph-main" src="${esc(DB.photoOf(p))}" alt="${esc(name)}" loading="lazy">
       ${rollover}
       ${badgesHtml}
-    </div>
+    </a>
     <div class="info">
       <span class="cat">${esc(catName(p.category_id))}</span>
-      <h3>${esc(name)}</h3>
+      <h3><a href="${href}">${esc(name)}</a></h3>
       <div class="price-row">
         <span class="price">${I18N.fmtPrice(price)}</span>
         ${onSale ? `<span class="price-old">${I18N.fmtPrice(old)}</span><span class="badge-sale">-${Math.round((1 - price / old) * 100)}%</span>` : ''}
@@ -475,11 +479,6 @@ function productCard(p) {
         ${!soldOut && p.stock <= 3 ? `<span class="badge-low">${esc(I18N.t('low_stock').replace('{n}', p.stock))}</span>` : ''}
       </div>
     </div>`;
-  const photo = card.querySelector('.photo');
-  photo.addEventListener('click', () => openModal(p, { trigger: photo }));
-  photo.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(p, { trigger: photo }); }
-  });
   card.querySelector('.heart').addEventListener('click', () => {
     Wishlist.toggle(p.id); renderChips(); renderGrid(); renderFeatured();
   });
@@ -599,13 +598,13 @@ function renderRecentlyViewed() {
   section.hidden = items.length < 2;   // one item tells the visitor nothing
   strip.innerHTML = '';
   items.forEach(p => {
-    const el = document.createElement('button');
+    const el = document.createElement('a');
     el.className = 'rv-item';
+    el.href = productPath(p.id);
     el.innerHTML = `
       <img src="${esc(DB.photoOf(p))}" alt="" loading="lazy">
       <span class="rv-name">${esc(I18N.localize(p, 'name'))}</span>
       <span class="rv-price">${I18N.fmtPrice(effPrice(p))}</span>`;
-    el.addEventListener('click', () => openModal(p));
     strip.appendChild(el);
   });
 }
@@ -675,8 +674,10 @@ function renderWishButton() {
    front. Reading the id from the URL costs nothing at build time, so products
    created long after deployment get working links with no rebuild.
 
-   Two shapes are accepted: ?p=12 works on any static host, and /p/12 is the
-   pretty form a Netlify edge function can rewrite. */
+   Since every product has its own page, this is the FALLBACK path: it only
+   runs when the shop itself was served for a /p/<id> URL, which happens for a
+   product added since the last build, via the `/p/* -> / 200` rule. The modal
+   below then stands in until the next build writes that product its page. */
 function readProductId() {
   const q = new URLSearchParams(location.search).get('p');
   if (q) return q.replace(/\D/g, '');
