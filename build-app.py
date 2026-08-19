@@ -54,7 +54,7 @@ def tabbar(active_href):
             + "\n".join(links) + "\n  </nav>\n")
 
 
-THEME_LINK = '<link rel="stylesheet" href="css/theme-app.css?v=16" id="themeCss" data-native-theme>'
+THEME_LINK = '<link rel="stylesheet" href="/css/theme-app.css?v=16" id="themeCss" data-native-theme>'
 
 
 def build():

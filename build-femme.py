@@ -36,7 +36,7 @@ FONTS = ("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;6
          "&family=Cairo:wght@400;600;700&display=swap")
 
 
-THEME_LINK = '<link rel="stylesheet" href="css/theme-femme.css?v=14" id="themeCss" data-native-theme>'
+THEME_LINK = '<link rel="stylesheet" href="/css/theme-femme.css?v=14" id="themeCss" data-native-theme>'
 
 
 def build():

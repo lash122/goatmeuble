@@ -37,14 +37,14 @@ FONTS = ("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700"
          "&family=Cairo:wght@400;600;700&display=swap")
 
 # The VP logo is a photo, not a vector — keep it as JPEG in the deploy.
-LOGO_OUT = "logo.jpg"
+LOGO_OUT = "/logo.jpg"
 
 # Dark slate, matching the theme's top bar — used for the phone's browser
 # chrome and as the splash background when the shop is installed.
 THEME_COLOR = "#0b1220"
 
 
-THEME_LINK = '<link rel="stylesheet" href="css/theme-tech.css?v=12" id="themeCss" data-native-theme>'
+THEME_LINK = '<link rel="stylesheet" href="/css/theme-tech.css?v=12" id="themeCss" data-native-theme>'
 
 
 def build():
@@ -61,7 +61,7 @@ def build():
     # every theme ships with the build — the dashboard can switch the shop's
     # template at runtime (js/layouts.js), so all the theme sheets must exist
 
-    shutil.copy(LOGO_SRC, OUT / LOGO_OUT)
+    shutil.copy(LOGO_SRC, OUT / LOGO_OUT.lstrip("/"))
 
     rebrand_pages()
     # categories right after the hero, products below them (the owner asked
