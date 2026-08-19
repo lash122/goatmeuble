@@ -8,13 +8,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <!-- Installable on a phone home screen: customers who come back are
-       worth more than an ad click, and it costs three tags. -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon-180.png">
+  <!-- Root-absolute, not relative. A 404 is served AT the URL that failed, so
+       this page can render at any depth — "css/style.css" from /p/99 resolves
+       to /p/css/style.css and 404s too, leaving unstyled text on a broken
+       page, which is the worst possible moment to look broken. -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-180.png">
   <meta name="theme-color" content="#0f1b33">
-  <link rel="stylesheet" href="css/style.css?v=27">
+  <link rel="stylesheet" href="/css/style.css?v=27">
   <!-- Deliberately no Supabase, no config, no app JS: the one job of this page
        is to load when something else did not. A trilingual static message
        costs nothing and cannot itself fail. -->

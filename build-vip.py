@@ -96,7 +96,7 @@ def rebrand_pages():
         # so bumping the stylesheet cache-buster silently stopped injecting the
         # theme overlay and the build fell back to the base look with no error.
         s = re.sub(
-            r'(<link rel="stylesheet" href="css/style\.css\?v=\d+">)',
+            r'(<link rel="stylesheet" href="/?css/style\.css\?v=\d+">)',
             lambda m: m.group(1) + '\n  ' + THEME_LINK, s, count=1)
 
         # Inter-only font request, like TECH DZ
@@ -139,8 +139,9 @@ def rebrand_pages():
         s = s.replace(f"{BRAND} — Boutique en ligne", f"{BRAND} — Informatique & high-tech")
 
         # favicon: the tech SVG is replaced by the logo-derived PNG
-        s = s.replace('href="favicon.svg" type="image/svg+xml"',
-                      'href="favicon.png" type="image/png"')
+        s = re.sub(r'href="/?favicon\.svg" type="image/svg\+xml"',
+                       lambda m: ('href="/favicon.png"' if m.group(0).startswith('href="/')
+                                  else 'href="favicon.png"') + ' type="image/png"', s)
 
         p.write_text(s, encoding="utf-8")
 

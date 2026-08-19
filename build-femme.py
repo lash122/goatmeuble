@@ -82,7 +82,7 @@ def rebrand_pages():
         # so bumping the stylesheet cache-buster silently stopped injecting the
         # theme overlay and the build fell back to the base look with no error.
         s = re.sub(
-            r'(<link rel="stylesheet" href="css/style\.css\?v=\d+">)',
+            r'(<link rel="stylesheet" href="/?css/style\.css\?v=\d+">)',
             lambda m: m.group(1) + '\n  ' + THEME_LINK, s, count=1)
 
         # swap the font request wholesale — the type is half the identity
