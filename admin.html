@@ -10,8 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="preconnect" href="https://ssnplihsehgjiydlfimo.supabase.co" crossorigin>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/style.css?v=25">
-  <link rel="stylesheet" href="css/admin.css?v=12">
+  <link rel="stylesheet" href="css/style.css?v=26">
+  <link rel="stylesheet" href="css/admin.css?v=13">
 </head>
 <body class="admin-body">
 
@@ -116,7 +116,16 @@
       <!-- ZONES -->
       <div class="tab-panel" id="tab-zones">
         <div class="panel-h"><h2>Zones de livraison & frais</h2></div>
-        <div class="panel" style="max-width:480px" id="zonesBox"></div>
+        <p style="color:var(--muted);font-size:0.85rem;max-width:640px;margin-bottom:12px">
+          Deux prix par wilaya : <b>stop desk</b> (le client récupère au bureau du
+          transporteur — souvent moins cher) et <b>à domicile</b>. Beaucoup de clients
+          ne commandent qu'au tarif stop desk.
+        </p>
+        <div class="order-toolbar" style="max-width:640px">
+          <input id="zoneSearch" placeholder="Filtrer : nom de wilaya ou code (16, Alger…)">
+          <span class="order-count" id="zoneCount" style="margin:0;white-space:nowrap"></span>
+        </div>
+        <div class="panel" style="max-width:640px" id="zonesBox"></div>
         <button class="a-btn gold" id="addZoneBtn" style="margin-top:14px">+ Ajouter une zone</button>
         <div style="margin-top:20px">
           <button class="a-btn" id="saveZonesBtn">💾 Enregistrer les zones</button>
@@ -276,8 +285,8 @@
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
     crossorigin="anonymous" defer></script>
   <script src="js/config.js?v=31" defer></script>
-  <script src="js/i18n.js?v=32" defer></script>
-  <script src="js/supabase.js?v=30" defer></script>
-  <script src="js/admin.js?v=36" defer></script>
+  <script src="js/i18n.js?v=33" defer></script>
+  <script src="js/supabase.js?v=31" defer></script>
+  <script src="js/admin.js?v=37" defer></script>
 </body>
 </html>

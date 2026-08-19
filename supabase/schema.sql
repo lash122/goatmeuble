@@ -58,11 +58,28 @@ create table if not exists orders (
         check (status in ('new','confirmed','shipped','delivered','cancelled')),
   discount numeric not null default 0, -- promo-code amount deducted (v1.1)
   promo_code text not null default '', -- code that was applied, '' if none (v1.1)
+  -- 'home' = à domicile, 'desk' = stopdesk (collected from the agency) (v1.3)
+  delivery_type text not null default 'home'
+        check (delivery_type in ('home','desk')),
+  -- the courier's own parcel number, typed in by the owner once the parcel is
+  -- handed over. Without it the tracking page can only ever show an internal
+  -- status, and nobody can look the parcel up with Yalidine / ZR / Noest.
+  carrier text not null default '',
+  tracking_number text not null default '',
   created_at timestamptz not null default now()
 );
 -- v1.1 upgrade for older installs
 alter table orders add column if not exists discount numeric not null default 0;
 alter table orders add column if not exists promo_code text not null default '';
+-- v1.3
+alter table orders add column if not exists delivery_type text not null default 'home';
+alter table orders add column if not exists carrier text not null default '';
+alter table orders add column if not exists tracking_number text not null default '';
+do $$ begin
+  alter table orders add constraint orders_delivery_type_check
+    check (delivery_type in ('home','desk'));
+exception when duplicate_object then null;
+end $$;
 
 create index if not exists orders_created_at_idx on orders (created_at desc);
 create index if not exists orders_phone_idx on orders (phone, created_at desc);
@@ -76,10 +93,54 @@ create table if not exists settings (
 
 insert into settings (key, value) values
   ('store', '{"name":"Élégance","phone":"","email":""}'),
-  ('zones', '[{"name":"Alger","fee":600},{"name":"Oran","fee":800},{"name":"Constantine","fee":800},{"name":"Blida","fee":600},{"name":"Sétif","fee":800},{"name":"Annaba","fee":800},{"name":"Tizi Ouzou","fee":700},{"name":"Autre wilaya","fee":1000}]'),
+  ('zones', '[]'),
   ('promo', '{"active":false,"percent":0,"label_fr":"","label_ar":"","label_en":""}'),
   ('free_delivery_from', 'null')
 on conflict (key) do nothing;
+
+-- ---------- THE 58 WILAYAS ----------
+-- Algerian delivery is priced per wilaya and in two flavours: `desk` is
+-- stopdesk, where the customer collects from the courier's agency, and `home`
+-- is delivery to the door. Stopdesk is markedly cheaper and a large share of
+-- customers will only order at that price, so a shop offering just one of them
+-- is turning orders away.
+--
+-- The figures below are starting values, not real tariffs — set yours in the
+-- dashboard (Zones de livraison). Re-running this file MERGES: a wilaya you
+-- have already priced keeps your numbers, missing ones are added. Nothing you
+-- typed is overwritten.
+--
+-- Pre-v1.3 installs had one flat `fee` per zone, which was a home-delivery
+-- price; it is carried over to `home`, and `desk` starts from the default
+-- because those shops never had a stopdesk price to keep.
+do $$
+declare
+  canonical jsonb := '[{"code":1,"name":"Adrar","desk":900,"home":1400},{"code":2,"name":"Chlef","desk":450,"home":650},{"code":3,"name":"Laghouat","desk":500,"home":800},{"code":4,"name":"Oum El Bouaghi","desk":500,"home":750},{"code":5,"name":"Batna","desk":500,"home":750},{"code":6,"name":"Béjaïa","desk":450,"home":650},{"code":7,"name":"Biskra","desk":550,"home":850},{"code":8,"name":"Béchar","desk":800,"home":1200},{"code":9,"name":"Blida","desk":400,"home":500},{"code":10,"name":"Bouira","desk":450,"home":650},{"code":11,"name":"Tamanrasset","desk":900,"home":1600},{"code":12,"name":"Tébessa","desk":500,"home":800},{"code":13,"name":"Tlemcen","desk":450,"home":700},{"code":14,"name":"Tiaret","desk":500,"home":750},{"code":15,"name":"Tizi Ouzou","desk":450,"home":650},{"code":16,"name":"Alger","desk":400,"home":500},{"code":17,"name":"Djelfa","desk":500,"home":800},{"code":18,"name":"Jijel","desk":450,"home":700},{"code":19,"name":"Sétif","desk":450,"home":700},{"code":20,"name":"Saïda","desk":500,"home":750},{"code":21,"name":"Skikda","desk":450,"home":700},{"code":22,"name":"Sidi Bel Abbès","desk":450,"home":700},{"code":23,"name":"Annaba","desk":450,"home":700},{"code":24,"name":"Guelma","desk":450,"home":700},{"code":25,"name":"Constantine","desk":450,"home":650},{"code":26,"name":"Médéa","desk":450,"home":650},{"code":27,"name":"Mostaganem","desk":450,"home":700},{"code":28,"name":"M''Sila","desk":500,"home":750},{"code":29,"name":"Mascara","desk":450,"home":700},{"code":30,"name":"Ouargla","desk":700,"home":1100},{"code":31,"name":"Oran","desk":450,"home":650},{"code":32,"name":"El Bayadh","desk":700,"home":1100},{"code":33,"name":"Illizi","desk":900,"home":1600},{"code":34,"name":"Bordj Bou Arréridj","desk":450,"home":700},{"code":35,"name":"Boumerdès","desk":400,"home":550},{"code":36,"name":"El Tarf","desk":500,"home":750},{"code":37,"name":"Tindouf","desk":900,"home":1600},{"code":38,"name":"Tissemsilt","desk":500,"home":800},{"code":39,"name":"El Oued","desk":700,"home":1100},{"code":40,"name":"Khenchela","desk":500,"home":800},{"code":41,"name":"Souk Ahras","desk":500,"home":800},{"code":42,"name":"Tipaza","desk":400,"home":550},{"code":43,"name":"Mila","desk":450,"home":700},{"code":44,"name":"Aïn Defla","desk":450,"home":700},{"code":45,"name":"Naâma","desk":700,"home":1100},{"code":46,"name":"Aïn Témouchent","desk":450,"home":700},{"code":47,"name":"Ghardaïa","desk":650,"home":1000},{"code":48,"name":"Relizane","desk":450,"home":700},{"code":49,"name":"Timimoun","desk":900,"home":1500},{"code":50,"name":"Bordj Badji Mokhtar","desk":1000,"home":1800},{"code":51,"name":"Ouled Djellal","desk":600,"home":900},{"code":52,"name":"Béni Abbès","desk":800,"home":1300},{"code":53,"name":"In Salah","desk":900,"home":1600},{"code":54,"name":"In Guezzam","desk":1000,"home":1800},{"code":55,"name":"Touggourt","desk":700,"home":1100},{"code":56,"name":"Djanet","desk":1000,"home":1800},{"code":57,"name":"El M''Ghair","desk":700,"home":1100},{"code":58,"name":"El Meniaa","desk":800,"home":1200}]'::jsonb;
+  current_zones jsonb;
+  merged jsonb := '[]'::jsonb;
+  w jsonb;
+  old jsonb;
+begin
+  select value into current_zones from settings where key = 'zones';
+  current_zones := coalesce(current_zones, '[]'::jsonb);
+
+  for w in select * from jsonb_array_elements(canonical) loop
+    select z into old
+    from jsonb_array_elements(current_zones) z
+    where lower(btrim(z->>'name')) = lower(btrim(w->>'name'))
+    limit 1;
+
+    merged := merged || jsonb_build_object(
+      'code', w->'code',
+      'name', w->>'name',
+      -- an existing home price wins; before v1.3 that price was called 'fee'
+      'home', coalesce(old->'home', old->'fee', w->'home'),
+      'desk', coalesce(old->'desk', w->'desk')
+    );
+  end loop;
+
+  update settings set value = merged, updated_at = now() where key = 'zones';
+end $$;
 
 -- ---------- PROMO CODES (v1.1) ----------
 -- Not readable by the public: customers only learn a code's discount by
@@ -113,6 +174,39 @@ create table if not exists owners (
 );
 alter table owners enable row level security;
 -- deliberately no policies: this table is unreachable through the public API
+
+-- ============================================================
+-- ALGERIAN PHONE NUMBERS
+--
+-- A cash-on-delivery order is worth nothing without a number the driver can
+-- ring: a bad one costs the ad click that produced it AND the courier trip
+-- that delivers nothing. The old check accepted any 8+ characters made of
+-- digits, spaces and dashes, so "123456789" passed.
+--
+-- A real Algerian mobile is 0 followed by 5, 6 or 7 and eight more digits.
+-- The same number arrives written half a dozen ways — 0555 12 34 56,
+-- +213 555 123 456, 00213555123456 — so strip it to digits, peel off the
+-- international prefixes and the trunk 0, and check what is left. Returns the
+-- canonical 0XXXXXXXXX form, or null when it is not a mobile at all, so every
+-- order is stored in one shape and the CSV handed to the courier is uniform.
+-- ============================================================
+create or replace function public.dz_phone(p_phone text)
+returns text
+language sql immutable
+as $$
+  select case
+    when d ~ '^[567][0-9]{8}$' then '0' || d
+    else null
+  end
+  from (
+    select regexp_replace(
+             regexp_replace(
+               regexp_replace(regexp_replace(coalesce(p_phone, ''), '\D', '', 'g'),
+                              '^00', ''),
+               '^213', ''),
+             '^0', '') as d
+  ) t
+$$;
 
 create or replace function public.is_owner()
 returns boolean
@@ -151,11 +245,16 @@ create trigger on_auth_user_created
 --   3. free delivery over a threshold (settings key 'free_delivery_from')
 --      zeroes the zone fee
 -- ============================================================
--- Adding p_promo_code changed the signature, and `create or replace` cannot do
--- that — it creates a SECOND function beside the old one. PostgREST then sees
--- two candidates and refuses every call with PGRST203, which means no orders at
--- all. Drop the pre-promo version first. Harmless on a fresh install.
+-- v1.3 adds p_delivery_type: 'home' (à domicile) or 'desk' (stopdesk), which
+-- selects which of the wilaya's two prices applies.
+--
+-- Every signature change creates a SECOND function beside the old one, because
+-- `create or replace` matches on arguments. PostgREST then sees two candidates
+-- and refuses every call with PGRST203 — which means no orders at all, silently,
+-- until someone notices. Drop every previous shape first. Harmless on a fresh
+-- install.
 drop function if exists public.place_order(text, text, text, text, jsonb);
+drop function if exists public.place_order(text, text, text, text, jsonb, text);
 
 create or replace function public.place_order(
   p_name    text,
@@ -163,7 +262,8 @@ create or replace function public.place_order(
   p_address text,
   p_zone    text,
   p_items   jsonb,
-  p_promo_code text default ''
+  p_promo_code text default '',
+  p_delivery_type text default 'home'
 )
 returns jsonb
 language plpgsql security definer set search_path = public, pg_temp
@@ -190,17 +290,30 @@ begin
   p_address := left(btrim(coalesce(p_address, '')), 400);
   p_zone    := left(btrim(coalesce(p_zone,    '')), 80);
   p_promo_code := upper(left(btrim(coalesce(p_promo_code, '')), 40));
+  p_delivery_type := lower(btrim(coalesce(p_delivery_type, 'home')));
+  if p_delivery_type not in ('home', 'desk') then
+    p_delivery_type := 'home';
+  end if;
 
-  if p_name = '' or p_phone = '' or p_address = '' then
+  -- stopdesk means the customer collects from the courier's agency, so a street
+  -- address is not required — the wilaya is. Home delivery needs both.
+  if p_name = '' or p_phone = ''
+     or (p_delivery_type = 'home' and p_address = '') then
     raise exception 'MISSING_FIELDS';
   end if;
-  if p_phone !~ '^[0-9+][0-9+ -]{7,}$' then
+
+  -- one canonical 0XXXXXXXXX, or not an Algerian mobile at all
+  p_phone := dz_phone(p_phone);
+  if p_phone is null then
     raise exception 'INVALID_PHONE';
   end if;
 
-  -- light anti-spam: the form is open to the whole internet
+  -- light anti-spam: the form is open to the whole internet. Comparing the
+  -- normalised number matters here — otherwise the same phone typed three
+  -- different ways counts as three different customers.
   if (select count(*) from orders
-      where phone = p_phone and created_at > now() - interval '1 hour') >= 5 then
+      where dz_phone(phone) = p_phone
+        and created_at > now() - interval '1 hour') >= 5 then
     raise exception 'TOO_MANY_ORDERS';
   end if;
 
@@ -221,8 +334,15 @@ begin
   from settings where key = 'free_delivery_from';
   if v_free_from is null then v_free_from := 0; end if;
 
-  -- the delivery fee comes from settings, never from the browser
-  select (z->>'fee')::numeric into v_fee
+  -- The delivery fee comes from settings, never from the browser, and which of
+  -- the wilaya's two prices applies is decided here too. `fee` is the pre-v1.3
+  -- single price, kept as a fallback so an install that has not re-run this
+  -- file still takes orders instead of failing on UNKNOWN_ZONE.
+  select coalesce(
+           (z->>(case when p_delivery_type = 'desk' then 'desk' else 'home' end))::numeric,
+           (z->>'home')::numeric,
+           (z->>'fee')::numeric
+         ) into v_fee
   from settings s, jsonb_array_elements(s.value) z
   where s.key = 'zones' and z->>'name' = p_zone
   limit 1;
@@ -305,21 +425,22 @@ begin
 
   insert into orders (customer_name, phone, address, zone,
                       delivery_fee, items, subtotal, discount, promo_code,
-                      total, status)
+                      total, status, delivery_type)
   values (p_name, p_phone, p_address, p_zone,
           v_fee, clean, v_sub, v_discount, v_applied_code,
-          v_sub - v_discount + v_fee, 'new')
+          v_sub - v_discount + v_fee, 'new', p_delivery_type)
   returning id into v_id;
 
   return jsonb_build_object(
     'id', v_id, 'subtotal', v_sub, 'discount', v_discount,
     'promo_code', v_applied_code, 'delivery_fee', v_fee,
+    'delivery_type', p_delivery_type, 'phone', p_phone,
     'total', v_sub - v_discount + v_fee
   );
 end $$;
 
-revoke all on function public.place_order(text,text,text,text,jsonb,text) from public;
-grant execute on function public.place_order(text,text,text,text,jsonb,text) to anon, authenticated;
+revoke all on function public.place_order(text,text,text,text,jsonb,text,text) from public;
+grant execute on function public.place_order(text,text,text,text,jsonb,text,text) to anon, authenticated;
 
 -- ============================================================
 -- PROMO CODE PREVIEW
@@ -384,14 +505,19 @@ begin
   end if;
 
   return jsonb_build_object(
-    'id',           o.id,
-    'status',       o.status,
-    'created_at',   o.created_at,
-    'zone',         o.zone,
-    'subtotal',     o.subtotal,
-    'delivery_fee', o.delivery_fee,
-    'total',        o.total,
-    'items',        o.items
+    'id',            o.id,
+    'status',        o.status,
+    'created_at',    o.created_at,
+    'zone',          o.zone,
+    'subtotal',      o.subtotal,
+    'delivery_fee',  o.delivery_fee,
+    'total',         o.total,
+    'items',         o.items,
+    -- so the customer sees where to collect, and can follow the parcel with
+    -- the courier directly instead of ringing the shop to ask
+    'delivery_type', o.delivery_type,
+    'carrier',       o.carrier,
+    'tracking_number', o.tracking_number
   );
 end $$;
 

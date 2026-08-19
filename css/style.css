@@ -429,6 +429,26 @@ footer.site .fine { border-top: 1px solid rgba(255,255,255,0.12); margin-top: 28
   width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 11px 12px; background: #fff;
 }
 .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus { outline: 2px solid var(--gold-soft); border-color: var(--gold); }
+
+/* Courier parcel number on the tracking page */
+.parcel-box { margin-top: 14px; padding: 12px 14px; border: 1px dashed var(--line); border-radius: 10px; }
+.parcel-box .row { display: flex; justify-content: space-between; gap: 12px; font-size: 0.88rem; padding: 3px 0; }
+.parcel-box .parcel-no { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .02em; }
+.parcel-box small { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 6px; }
+
+/* Delivery method: two cards, not a dropdown. Stopdesk is markedly cheaper
+   and many customers only order at that price, so the choice has to be
+   visible and explained rather than hidden behind a select. */
+.deliv-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.deliv-opt { display: flex; align-items: flex-start; gap: 9px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px;
+  margin: 0; font-weight: 400; transition: border-color .15s, background .15s; }
+.deliv-opt:hover { border-color: var(--gold); }
+.deliv-opt input { width: auto; margin: 2px 0 0; flex: none; accent-color: var(--gold); }
+.deliv-opt b { display: block; font-size: 0.9rem; }
+.deliv-opt small { display: block; color: var(--muted); font-size: 0.75rem; line-height: 1.35; margin-top: 2px; }
+.deliv-opt:has(input:checked) { border-color: var(--gold); background: var(--gold-soft); }
+@media (max-width: 520px) { .deliv-choice { grid-template-columns: 1fr; } }
 .cod-note {
   display: flex; align-items: center; gap: 10px; background: var(--gold-soft);
   border: 1px dashed var(--gold); border-radius: 8px; padding: 12px 14px; font-size: 0.88rem;

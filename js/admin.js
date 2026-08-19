@@ -45,7 +45,10 @@ async function initAdmin() {
   document.getElementById('orderExportBtn').addEventListener('click', exportOrdersCsv);
   document.getElementById('addProductBtn').addEventListener('click', () => editProduct(null));
   document.getElementById('addCatBtn').addEventListener('click', () => editCategory(null));
-  document.getElementById('addZoneBtn').addEventListener('click', () => addZoneRow('', 600));
+  document.getElementById('addZoneBtn').addEventListener('click', () => addZoneRow({ desk: 450, home: 650 }));
+  document.getElementById('zoneSearch').addEventListener('input', e => {
+    zoneQuery = e.target.value; renderZones();
+  });
   document.getElementById('saveZonesBtn').addEventListener('click', saveZones);
   document.getElementById('saveShopBtn').addEventListener('click', saveShop);
   document.getElementById('saveLayoutBtn').addEventListener('click', () => saveLayout(false));
@@ -308,7 +311,7 @@ function renderOrders() {
     tr.innerHTML = `
       <td><b>#${o.id}</b><br><small style="color:var(--muted)">${new Date(o.created_at || Date.now()).toLocaleDateString('fr-FR')}</small></td>
       <td>${esc(o.customer_name)}<br><small style="color:var(--muted)">${esc(o.phone)}</small></td>
-      <td>${esc(o.zone)}</td>
+      <td>${esc(o.zone)}<br><small style="color:var(--muted)">${o.delivery_type === 'desk' ? '🏢 Stop desk' : '🏠 À domicile'}</small></td>
       <td><b>${I18N.fmtPrice(o.total)}</b></td>
       <td>${itemsCount} article(s)</td>
       <td>${statusTag(o.status)}</td>
@@ -350,8 +353,11 @@ function exportOrdersCsv() {
     const s = String(v ?? '');
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
-  const header = ['ID', 'Date', 'Client', 'Téléphone', 'Zone', 'Adresse',
-    'Articles', 'Sous-total (DA)', 'Remise (DA)', 'Livraison (DA)', 'Total (DA)', 'Statut'];
+  // this file is what gets handed to the courier, so it carries the two things
+  // they actually need: which service, and the parcel number once assigned
+  const header = ['ID', 'Date', 'Client', 'Téléphone', 'Zone', 'Livraison', 'Adresse',
+    'Articles', 'Sous-total (DA)', 'Remise (DA)', 'Frais livraison (DA)', 'Total (DA)',
+    'Statut', 'Transporteur', 'N° colis'];
   const lines = [header.join(',')];
   rows.forEach(o => {
     const items = (o.items || []).map(i =>
@@ -361,8 +367,11 @@ function exportOrdersCsv() {
     lines.push([
       o.id,
       new Date(o.created_at || Date.now()).toLocaleDateString('fr-FR'),
-      o.customer_name, o.phone, o.zone, o.address, items,
+      o.customer_name, o.phone, o.zone,
+      o.delivery_type === 'desk' ? 'Stop desk' : 'À domicile',
+      o.address, items,
       o.subtotal, o.discount || 0, o.delivery_fee || 0, o.total, status,
+      o.carrier || '', o.tracking_number || '',
     ].map(csvEsc).join(','));
   });
   const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
@@ -385,12 +394,13 @@ function viewOrder(o) {
       `<span>${esc(i.size || '')}${i.size ? ' · ' : ''}× ${qty}</span></div>` +
       `<span class="order-item-price">${I18N.fmtPrice(i.price * qty)}</span></li>`;
   }).join('');
+  const desk = o.delivery_type === 'desk';
   openEditor(`
     <h3 style="margin-bottom:14px">Commande #${o.id}</h3>
     <p><b>Client :</b> ${esc(o.customer_name)}</p>
     <p><b>Téléphone :</b> ${esc(o.phone)}</p>
-    <p><b>Adresse :</b> ${esc(o.address)}</p>
-    <p><b>Zone :</b> ${esc(o.zone)}</p>
+    <p><b>Adresse :</b> ${esc(o.address) || '<span style="color:var(--muted)">— (stop desk)</span>'}</p>
+    <p><b>Zone :</b> ${esc(o.zone)} — ${desk ? '🏢 Stop desk' : '🏠 À domicile'}</p>
     <p><b>Statut :</b> ${statusTag(o.status)}</p>
     <p style="margin-top:12px"><b>Articles :</b></p>
     <ul class="order-items">${itemsHtml}</ul>
@@ -401,8 +411,46 @@ function viewOrder(o) {
       <div class="row grand"><span>Total (à payer à la livraison)</span><span>${I18N.fmtPrice(o.total)}</span></div>
     </div>
     <div class="cod-note" style="margin-top:10px">💵 Paiement à la livraison</div>
-    <button class="a-btn ghost" style="margin-top:18px;width:100%" onclick="document.getElementById('editorClose').click()">Fermer</button>
-  `);
+
+    <!-- The courier's own parcel number. Saved here it appears on the
+         customer's tracking page, which is where "où est ma commande ?"
+         otherwise turns into a phone call to the shop. -->
+    <div class="f-grid" style="margin-top:18px;border-top:1px solid var(--line);padding-top:14px">
+      <b style="font-size:0.95rem">Expédition</b>
+      <div class="f-grid two">
+        <div>
+          <label>Transporteur</label>
+          <input id="o_carrier" list="carrierList" placeholder="Yalidine, ZR Express…" value="${esc(o.carrier || '')}">
+          <datalist id="carrierList">
+            <option value="Yalidine"></option><option value="ZR Express"></option>
+            <option value="Noest"></option><option value="Maystro"></option>
+            <option value="EMS Anderson"></option>
+          </datalist>
+        </div>
+        <div>
+          <label>N° de colis</label>
+          <input id="o_tracking" placeholder="Numéro du bordereau" value="${esc(o.tracking_number || '')}">
+        </div>
+      </div>
+      <button class="a-btn gold" id="o_saveShipping">💾 Enregistrer l'expédition</button>
+    </div>
+
+    <button class="a-btn ghost" style="margin-top:18px;width:100%" id="o_close">Fermer</button>
+  `, () => {
+    document.getElementById('o_close').addEventListener('click', closeEditor);
+    document.getElementById('o_saveShipping').addEventListener('click', () => {
+      const carrier = document.getElementById('o_carrier').value;
+      const tracking = document.getElementById('o_tracking').value;
+      run(async () => {
+        await DB.saveOrderShipping(o.id, carrier, tracking);
+        // patch the row in place: refreshAll() here would close the panel the
+        // owner is still looking at
+        o.carrier = carrier.trim();
+        o.tracking_number = tracking.trim();
+        renderOrders();
+      }, 'Expédition enregistrée ✓');
+    });
+  });
 }
 
 /* ================= PRODUCTS ================= */
@@ -604,31 +652,76 @@ function editCategory(c) {
 }
 
 /* ================= ZONES ================= */
+/* ================= DELIVERY ZONES =================
+   58 wilayas, each with two prices: stopdesk (the customer collects from the
+   courier's agency) and à domicile. Stopdesk is markedly cheaper and a large
+   share of Algerian customers only order at that price, so both have to be
+   set — a wilaya priced at 0 for stopdesk offers it free, not "not offered".
+
+   58 rows is a lot to scroll, hence the filter box. */
+let zoneQuery = '';
+
 function renderZones() {
   const box = document.getElementById('zonesBox');
   box.innerHTML = '';
-  A.zones.forEach(z => addZoneRow(z.name, z.fee));
+  const q = zoneQuery.trim().toLowerCase();
+  const shown = A.zones.filter(z =>
+    !q || String(z.name).toLowerCase().includes(q) || String(z.code || '') === q);
+
+  shown.forEach(z => addZoneRow(z));
+  document.getElementById('zoneCount').textContent =
+    q ? `${shown.length} / ${A.zones.length} wilayas` : `${A.zones.length} wilayas`;
 }
-function addZoneRow(name, fee) {
+
+function addZoneRow(z = {}) {
   const box = document.getElementById('zonesBox');
   const div = document.createElement('div');
   div.className = 'zone-edit';
+  div.dataset.code = z.code ?? '';
+  // `fee` is the pre-v1.3 single price; show it as the home price rather than
+  // silently resetting a shop that has not re-run schema.sql to zero
+  const home = z.home ?? z.fee ?? 0;
+  const desk = z.desk ?? z.fee ?? 0;
   div.innerHTML = `
-    <input class="z-name" placeholder="Wilaya / Zone" value="${esc(name)}">
-    <input class="z-fee" type="number" min="0" style="max-width:110px" value="${fee}">
+    <span class="z-code">${z.code ? String(z.code).padStart(2, '0') : '—'}</span>
+    <input class="z-name" placeholder="Wilaya" value="${esc(z.name || '')}">
+    <label class="z-lab">Stop desk<input class="z-desk" type="number" min="0" value="${Number(desk)}"></label>
+    <label class="z-lab">À domicile<input class="z-home" type="number" min="0" value="${Number(home)}"></label>
     <button class="btn-mini danger" title="Supprimer">×</button>`;
   div.querySelector('button').addEventListener('click', () => div.remove());
   box.appendChild(div);
 }
 
 async function saveZones() {
-  const zones = [...document.querySelectorAll('.zone-edit')].map(d => ({
-    name: d.querySelector('.z-name').value.trim(),
-    fee: Number(d.querySelector('.z-fee').value) || 0,
-  })).filter(z => z.name);
+  /* Only the rows on screen are in the DOM, so saving while the filter is
+     active would silently delete every wilaya not matching it. Merge the
+     edited rows back over the full list instead. */
+  const edited = new Map();
+  document.querySelectorAll('.zone-edit').forEach(d => {
+    const name = d.querySelector('.z-name').value.trim();
+    if (!name) return;
+    edited.set(name.toLowerCase(), {
+      code: d.dataset.code ? Number(d.dataset.code) : undefined,
+      name,
+      desk: Number(d.querySelector('.z-desk').value) || 0,
+      home: Number(d.querySelector('.z-home').value) || 0,
+    });
+  });
+
+  const zones = A.zones
+    .map(z => edited.get(String(z.name).toLowerCase()) || z)
+    // a row deleted while unfiltered really is a deletion
+    .filter(z => !zoneQuery.trim() ? edited.has(String(z.name).toLowerCase()) : true);
+
+  // wilayas typed in by hand that were not in the list before
+  edited.forEach((z, key) => {
+    if (!zones.some(x => String(x.name).toLowerCase() === key)) zones.push(z);
+  });
+
   await run(async () => {
     await DB.saveZones(zones);
     A.zones = zones;
+    renderZones();
   }, 'Zones enregistrées ✓');
 }
 
@@ -858,10 +951,13 @@ function renderStats() {
 }
 
 /* ================= editor modal helpers ================= */
-function openEditor(html) {
+/* `onMount` runs once the markup is in the DOM, so panels can wire up their
+   own buttons instead of reaching for inline onclick handlers. */
+function openEditor(html, onMount) {
   document.getElementById('editorBody').innerHTML = html;
   document.getElementById('editorModal').classList.add('open');
   document.body.style.overflow = 'hidden';
+  if (onMount) onMount();
 }
 function closeEditor() {
   document.getElementById('editorModal').classList.remove('open');

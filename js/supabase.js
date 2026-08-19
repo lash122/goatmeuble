@@ -6,11 +6,17 @@ const DB = (() => {
   // ---------------- demo data ----------------
   const demo = {
     store: { name: 'Élégance', phone: '+213 555 000 000', email: '', facebook: '', instagram: '', tiktok: '' },
+    // two prices per wilaya: desk = stopdesk (collected from the courier's
+    // agency), home = to the door. A sample of the 58 the schema seeds.
     zones: [
-      { name: 'Alger', fee: 600 }, { name: 'Oran', fee: 800 },
-      { name: 'Constantine', fee: 800 }, { name: 'Blida', fee: 600 },
-      { name: 'Sétif', fee: 800 }, { name: 'Annaba', fee: 800 },
-      { name: 'Tizi Ouzou', fee: 700 }, { name: 'Autre wilaya', fee: 1000 },
+      { code: 16, name: 'Alger', desk: 400, home: 500 },
+      { code: 31, name: 'Oran', desk: 450, home: 650 },
+      { code: 25, name: 'Constantine', desk: 450, home: 650 },
+      { code: 9, name: 'Blida', desk: 400, home: 500 },
+      { code: 19, name: 'Sétif', desk: 450, home: 700 },
+      { code: 23, name: 'Annaba', desk: 450, home: 700 },
+      { code: 15, name: 'Tizi Ouzou', desk: 450, home: 650 },
+      { code: 30, name: 'Ouargla', desk: 700, home: 1100 },
     ],
     categories: [
       { id: 1, name_fr: 'Costumes', name_ar: 'بدلات', name_en: 'Suits', sort: 1 },
@@ -309,10 +315,11 @@ const DB = (() => {
        and settings tables, because a number that travels through the browser
        cannot be trusted. Returns the authoritative
        { id, subtotal, discount, promo_code, delivery_fee, total }. */
-    async placeOrder({ customer_name, phone, address, zone, items, promo_code }) {
+    async placeOrder({ customer_name, phone, address, zone, items, promo_code, delivery_type }) {
       const lines = items.map(i => ({
         product_id: i.product_id, qty: Number(i.qty) || 0, size: i.size,
       }));
+      const deliv = delivery_type === 'desk' ? 'desk' : 'home';
 
       if (IS_DEMO) {
         // mirrors place_order() in schema.sql so the offline preview behaves
@@ -336,35 +343,39 @@ const DB = (() => {
           discount = Math.round(subtotal * c.percent) / 100;
           appliedCode = c.code;
         }
-        let fee = Number(demo.zones.find(z => z.name === zone)?.fee) || 0;
+        const z = demo.zones.find(z => z.name === zone) || {};
+        let fee = Number(deliv === 'desk' ? z.desk : z.home) || 0;
         // threshold measured after the promo code, exactly as place_order() does
         if (freeFrom > 0 && (subtotal - discount) >= freeFrom) fee = 0;
         const orders = demoLoadOrders();
         const order = {
           id: (orders.at(-1)?.id || 1000) + 1, created_at: new Date().toISOString(),
-          customer_name, phone, address, zone,
+          customer_name, phone: dzPhone(phone) || phone, address, zone,
           delivery_fee: fee, items: priced, subtotal, discount,
           promo_code: appliedCode, total: subtotal - discount + fee, status: 'new',
+          delivery_type: deliv, carrier: '', tracking_number: '',
         };
         orders.push(order);
         demoSaveOrders(orders);
         return { id: order.id, subtotal, discount, promo_code: appliedCode,
-                 delivery_fee: fee, total: order.total };
+                 delivery_fee: fee, delivery_type: deliv, total: order.total };
       }
 
       try {
         return must(await sb.rpc('place_order', {
           p_name: customer_name, p_phone: phone, p_address: address,
           p_zone: zone, p_items: lines, p_promo_code: promo_code || '',
+          p_delivery_type: deliv,
         }));
       } catch (e) {
-        // PGRST202: no function with that signature — the v1.1 schema has not
-        // been pasted into SQL Editor yet. Fall back to the v1.0 call so the
-        // shop keeps taking orders; the promo code is simply ignored.
+        // PGRST202: no function with that signature — the schema in SQL Editor
+        // is older than this file. Step back one version at a time so the shop
+        // keeps taking orders instead of failing outright; the newer argument
+        // is simply ignored until the owner re-runs supabase/schema.sql.
         if (e?.code === 'PGRST202' || /does not exist/i.test(e?.message || '')) {
           return must(await sb.rpc('place_order', {
             p_name: customer_name, p_phone: phone, p_address: address,
-            p_zone: zone, p_items: lines,
+            p_zone: zone, p_items: lines, p_promo_code: promo_code || '',
           }));
         }
         throw e;
@@ -421,6 +432,24 @@ const DB = (() => {
         return;
       }
       must(await sb.from('orders').update({ status }).eq('id', id));
+    },
+
+    /* The courier's own parcel number, typed in once the parcel is handed
+       over. Without it the customer's tracking page can only show an internal
+       status and every "where is my order?" comes back to the shop by phone. */
+    async saveOrderShipping(id, carrier, tracking_number) {
+      const patch = {
+        carrier: String(carrier || '').trim().slice(0, 40),
+        tracking_number: String(tracking_number || '').trim().slice(0, 60),
+      };
+      if (IS_DEMO) {
+        const orders = demoLoadOrders();
+        const o = orders.find(o => String(o.id) === String(id));
+        if (o) Object.assign(o, patch);
+        demoSaveOrders(orders);
+        return;
+      }
+      must(await sb.from('orders').update(patch).eq('id', id));
     },
 
     // the owner can clean up old/test orders from the admin panel

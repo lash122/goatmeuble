@@ -8,6 +8,24 @@ function esc(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+/* Algerian mobile numbers, normalised — the browser-side twin of dz_phone()
+   in supabase/schema.sql, and it must stay in step with it.
+
+   A cash-on-delivery order is worth nothing without a number the driver can
+   ring: a wrong one costs the ad click that produced it AND a courier trip
+   that delivers nothing. The old check accepted any 9-15 characters made of
+   digits, spaces and dashes, so "123456789" sailed through.
+
+   A real mobile is 0 then 5, 6 or 7 then eight digits. The same number gets
+   typed as 0555 12 34 56, +213 555 123 456, 00213555123456 — so strip to
+   digits, peel the international prefixes and the trunk 0, and check what is
+   left. Returns the canonical 0XXXXXXXXX, or null when it is not a mobile. */
+function dzPhone(input) {
+  let d = String(input || '').replace(/\D/g, '');
+  d = d.replace(/^00/, '').replace(/^213/, '').replace(/^0/, '');
+  return /^[567]\d{8}$/.test(d) ? '0' + d : null;
+}
+
 /* Builds a wa.me link from whatever the owner typed in the admin panel.
    Algerian numbers get entered as 0555..., 05 55..., +213 555... — WhatsApp
    needs bare international digits, so normalise rather than make the owner
@@ -104,6 +122,14 @@ const I18N = (() => {
       free_delivery: 'Livraison offerte', free_delivery_qualifies: '🎉 Livraison offerte !',
       free_delivery_progress: 'Plus que {x} pour la livraison offerte 🚚',
       delivery_free: 'Offerte',
+      // v1.3 — Algerian delivery: stopdesk vs à domicile, and the parcel
+      deliv_type: 'Mode de livraison',
+      deliv_home: 'À domicile', deliv_home_hint: 'Le livreur vient à votre adresse',
+      deliv_desk: 'Stop desk', deliv_desk_hint: 'Vous récupérez au bureau du transporteur — moins cher',
+      address_desk_optional: 'Adresse (facultatif pour le stop desk)',
+      invalid_phone_dz: 'Numéro algérien invalide — ex. 0555 12 34 56',
+      carrier: 'Transporteur', tracking_number: 'N° de colis',
+      tracking_hint: 'Suivez votre colis avec ce numéro chez le transporteur.',
       wishlist: 'Favoris', wishlist_empty: 'Vos favoris sont vides — cliquez sur le ♥ d’un article.',
       wl_add: 'Ajouter aux favoris', wl_remove: 'Retirer des favoris',
       related: 'Vous aimerez aussi',
@@ -170,6 +196,13 @@ const I18N = (() => {
       free_delivery: 'توصيل مجاني', free_delivery_qualifies: '🎉 توصيل مجاني!',
       free_delivery_progress: 'أضف {x} أخرى للحصول على توصيل مجاني 🚚',
       delivery_free: 'مجاناً',
+      deliv_type: 'طريقة التوصيل',
+      deliv_home: 'إلى المنزل', deliv_home_hint: 'يأتي عامل التوصيل إلى عنوانك',
+      deliv_desk: 'مكتب التوصيل', deliv_desk_hint: 'تستلم الطرد من مكتب الناقل — أرخص',
+      address_desk_optional: 'العنوان (اختياري لمكتب التوصيل)',
+      invalid_phone_dz: 'رقم جزائري غير صحيح — مثال 0555 12 34 56',
+      carrier: 'شركة التوصيل', tracking_number: 'رقم الطرد',
+      tracking_hint: 'تابع طردك بهذا الرقم لدى شركة التوصيل.',
       wishlist: 'المفضلة', wishlist_empty: 'قائمة المفضلة فارغة — اضغط على ♥ في أي منتج.',
       wl_add: 'أضف إلى المفضلة', wl_remove: 'إزالة من المفضلة',
       related: 'قد يعجبك أيضاً',
@@ -236,6 +269,13 @@ const I18N = (() => {
       free_delivery: 'Free delivery', free_delivery_qualifies: '🎉 Free delivery!',
       free_delivery_progress: 'Only {x} away from free delivery 🚚',
       delivery_free: 'Free',
+      deliv_type: 'Delivery method',
+      deliv_home: 'To my address', deliv_home_hint: 'The courier comes to you',
+      deliv_desk: 'Stop desk', deliv_desk_hint: 'Collect from the courier office — cheaper',
+      address_desk_optional: 'Address (optional for stop desk)',
+      invalid_phone_dz: 'Not a valid Algerian number — e.g. 0555 12 34 56',
+      carrier: 'Carrier', tracking_number: 'Parcel no.',
+      tracking_hint: 'Track your parcel with this number at the carrier.',
       wishlist: 'Wishlist', wishlist_empty: 'Your wishlist is empty — tap the ♥ on any item.',
       wl_add: 'Add to wishlist', wl_remove: 'Remove from wishlist',
       related: 'You may also like',

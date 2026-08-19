@@ -6,7 +6,30 @@ An elegant, trilingual (**FR / AR / EN**) clothing store website with:
 - Owner admin panel: products, categories, orders, delivery zones, promotions, simple stats
 - No build tools, no server — deploy anywhere for free
 
-## ⭐ v1.2 — already installed? ONE required step
+## ⭐ v1.3 — already installed? ONE required step
+Paste `supabase/schema.sql` into **SQL Editor → Run** again. Until you do, the
+shop keeps working on the old single delivery price and the old loose phone
+check. Re-running is safe and **your delivery prices are kept**: the 58 wilayas
+are merged in, not overwritten — a wilaya you have already priced keeps your
+number, missing ones are added with a starting value you then edit.
+
+### New in v1.3 — the Algerian delivery model
+- **58 wilayas, two prices each.** *Stop desk* (the customer collects from the
+  courier's agency, cheaper) and *à domicile*. Many Algerian customers only
+  order at the stopdesk price, so offering one of the two turns orders away.
+  The customer picks the method at checkout and the wilaya list shows the price
+  for the method chosen. Set your real tariffs in **Zones de livraison**.
+- **Courier parcel number.** Record the carrier and bordereau on an order
+  (Commandes → Voir → Expédition) and the customer sees it on the tracking
+  page — that is where "où est ma commande ?" stops being a phone call. It is
+  in the CSV you hand the courier too.
+- **Algerian phone validation.** The old check accepted any 9–15 characters of
+  digits, spaces and dashes, so `123456789` passed. Numbers are now validated
+  as real Algerian mobiles (0 then 5/6/7 then eight digits, however they are
+  typed) and stored in one canonical `0XXXXXXXXX` form. A number the driver
+  cannot ring costs the ad click that produced it *and* the courier trip.
+
+## v1.2 — already installed? ONE required step
 Paste `supabase/schema.sql` into **SQL Editor → Run** again. It corrects when
 free delivery kicks in: the threshold is now measured **after** the promo-code
 discount, which is what the checkout page has always shown the customer. Until

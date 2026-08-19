@@ -192,14 +192,31 @@ function buildForm(subtotal) {
       <div class="form-grid" style="margin-top:18px;border-top:1px solid var(--line);padding-top:18px">
         <div><label data-i18n="name"></label><input id="fName" type="text"></div>
         <div><label data-i18n="phone"></label><input id="fPhone" type="tel" placeholder="05 XX XX XX XX"></div>
+        <div>
+          <label data-i18n="deliv_type"></label>
+          <div class="deliv-choice" id="fDeliv">
+            <label class="deliv-opt">
+              <input type="radio" name="deliv" value="home" checked>
+              <span><b data-i18n="deliv_home"></b><small data-i18n="deliv_home_hint"></small></span>
+            </label>
+            <label class="deliv-opt">
+              <input type="radio" name="deliv" value="desk">
+              <span><b data-i18n="deliv_desk"></b><small data-i18n="deliv_desk_hint"></small></span>
+            </label>
+          </div>
+        </div>
+        <div><label id="fAddressLabel" data-i18n="address"></label><textarea id="fAddress" rows="2"></textarea></div>
         <div><label data-i18n="zone"></label><select id="fZone"></select></div>
-        <div><label data-i18n="address"></label><textarea id="fAddress" rows="2"></textarea></div>
         <div class="error-msg" id="formError"></div>
         <button class="btn-gold" id="placeOrderBtn" style="width:100%" data-i18n="place_order"></button>
       </div>`;
     right.appendChild(form);
     form.querySelector('#placeOrderBtn').addEventListener('click', placeOrder);
     form.querySelector('#fZone').addEventListener('change', updateTotals);
+    // the wilaya list shows the price for the chosen method, so switching
+    // method has to redraw it, not just recompute the total
+    form.querySelectorAll('input[name="deliv"]').forEach(r =>
+      r.addEventListener('change', () => { renderZoneOptions(); updateTotals(); }));
   }
 
   // localize labels + placeholders
@@ -209,19 +226,39 @@ function buildForm(subtotal) {
   document.getElementById('promoBtn').textContent = I18N.t('promo_apply');
   document.getElementById('promoInput').placeholder = I18N.t('promo_code');
 
-  // zones with fee
-  const sel = form.querySelector('#fZone');
+  renderZoneOptions();
+  updateTotals();
+}
+
+/* 'home' (à domicile) or 'desk' (stopdesk, collected from the courier's
+   agency). Every wilaya carries both prices; this picks which one is quoted,
+   and place_order() applies the same choice server-side. */
+function deliveryType() {
+  return document.querySelector('input[name="deliv"]:checked')?.value === 'desk'
+    ? 'desk' : 'home';
+}
+
+function zoneFee(z, type = deliveryType()) {
+  // `fee` is the pre-v1.3 single price — kept so a shop whose database has not
+  // been upgraded yet still shows a delivery cost instead of zero
+  const v = type === 'desk' ? z?.desk : z?.home;
+  return Number(v ?? z?.home ?? z?.fee) || 0;
+}
+
+/* 58 wilayas, each labelled with the price for the method currently chosen —
+   the customer should not have to switch method to find out what it saves. */
+function renderZoneOptions() {
+  const sel = document.getElementById('fZone');
+  if (!sel) return;
   const prev = sel.value;
   sel.innerHTML = '';
   zones.forEach(z => {
     const o = document.createElement('option');
     o.value = z.name;
-    o.textContent = `${z.name} — ${I18N.fmtPrice(z.fee)}`;
+    o.textContent = `${z.code ? z.code + ' · ' : ''}${z.name} — ${I18N.fmtPrice(zoneFee(z))}`;
     sel.appendChild(o);
   });
   if (prev) sel.value = prev;
-
-  updateTotals();
 }
 
 /* Module level, and bound once when the form is built: render() re-runs on
@@ -232,6 +269,12 @@ function updateTotals() {
   if (!form) return;
   const zone = zones.find(z => z.name === form.querySelector('#fZone').value) || zones[0];
   const sub = currentBaseSubtotal;
+
+  // stopdesk means collecting from the agency, so the street address stops
+  // being required — say so rather than leaving a field that looks mandatory
+  const desk = deliveryType() === 'desk';
+  const addrLabel = document.getElementById('fAddressLabel');
+  if (addrLabel) addrLabel.textContent = I18N.t(desk ? 'address_desk_optional' : 'address');
 
   // promo code discount
   const discount = appliedCode ? Math.round(sub * appliedCode.percent) / 100 : 0;
@@ -247,7 +290,7 @@ function updateTotals() {
 
   // free delivery above the owner's threshold, after discounts
   const qualifies = freeFrom > 0 && (sub - discount) >= freeFrom;
-  const fee = qualifies ? 0 : (Number(zone?.fee) || 0);
+  const fee = qualifies ? 0 : zoneFee(zone);
   document.getElementById('deliveryVal').textContent = qualifies ? I18N.t('delivery_free') : I18N.fmtPrice(fee);
 
   // progress nudge toward the threshold
@@ -291,12 +334,18 @@ async function placeOrder() {
   const address = document.getElementById('fAddress').value.trim();
   const form = document.getElementById('orderForm');
   const zone = form.dataset.zone;
+  const deliv = deliveryType();
 
-  if (!name || !phone || !address || !zone) {
+  // stopdesk is collected from the courier's agency: the wilaya decides which
+  // agency, so a street address adds nothing and must not block the order
+  if (!name || !phone || !zone || (deliv === 'home' && !address)) {
     err.textContent = I18N.t('required'); err.classList.add('show'); return;
   }
-  if (!/^[0-9+\s-]{9,15}$/.test(phone)) {
-    err.textContent = I18N.t('invalid_phone'); err.classList.add('show'); return;
+  // a number the driver cannot ring costs the ad click AND the courier trip,
+  // so this is the Algerian mobile format, not "looks vaguely like a phone"
+  const dz = dzPhone(phone);
+  if (!dz) {
+    err.textContent = I18N.t('invalid_phone_dz'); err.classList.add('show'); return;
   }
 
   const btn = document.getElementById('placeOrderBtn');
@@ -307,8 +356,8 @@ async function placeOrder() {
     // lines that were actually ordered
     const ordered = Cart.get();
     const res = await DB.placeOrder({
-      customer_name: name, phone, address, zone, items: ordered,
-      promo_code: appliedCode?.code || '',
+      customer_name: name, phone: dz, address, zone, items: ordered,
+      promo_code: appliedCode?.code || '', delivery_type: deliv,
     });
     Track.purchase(res, ordered);
     Cart.clear();
@@ -366,7 +415,7 @@ function orderErrorMessage(e) {
   if (code.includes('PRODUCT_UNAVAILABLE')) return I18N.t('err_unavailable');
   if (code.includes('TOO_MANY_ORDERS')) return I18N.t('err_too_many');
   if (code.includes('INVALID_SIZE')) return I18N.t('size_required');
-  if (code.includes('INVALID_PHONE')) return I18N.t('invalid_phone');
+  if (code.includes('INVALID_PHONE')) return I18N.t('invalid_phone_dz');
   if (code.includes('INVALID_PROMO') || code.includes('PROMO_MIN_ORDER')) return I18N.t('promo_invalid');
   if (code.includes('MISSING_FIELDS') || code.includes('UNKNOWN_ZONE')) return I18N.t('required');
   console.error('place_order failed:', e);

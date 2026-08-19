@@ -124,8 +124,17 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width
 .bar-row { display: grid; grid-template-columns: 160px 1fr 70px; gap: 10px; align-items: center; margin-bottom: 9px; font-size: 0.88rem; }
 .bar-row .bar { background: #eceef4; border-radius: 6px; height: 18px; overflow: hidden; }
 .bar-row .bar i { display: block; height: 100%; background: var(--gold); }
-.zone-edit { display: flex; gap: 8px; margin-bottom: 9px; max-width: 420px; }
-.zone-edit input { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; }
+.zone-edit { display: flex; gap: 8px; margin-bottom: 9px; align-items: flex-end; }
+.zone-edit input { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; min-width: 0; }
+.zone-edit .z-code { flex: none; width: 30px; color: var(--muted); font-size: 0.8rem;
+  font-variant-numeric: tabular-nums; padding-bottom: 10px; }
+/* the two fee columns stay a fixed width so the numbers line up down the list */
+.zone-edit .z-lab { flex: none; width: 104px; font-size: 0.72rem; color: var(--muted); }
+.zone-edit .z-lab input { width: 100%; margin-top: 3px; font-variant-numeric: tabular-nums; }
+@media (max-width: 620px) {
+  .zone-edit { flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 9px; }
+  .zone-edit .z-name { flex: 1 1 100%; }
+}
 .order-items li { margin-inline-start: 18px; font-size: 0.88rem; }
 
 @media (max-width: 640px) { .f-grid.two { grid-template-columns: 1fr; } }

@@ -105,11 +105,25 @@ function renderResult(o) {
   const totals = document.createElement('div');
   totals.className = 'totals';
   totals.style.marginTop = '14px';
+  const method = I18N.t(o.delivery_type === 'desk' ? 'deliv_desk' : 'deliv_home');
   totals.innerHTML = `
     <div class="row"><span>${esc(I18N.t('subtotal'))}</span><span>${I18N.fmtPrice(o.subtotal)}</span></div>
-    <div class="row"><span>${esc(I18N.t('delivery'))} — ${esc(o.zone)}</span><span>${I18N.fmtPrice(o.delivery_fee)}</span></div>
+    <div class="row"><span>${esc(I18N.t('delivery'))} — ${esc(o.zone)} · ${esc(method)}</span><span>${I18N.fmtPrice(o.delivery_fee)}</span></div>
     <div class="row grand"><span>${esc(I18N.t('total'))}</span><span>${I18N.fmtPrice(o.total)}</span></div>`;
   box.appendChild(totals);
+
+  /* The courier's parcel number, once the shop has handed the parcel over.
+     Until then there is nothing to show — and showing an empty "N° de colis"
+     invites exactly the phone call it is meant to prevent. */
+  if (o.tracking_number) {
+    const parcel = document.createElement('div');
+    parcel.className = 'parcel-box';
+    parcel.innerHTML = `
+      <div class="row"><span>${esc(I18N.t('carrier'))}</span><b>${esc(o.carrier || '—')}</b></div>
+      <div class="row"><span>${esc(I18N.t('tracking_number'))}</span><b class="parcel-no">${esc(o.tracking_number)}</b></div>
+      <small>${esc(I18N.t('tracking_hint'))}</small>`;
+    box.appendChild(parcel);
+  }
 
   const cod = document.createElement('div');
   cod.className = 'cod-note';
