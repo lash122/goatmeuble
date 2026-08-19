@@ -313,9 +313,16 @@ def write_product_pages():
         d.mkdir(parents=True, exist_ok=True)
         (d / "index.html").write_text(page, encoding="utf-8")
 
+    # The shell the edge function fills at request time: the same branded
+    # template, asset paths already rebased for /p/<id>, but with nobody's
+    # product in it. Keeping it as a real file means the edge function does not
+    # carry a copy of the markup — the page it serves and the page the build
+    # writes come from one source that cannot drift apart.
+    (OUT / "product-shell.html").write_text(rebase_to_root(tpl), encoding="utf-8")
+
     # a template is not a page anyone should land on
     tpl_path.unlink()
-    print(f"   product pages: {len(products)} under p/<id>/")
+    print(f"   product pages: {len(products)} under p/<id>/  (+ product-shell.html)")
 
 
 def fetch_categories(api, key):
@@ -589,6 +596,17 @@ def write_robots():
 def copy_seo():
     shutil.copy(ROOT / "sitemap.xml", OUT / "sitemap.xml")
     shutil.copy(ROOT / "_headers", OUT / "_headers")
+    # The edge function travels with the deploy, so a drag-and-drop upload of
+    # dist-vip gets it too — not just a git-connected build.
+    shutil.copytree(ROOT / "netlify", OUT / "netlify", dirs_exist_ok=True)
+    # Deliberately NOT the root netlify.toml: that one tells Netlify to run the
+    # build and publish dist-vip, which is nonsense when dist-vip IS the site
+    # root. Hand-drop deploys get a file that only points at the functions.
+    (OUT / "netlify.toml").write_text(
+        "# Deployed build — the site is already built; do not build it again.\n"
+        "[[edge_functions]]\n"
+        '  path = "/p/*"\n'
+        '  function = "product"\n', encoding="utf-8")
     shutil.copy(ROOT / "_redirects", OUT / "_redirects")
 
 

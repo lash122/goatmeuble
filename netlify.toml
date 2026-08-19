@@ -1,0 +1,24 @@
+# Netlify configuration for a GIT-CONNECTED build (Netlify runs the scripts).
+#
+# This file is for the repository root. The build writes a much smaller one
+# into dist-vip/ for the drag-and-drop case, where Netlify is handed the
+# finished folder and must not try to build anything.
+
+[build]
+  # build-sitemap.py must run first: build-vip.py copies the sitemap and
+  # robots.txt it produces into the output.
+  command = "pip install -r requirements.txt && python3 build-sitemap.py && python3 build-vip.py"
+  publish = "dist-vip"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
+
+# Edge functions are declared inline in the function file itself
+# (`export const config = { path: '/p/*' }`), so there is nothing to route
+# here. This only tells Netlify where to find them, which is also the default.
+[functions]
+  directory = "netlify/functions"
+
+[[edge_functions]]
+  path = "/p/*"
+  function = "product"

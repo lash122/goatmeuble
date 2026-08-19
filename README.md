@@ -252,10 +252,7 @@ too, or the browser will refuse to load it.
   Product cards on the shop are ordinary links to these pages, so they open in
   a new tab, follow for a crawler, and work with the Back button.
 
-  **Re-run the build after adding a product.** Until you do, its page does not
-  exist and the `/p/* -> / 200` rule in `_redirects` lands the link on the
-  shop, which opens that product in a modal instead — it still sells, it just
-  previews generically on WhatsApp until the next build.
+  **You no longer have to rebuild after adding a product** — see below.
 
   A price edited since the last build shows the old figure for a moment before
   the settings arrive. Whatever is on screen, `place_order()` recomputes the
@@ -309,6 +306,41 @@ announced one by one — that would be noise on every login, not news.
 
 This is the whole notification system: there is no email and no server. If you
 close the dashboard, nothing is watching.
+
+### Product pages without rebuilding (Netlify edge function)
+`netlify/edge-functions/product.js` renders `/p/<id>` at the CDN edge: it
+fetches that one product from Supabase and fills `product-shell.html`, the same
+shell the build uses. So a product you add appears immediately, at the right
+price, with its own link preview — no build, no deploy.
+
+**It cannot break the site.** Every failure path — bad id, product hidden,
+database paused, request slower than 1.5 s, anything thrown — calls
+`context.next()` and hands the request back to Netlify. The ladder is:
+
+1. the edge function — always current, any product
+2. the baked `p/<id>/index.html` from the last build — correct, maybe stale
+3. `/p/* -> /` in `_redirects` — the shop, which opens the product in a modal
+
+Layers 2 and 3 are exactly what the site did before, untouched. Turning the
+edge function off (delete it, or drop the `[[edge_functions]]` block) returns
+you to the previous behaviour with nothing else to undo.
+
+**It needs two environment variables** in Netlify → Site configuration →
+Environment variables. Without them it does nothing and falls straight to the
+baked pages:
+
+| Variable | Value |
+|---|---|
+| `SUPABASE_URL` | the `url` from `js/config.js` |
+| `SUPABASE_ANON_KEY` | the `anonKey` from `js/config.js` |
+| `SITE_URL` | optional — defaults to the request's own origin |
+
+Responses are cached at the edge for 60 s with `stale-while-revalidate`, so a
+price edit appears within about a minute and the shop is not charged a database
+round trip per view.
+
+You still want to run the build periodically — it refreshes the sitemap and the
+baked fallbacks — but forgetting to is no longer a broken link.
 
 ### Ads (Meta & TikTok pixels)
 The shop's traffic comes from paid social, and an ad platform can only

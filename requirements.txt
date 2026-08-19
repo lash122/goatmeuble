@@ -1,0 +1,4 @@
+# build-vip.py generates the favicon, the 1200x630 share card and the PWA
+# icons from the logo, so the build needs an imaging library. Nothing else
+# here is a runtime dependency — the site itself is static files.
+Pillow>=10.0
