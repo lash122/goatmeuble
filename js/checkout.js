@@ -42,6 +42,11 @@ async function initCheckout() {
 
   renderFaq();
   render();
+
+  /* Fired after revalidateCartPrices(), so the value reported to the ad
+     platforms is the corrected basket rather than whatever price was stored
+     in localStorage when the item was added. */
+  Track.beginCheckout(Cart.get());
 }
 
 /* The cart stores the shelf price from the moment the item was added; the
@@ -106,7 +111,7 @@ function render() {
     appliedCode = null;
     linesEl.innerHTML = `
       <p style="text-align:center;color:var(--muted);padding:30px 0" data-i18n="cart_empty"></p>
-      <div style="text-align:center"><a class="btn-outline" href="index.html" data-i18n="continue_shopping"></a></div>`;
+      <div style="text-align:center"><a class="btn-outline" href="./" data-i18n="continue_shopping"></a></div>`;
     linesEl.querySelectorAll('[data-i18n]').forEach(el => el.textContent = I18N.t(el.dataset.i18n));
     ['subtotalVal', 'deliveryVal', 'totalVal'].forEach(id => document.getElementById(id).textContent = '—');
     document.getElementById('promoRow').hidden = true;
@@ -298,10 +303,14 @@ async function placeOrder() {
   btn.disabled = true; btn.style.opacity = 0.6;
 
   try {
+    // captured before Cart.clear(), because the conversion event needs the
+    // lines that were actually ordered
+    const ordered = Cart.get();
     const res = await DB.placeOrder({
-      customer_name: name, phone, address, zone, items: Cart.get(),
+      customer_name: name, phone, address, zone, items: ordered,
       promo_code: appliedCode?.code || '',
     });
+    Track.purchase(res, ordered);
     Cart.clear();
     document.getElementById('cartView').style.display = 'none';
     document.getElementById('faq').style.display = 'none';

@@ -308,6 +308,7 @@ async function initStore() {
       return;
     }
     Cart.add(state.current, state.selectedSize || '');
+    Track.addToCart(state.current);
     closeModal();
     toast();
   };
@@ -319,6 +320,15 @@ async function initStore() {
     renderWishButton();
     renderGrid(); renderFeatured();
   });
+  /* The size guide is a clothing feature (chest and waist, with a tape
+     measure). A shop selling anything else uses the same chooser for colours
+     or storage, where the guide is nonsense — so it is opt-in, and the button
+     goes away entirely rather than opening an irrelevant panel.
+     Only the button opens it, so hiding the button is enough — the panel
+     stays in the DOM because the Escape/Tab handlers below read it. */
+  if (window.SIZE_GUIDE === false) {
+    document.getElementById('sizeGuideBtn').hidden = true;
+  }
   document.getElementById('sizeGuideBtn').addEventListener('click', () => {
     // push the button itself: mouse users often don't have focus on it, and
     // returning focus there when the guide closes is what keyboard users expect
@@ -366,7 +376,7 @@ function renderPromoBanner() {
 function renderChips() {
   const row = document.getElementById('categoryChips');
   const chips = [{ id: null, label: I18N.t('all') },
-    ...state.categories.map(c => ({ id: c.id, label: I18N.localize(c, 'name') }))];
+    ...stockedCategories().map(c => ({ id: c.id, label: I18N.localize(c, 'name') }))];
   // the wishlist lives next to the categories: one tap to see saved hearts
   const wlCount = Wishlist.get().length;
   chips.push({ id: 'wishlist', label: `♥ ${I18N.t('wishlist')}${wlCount ? ` (${wlCount})` : ''}` });
@@ -391,7 +401,8 @@ function renderTiles() {
   const section = document.getElementById('catTiles');
   const row = document.getElementById('tileRow');
   row.innerHTML = '';
-  state.categories.forEach(c => {
+  const shown = stockedCategories();
+  shown.forEach(c => {
     const count = state.products.filter(p => p.category_id === c.id).length;
     const tile = document.createElement('button');
     tile.className = 'cat-tile';
@@ -406,8 +417,17 @@ function renderTiles() {
     });
     row.appendChild(tile);
   });
-  section.hidden = !state.categories.length;
+  section.hidden = !shown.length;
   eagerFirstRow(row);
+}
+
+/* Categories the visitor can actually buy from. An empty category is a tile
+   promising a section and a chip that filters to "no products" — the owner
+   sees it as a category waiting to be filled, a customer sees a dead end.
+   It reappears on its own the moment a product is put in it. */
+function stockedCategories() {
+  return state.categories.filter(c =>
+    state.products.some(p => p.category_id === c.id));
 }
 
 function wishHeart(p) {
@@ -830,6 +850,7 @@ async function shareCurrent() {
 }
 
 function openModal(p, opts = {}) {
+  Track.view(p);
   state.current = p;
   state.selectedSize = null;
   state.photoIndex = 0;

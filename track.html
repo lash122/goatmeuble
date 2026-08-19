@@ -9,6 +9,11 @@
   <link id="fontsCss" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="preconnect" href="https://ssnplihsehgjiydlfimo.supabase.co" crossorigin>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <!-- Installable on a phone home screen: customers who come back are
+       worth more than an ad click, and it costs three tags. -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="theme-color" content="#0f1b33">
   <!-- Social tags for shared links; the snippet absolutizes og:url/og:image
        from SITE_URL (js/config.js) or the live origin. -->
   <link rel="canonical" href="/track.html">
@@ -41,7 +46,7 @@
 
   <header class="site">
     <div class="container site-inner">
-      <a class="brand" href="index.html"><span class="logo">É<em>l</em>égance</span></a>
+      <a class="brand" href="./"><span class="logo">É<em>l</em>égance</span></a>
       <div class="header-actions">
         <div class="lang-switch">
           <button data-lang="fr">FR</button>
@@ -90,7 +95,7 @@
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
     crossorigin="anonymous" defer></script>
-  <script src="js/config.js?v=30" defer></script>
+  <script src="js/config.js?v=31" defer></script>
   <script src="js/i18n.js?v=32" defer></script>
   <script src="js/supabase.js?v=29" defer></script>
   <script src="js/cart.js?v=28" defer></script>

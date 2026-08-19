@@ -1,6 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /admin.html
-Disallow: /checkout.html
 
 Sitemap: https://vptech.dzstor.shop/sitemap.xml

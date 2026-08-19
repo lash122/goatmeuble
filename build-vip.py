@@ -32,6 +32,10 @@ FONTS = ("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700"
 # The VP logo is a photo, not a vector — keep it as JPEG in the deploy.
 LOGO_OUT = "logo.jpg"
 
+# Dark slate, matching the theme's top bar — used for the phone's browser
+# chrome and as the splash background when the shop is installed.
+THEME_COLOR = "#0b1220"
+
 
 def build():
     if OUT.exists():
@@ -55,6 +59,7 @@ def build():
     reorder_home(['catTiles', 'shop', 'featured'])
     retitle_i18n()
     write_favicon()
+    write_pwa()
     write_og_card()
     write_robots()
     copy_seo()
@@ -79,6 +84,10 @@ def rebrand_pages():
 
         # Inter-only font request, like TECH DZ
         s = re.sub(r'https://fonts\.googleapis\.com/css2\?[^\"]+', FONTS, s)
+
+        # browser chrome colour: the dark slate this theme actually uses
+        s = s.replace('<meta name="theme-color" content="#0f1b33">',
+                      f'<meta name="theme-color" content="{THEME_COLOR}">')
 
         # wordmarks become the logo image + store name (index / checkout / track)
         s = s.replace('<span class="logo">É<em>l</em>égance</span>',
@@ -237,6 +246,45 @@ def write_favicon():
     from PIL import Image
     img = Image.open(LOGO_SRC).convert("RGB").resize((64, 64), Image.LANCZOS)
     img.save(OUT / "favicon.png", optimize=True)
+
+
+def write_pwa():
+    """Home-screen icons and the web app manifest.
+
+    Customers reach this shop from an ad once; an icon on their home screen is
+    how they come back without paying for the click twice. The logo is a
+    1024px square, so the three sizes are straight downscales of it.
+
+    start_url is './' — the same bare-directory URL the pages link to, so an
+    installed shop and a shared link open the identical address.
+    """
+    import json
+    from PIL import Image
+
+    logo = Image.open(LOGO_SRC).convert("RGB")
+    for size in (180, 192, 512):
+        logo.resize((size, size), Image.LANCZOS).save(
+            OUT / f"icon-{size}.png", optimize=True)
+
+    (OUT / "manifest.json").write_text(json.dumps({
+        "name": BRAND,
+        "short_name": "VP Tech",
+        "description": "Smartphones, ordinateurs et accessoires — "
+                       "livraison partout en Algérie, paiement à la livraison.",
+        "start_url": "./",
+        "scope": "./",
+        "display": "standalone",
+        "background_color": THEME_COLOR,
+        "theme_color": THEME_COLOR,
+        "lang": "fr",
+        "dir": "ltr",
+        "icons": [
+            {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+            {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+            {"src": "icon-512.png", "sizes": "512x512", "type": "image/png",
+             "purpose": "maskable"},
+        ],
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def write_og_card():

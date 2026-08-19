@@ -21,6 +21,27 @@ const SUPABASE_CONFIG = {
 // const it silently stayed undefined and the pages fell back to the origin.
 window.SITE_URL = 'https://vptech.dzstor.shop';
 
+/* Ad pixels. The shop's traffic comes from Facebook, Instagram and TikTok,
+   and an ad platform can only optimise for what it can measure — without
+   these, every campaign is spending blind and there is no retargeting.
+
+   Paste the IDs from Meta Events Manager and TikTok Events Manager. Leave a
+   value empty and that pixel is never loaded at all: no third-party script,
+   no cookie, nothing to disclose. See js/tracking.js for the events sent.
+
+   Adding a pixel makes you responsible for saying so — publish a privacy
+   policy before switching one on. */
+window.ADS = {
+  metaPixelId: '',      // Meta (Facebook/Instagram) — 15-16 digits
+  tiktokPixelId: '',    // TikTok — starts with C, e.g. 'CXXXXXXXXXXXXXXXXXXX'
+};
+
+/* Size guide. A clothing feature: the panel measures chest and waist with a
+   tape. Set false for a shop that sells anything else — a phone offered in
+   "Orange / Bleu / Argent" uses the same chooser, and a size guide beside it
+   makes the shop look like it was built for something different. */
+window.SIZE_GUIDE = false;
+
 // Demo mode shows sample products when the keys above are not set yet,
 // so you can preview the site design before connecting Supabase.
 const IS_DEMO =

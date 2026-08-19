@@ -20,14 +20,20 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), interest-cohort=()
   # Content Security Policy — the allow-list of what this site may load:
   #   script  self + cdn.jsdelivr.net (supabase-js, pinned with an SRI hash)
+  #           + connect.facebook.net / analytics.tiktok.com (the ad pixels)
   #   style   self + fonts.googleapis.com    font  fonts.gstatic.com
   #   img     self + data: (SVG placeholders) + blob: (upload previews)
   #           + the Supabase project (product photos in Storage)
-  #   connect the Supabase REST/auth/storage API, wss: for its realtime socket
+  #           + facebook.com — the Meta pixel reports via a 1×1 <img> beacon
+  #   connect the Supabase REST/auth/storage API, wss: for its realtime
+  #           socket, and the two pixels' event endpoints
   # 'unsafe-inline' is required and not removable yet: the SEO snippets in the
   # page heads are inline, and the font <link> uses an inline onload handler.
   # Even with it, an injected <script src> from an unlisted host is refused.
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ssnplihsehgjiydlfimo.supabase.co; connect-src 'self' https://ssnplihsehgjiydlfimo.supabase.co wss://ssnplihsehgjiydlfimo.supabase.co
+  #
+  # Adding a pixel means adding its hosts here too — a CSP that silently
+  # blocks the tracker looks exactly like a tracker that was never installed.
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://connect.facebook.net https://analytics.tiktok.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ssnplihsehgjiydlfimo.supabase.co https://www.facebook.com https://analytics.tiktok.com; connect-src 'self' https://ssnplihsehgjiydlfimo.supabase.co wss://ssnplihsehgjiydlfimo.supabase.co https://www.facebook.com https://connect.facebook.net https://analytics.tiktok.com
 
 # The owner's panel is not a search result and not a shareable link.
 /admin.html

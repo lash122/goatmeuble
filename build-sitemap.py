@@ -93,9 +93,17 @@ def write_sitemap(site, products):
 
 
 def write_robots(site):
+    """Deliberately no `Disallow: /admin.html`.
+
+    Naming the owner's login in a file every scanner reads is an invitation,
+    and it backfires twice over: Disallow stops a crawler fetching the page,
+    so it never sees the `X-Robots-Tag: noindex` in _headers, and the URL can
+    still surface in results on inbound links alone. The header is the thing
+    that actually removes those pages from the index — let Google fetch them
+    and be told to drop them.
+    """
     (ROOT / "robots.txt").write_text(
-        "User-agent: *\nAllow: /\nDisallow: /admin.html\n"
-        "Disallow: /checkout.html\n\n"
+        "User-agent: *\nAllow: /\n\n"
         f"Sitemap: {site}/sitemap.xml\n", encoding="utf-8")
 
 

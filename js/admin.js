@@ -545,8 +545,10 @@ function renderLayouts() {
     card.addEventListener('click', () => { chosenLayout = l.key; layoutDirty = true; renderLayouts(); });
     grid.appendChild(card);
   });
+  // './' rather than 'index.html' — the shop's public URL is the bare
+  // directory, and the preview should open the address customers actually see
   document.getElementById('previewLayoutLink').href = chosenLayout
-    ? `index.html?layout=${chosenLayout}` : 'index.html';
+    ? `./?layout=${chosenLayout}` : './';
 }
 
 async function saveLayout(skipConfirm) {
