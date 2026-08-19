@@ -14,6 +14,7 @@ let layoutDirty = false;  // true once the owner picks a card on this screen
 /* The templates the dashboard can apply (keys match layouts.js). */
 const LAYOUT_CHOICES = [
   { key: 'tech', label: 'Tech', desc: 'Navy & bleu électrique — accueil design, produits en avant.', mini: 'tech' },
+  { key: 'furniture', label: 'Atelier', desc: 'Lin & noyer, accent terracotta — photos larges, catégories par pièce. Pour le mobilier.', mini: 'furniture' },
   { key: 'sharp', label: 'Sharp', desc: 'Minimaliste noir & blanc — mur masonry, sans héros.', mini: 'sharp' },
 ];
 
@@ -773,6 +774,7 @@ function renderLayouts() {
   grid.innerHTML = '';
   const minis = {
     tech: '<i class="m-grid"></i><i class="m-chip"></i>',
+    furniture: '<i class="m-band"></i><i class="m-wide a"></i><i class="m-wide b"></i>',
     sharp: '<i class="m-top"></i><i class="m-tile a"></i><i class="m-tile b"></i><i class="m-tile c"></i><i class="m-dot"></i>',
   };
   LAYOUT_CHOICES.forEach(l => {

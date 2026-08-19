@@ -162,6 +162,13 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width
 }
 .mini.tech .m-chip { left: 20px; top: 32px; width: 56px; height: 20px; border-radius: 6px; background: #2563eb; }
 
+/* furniture — linen wall, walnut band, two wide landscape cards */
+.mini.furniture { background: #f7f3ec; }
+.mini.furniture .m-band { top: 0; left: 0; right: 0; height: 14px; background: #3b2f26; }
+.mini.furniture .m-wide { background: #e6dccd; border: 1px solid #d9cbb6; border-radius: 6px; }
+.mini.furniture .m-wide.a { top: 26px; left: 12px; right: 12px; height: 42px; }
+.mini.furniture .m-wide.b { top: 76px; left: 12px; right: 46px; height: 32px; background: #a9603f; border-color: #96543a; }
+
 /* sharp — black bar, masonry tiles, violet dot */
 .mini.sharp { background: #fff; }
 .mini.sharp .m-top { top: 0; left: 0; right: 0; height: 16px; background: #141414; }

@@ -5,20 +5,21 @@
    settings, and this module applies it at runtime on every page load — no
    rebuild, no redeploy.
 
-   Two templates, each a different *composition* of the same shared markup:
-     - tech   — navy & electric blue, circuit-board welcome, products first
-     - sharp  — black & white masonry, no hero — the wall welcomes you
+   Three templates, each a different *composition* of the same shared markup:
+     - tech      — navy & electric blue, circuit-board welcome, products first
+     - furniture — linen & walnut, wide landscape photos, categories first
+     - sharp     — black & white masonry, no hero — the wall welcomes you
    A template is: a theme stylesheet (#themeCss), a font stack (#fontsCss),
    a homepage section order, optional markup (the tech hero decor), and a
    few shopfront strings (hero title, section names).
 
-   `?layout=tech|sharp` on any URL forces a layout for previewing from the
+   `?layout=tech|furniture|sharp` on any URL forces a layout for previewing from the
    dashboard without saving. An unknown or missing layout falls back to the
    build's native look (the dist's own baked theme, if any). */
 
 /* Cache-buster for the theme stylesheets this module loads. Bump whenever a
    css/theme-*.css file changes, so browsers don't serve a stale sheet. */
-const THEME_CSS_VER = 29;
+const THEME_CSS_VER = 31;
 
 const LAYOUTS = {
   tech: {
@@ -52,6 +53,44 @@ const LAYOUTS = {
         search_ph: 'Search products…',
         no_results: 'No products match your search.',
         wa_prefill: 'Hello, I have a question about a product.',
+      },
+    },
+  },
+
+  /* Furniture sells on the room, not the object: wide photos, fewer and
+     larger cards, and categories first because people shop by room. */
+  furniture: {
+    label: 'Atelier',
+    desc: 'Lin & noyer, accent terracotta — photos larges, catégories par pièce.',
+    css: 'css/theme-furniture.css',
+    fonts: 'https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600'
+      + '&family=Inter:wght@400;600;700'
+      + '&family=Cairo:wght@400;600;700&display=swap',
+    order: ['catTiles', 'featured', 'shop'],
+    i18n: {
+      fr: {
+        hero_title: 'Des meubles qui durent',
+        hero_sub: 'Salon, chambre, bureau — livrés et montés chez vous, paiement à la livraison.',
+        all_products: 'Notre mobilier',
+        search_ph: 'Rechercher un meuble…',
+        no_results: 'Aucun meuble ne correspond à votre recherche.',
+        wa_prefill: 'Bonjour, j’ai une question sur un meuble.',
+      },
+      ar: {
+        hero_title: 'أثاث يدوم طويلاً',
+        hero_sub: 'صالون، غرفة نوم، مكتب — التوصيل والتركيب في منزلك مع الدفع عند الاستلام.',
+        all_products: 'أثاثنا',
+        search_ph: 'ابحث عن قطعة أثاث…',
+        no_results: 'لا توجد قطعة أثاث تطابق بحثك.',
+        wa_prefill: 'مرحباً، لدي سؤال عن قطعة أثاث.',
+      },
+      en: {
+        hero_title: 'Furniture built to last',
+        hero_sub: 'Living room, bedroom, office — delivered and assembled at home, cash on delivery.',
+        all_products: 'Our furniture',
+        search_ph: 'Search furniture…',
+        no_results: 'No furniture matches your search.',
+        wa_prefill: 'Hello, I have a question about a piece of furniture.',
       },
     },
   },
