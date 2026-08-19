@@ -6,8 +6,8 @@
    4. Run the file supabase/schema.sql in SQL Editor.
    ============================================================ */
 const SUPABASE_CONFIG = {
-  url: 'https://ssnplihsehgjiydlfimo.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzbnBsaWhzZWhnaml5ZGxmaW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzMjQ2MTEsImV4cCI6MjEwMTkwMDYxMX0.dmfMjrHTjJ_kZuNLsYvS3brSTgwFYe1OXjS7y3S90o0',
+  url: 'https://bdvnlqdublfikmadcnev.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkdm5scWR1YmxmaWttYWRjbmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwOTMwMTQsImV4cCI6MjEwMjY2OTAxNH0.XqwovU4SdlPzX55Psp4NGEeDnYYL9wX5jFqdHYql43A',
 };
 
 // Your public site URL, used for social previews and search links (og:url,

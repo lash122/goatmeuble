@@ -118,15 +118,8 @@ function galleryUp() {
 }
 
 /* ---- wishlist & recently viewed (localStorage, no account needed) ---- */
-const Wishlist = {
-  get() { try { return JSON.parse(localStorage.getItem('wishlist')) || []; } catch { return []; } },
-  has(id) { return this.get().includes(id); },
-  toggle(id) {
-    let ids = this.get();
-    ids = ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id];
-    localStorage.setItem('wishlist', JSON.stringify(ids));
-  },
-};
+/* Wishlist moved to js/cart.js — the product page needs it too, and cart.js is
+   the module every page already loads for localStorage state. */
 const RecentlyViewed = {
   get() { try { return JSON.parse(localStorage.getItem('recently_viewed')) || []; } catch { return []; } },
   push(id) {

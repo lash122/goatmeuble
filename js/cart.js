@@ -26,6 +26,19 @@ const Cart = {
   clear() { this.save([]); },
 };
 
+/* Saved hearts. Lives here rather than in store.js because the storefront and
+   the product page both need it, and cart.js is the localStorage module every
+   page already loads. */
+const Wishlist = {
+  get() { try { return JSON.parse(localStorage.getItem('wishlist')) || []; } catch { return []; } },
+  has(id) { return this.get().includes(id); },
+  toggle(id) {
+    let ids = this.get();
+    ids = ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id];
+    localStorage.setItem('wishlist', JSON.stringify(ids));
+  },
+};
+
 function renderCartCount() {
   const el = document.getElementById('cartCount');
   if (el) el.textContent = Cart.count();

@@ -292,6 +292,24 @@ const DB = (() => {
       return data;
     },
 
+    /* A few neighbours for the product page. The shop filters these out of the
+       catalogue it already holds; a product page never loads the catalogue, so
+       it asks for exactly the four it will show. */
+    async getRelated(categoryId, excludeId, limit = 4) {
+      if (IS_DEMO) {
+        return demo.products
+          .filter(x => x.active && x.category_id === categoryId && x.id !== excludeId)
+          .slice(0, limit);
+      }
+      return must(await sb.from('products')
+        .select('id,name_fr,name_ar,name_en,price,compare_at_price,photos,stock')
+        .eq('active', true)
+        .eq('category_id', categoryId)
+        .neq('id', excludeId)
+        .gt('stock', 0)
+        .limit(limit)) || [];
+    },
+
     async saveProduct(p) {
       if (IS_DEMO) {
         if (p.id) { const i = demo.products.findIndex(x => x.id === p.id); if (i >= 0) demo.products[i] = p; }

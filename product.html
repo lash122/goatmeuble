@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produit — Élégance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link id="fontsCss" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link rel="preconnect" href="__SUPABASE_ORIGIN__" crossorigin>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="theme-color" content="#0f1b33">
+  <link rel="stylesheet" href="css/style.css?v=26">
+  <link rel="stylesheet" href="css/product.css?v=1">
+</head>
+<body>
+  <div class="topbar">Livraison à domicile — Paiement à la livraison فقط | Cash on delivery</div>
+
+  <header class="site">
+    <div class="container site-inner">
+      <a class="brand" href="./">
+        <span class="logo">É<em>l</em>égance</span>
+      </a>
+      <nav class="main-nav">
+        <a href="./" data-i18n="nav_shop"></a>
+        <a href="track.html" data-i18n="track"></a>
+      </nav>
+      <div class="header-actions">
+        <div class="lang-switch">
+          <button data-lang="fr">FR</button>
+          <button data-lang="ar">ع</button>
+          <button data-lang="en">EN</button>
+        </div>
+        <a class="cart-btn" href="checkout.html">
+          <span data-i18n="cart"></span>
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container pdp">
+    <!-- Filled at build time so the crawler and the customer both get it
+         without waiting for the database. -->
+    <nav class="pdp-crumbs" aria-label="Fil d'ariane">
+      <a href="./" data-i18n="nav_shop"></a>
+      <span>›</span>
+      <a id="pdpCrumbCat" href="./"></a>
+    </nav>
+
+    <div class="pdp-grid">
+      <div class="pdp-media">
+        <div class="pdp-photo"><img id="pdpPhoto" alt=""></div>
+        <div class="pdp-thumbs" id="pdpThumbs" hidden></div>
+      </div>
+
+      <div class="pdp-info">
+        <span class="cat" id="pdpCat"></span>
+        <h1 id="pdpName"></h1>
+        <div class="price-row">
+          <span class="price" id="pdpPrice"></span>
+          <span class="price-old" id="pdpOld"></span>
+        </div>
+        <p class="pdp-desc" id="pdpDesc"></p>
+
+        <div id="pdpSizeBlock">
+          <div class="size-label"><span data-i18n="select_size"></span></div>
+          <div class="sizes" id="pdpSizes"></div>
+          <div class="size-error" id="pdpSizeError" data-i18n="size_required"></div>
+        </div>
+
+        <button class="btn-gold pdp-add" id="pdpAdd" data-i18n="add_to_cart"></button>
+        <div class="m-actions">
+          <button class="wl-btn" id="pdpWish" type="button"></button>
+          <button class="wl-btn" id="pdpShare" type="button"></button>
+        </div>
+
+        <!-- The reassurance a cash-on-delivery buyer is actually looking for,
+             on the page instead of two clicks away at checkout. -->
+        <ul class="pdp-trust">
+          <li><b>💵</b><span data-i18n="cod_only"></span></li>
+          <li><b>🏢</b><span data-i18n="deliv_desk_hint"></span></li>
+          <li><b>🏠</b><span data-i18n="deliv_home_hint"></span></li>
+        </ul>
+      </div>
+    </div>
+
+    <section class="pdp-related" id="pdpRelatedBlock" hidden>
+      <h2 class="section-title" data-i18n="related"></h2>
+      <div class="product-grid" id="pdpRelated"></div>
+    </section>
+  </main>
+
+  <footer class="site" id="contact">
+    <div class="container cols">
+      <div>
+        <h4>É<em style="color:var(--gold)">l</em>égance</h4>
+        <p style="max-width:260px" data-i18n="hero_sub"></p>
+      </div>
+      <div>
+        <h4 data-i18n="nav_contact"></h4>
+        <p id="footerPhone">—</p>
+        <div class="social-links" id="socialLinks"></div>
+        <a href="track.html" data-i18n="track"></a>
+      </div>
+    </div>
+    <div class="container fine">© <span id="year"></span> Élégance — <span data-i18n="cod_only"></span></div>
+  </footer>
+
+  <!-- sticky buy bar on phones, where the button scrolls away -->
+  <div class="pdp-sticky" id="pdpSticky" hidden>
+    <img id="pdpStickyImg" alt="">
+    <div><b id="pdpStickyName"></b><span id="pdpStickyPrice"></span></div>
+    <button class="btn-gold" id="pdpStickyAdd" data-i18n="add_to_cart"></button>
+  </div>
+
+  <a class="wa-float" id="waFloat" hidden target="_blank" rel="noopener noreferrer"></a>
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
+    integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
+    crossorigin="anonymous" defer></script>
+  <script src="js/config.js?v=31" defer></script>
+  <script src="js/tracking.js?v=1" defer></script>
+  <script src="js/i18n.js?v=33" defer></script>
+  <script src="js/supabase.js?v=31" defer></script>
+  <script src="js/cart.js?v=28" defer></script>
+  <script src="js/layouts.js?v=33" defer></script>
+  <script src="js/product.js?v=1" defer></script>
+</body>
+</html>

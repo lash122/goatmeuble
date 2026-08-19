@@ -34,6 +34,9 @@ FONTS = ("https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600"
          "&family=Cairo:wght@400;600;700&display=swap")
 
 
+THEME_LINK = '<link rel="stylesheet" href="css/theme-rugs.css?v=14" id="themeCss" data-native-theme>'
+
+
 def build():
     if OUT.exists():
         shutil.rmtree(OUT)
@@ -73,10 +76,12 @@ def rebrand_pages():
 
         # theme overlay must load after style.css so it can override
         # (the base pages carry a ?v= cache-buster on the stylesheet link)
-        s = s.replace(
-            '<link rel="stylesheet" href="css/style.css?v=25">',
-            '<link rel="stylesheet" href="css/style.css?v=25">\n'
-            '  <link rel="stylesheet" href="css/theme-rugs.css?v=14" id="themeCss" data-native-theme>', 1)
+        # Regex, not a literal: this used to match "css/style.css?v=25" exactly,
+        # so bumping the stylesheet cache-buster silently stopped injecting the
+        # theme overlay and the build fell back to the base look with no error.
+        s = re.sub(
+            r'(<link rel="stylesheet" href="css/style\.css\?v=\d+">)',
+            lambda m: m.group(1) + '\n  ' + THEME_LINK, s, count=1)
 
         # swap the font request wholesale — the type is half the identity
         s = re.sub(r'https://fonts\.googleapis\.com/css2\?[^"]+', FONTS, s)

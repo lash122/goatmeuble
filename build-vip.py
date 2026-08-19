@@ -26,7 +26,10 @@ OUT = ROOT / "dist-vip"
 
 BRAND = "Société de vente privée"
 LOGO_SRC = ROOT / "assets" / "logo-svp.jpg"
-PAGES = ["index.html", "checkout.html", "admin.html", "track.html", "404.html"]
+# product.html is a TEMPLATE, not a page: it is branded like the rest, then
+# consumed by write_pdp_prototype() and deleted from the output.
+PAGES = ["index.html", "checkout.html", "admin.html", "track.html", "404.html",
+         "product.html"]
 ASSETS = ["css", "js", "og-image.png"]
 
 # Same trimmed font stack as TECH DZ (Inter + Cairo, no Playfair).
@@ -39,6 +42,9 @@ LOGO_OUT = "logo.jpg"
 # Dark slate, matching the theme's top bar — used for the phone's browser
 # chrome and as the splash background when the shop is installed.
 THEME_COLOR = "#0b1220"
+
+
+THEME_LINK = '<link rel="stylesheet" href="css/theme-tech.css?v=12" id="themeCss" data-native-theme>'
 
 
 def build():
@@ -68,6 +74,9 @@ def build():
     write_og_card()
     write_robots()
     copy_seo()
+    # after copy_seo(): _headers is copied from the source there, so
+    # substituting before it would be overwritten by the placeholder copy
+    write_supabase_origin()
     write_product_pages()
 
     files = sorted(p.relative_to(OUT).as_posix() for p in OUT.rglob("*") if p.is_file())
@@ -83,10 +92,12 @@ def rebrand_pages():
         s = p.read_text(encoding="utf-8")
 
         # theme overlay must come after style.css so it can override
-        s = s.replace(
-            '<link rel="stylesheet" href="css/style.css?v=25">',
-            '<link rel="stylesheet" href="css/style.css?v=25">\n'
-            '  <link rel="stylesheet" href="css/theme-tech.css?v=12" id="themeCss" data-native-theme>', 1)
+        # Regex, not a literal: this used to match "css/style.css?v=25" exactly,
+        # so bumping the stylesheet cache-buster silently stopped injecting the
+        # theme overlay and the build fell back to the base look with no error.
+        s = re.sub(
+            r'(<link rel="stylesheet" href="css/style\.css\?v=\d+">)',
+            lambda m: m.group(1) + '\n  ' + THEME_LINK, s, count=1)
 
         # Inter-only font request, like TECH DZ
         s = re.sub(r'https://fonts\.googleapis\.com/css2\?[^\"]+', FONTS, s)
@@ -287,6 +298,40 @@ def write_product_pages():
         (d / "index.html").write_text(page, encoding="utf-8")
 
     print(f"   product pages: {len(products)} under p/<id>/")
+    write_pdp_prototype(products, cats, site, fallback_img, fallback_desc)
+
+
+def write_pdp_prototype(products, cats, site, fallback_img, fallback_desc):
+    """PROTOTYPE — the dedicated product template, at p2/<id>/.
+
+    Deliberately a second address rather than a replacement: p/<id>/ is the
+    shop page with the modal opened, p2/<id>/ is a page built for one product.
+    Same data, same build, so the two can be compared before anything is
+    decided. Delete this function and product.html to drop the experiment.
+
+    Unlike p/<id>/, nothing here loads the catalogue: the product is written
+    into the page as JSON and js/product.js reads it from there.
+    """
+    tpl_path = OUT / "product.html"
+    if not tpl_path.exists():
+        return
+    tpl = tpl_path.read_text(encoding="utf-8")
+
+    for p in products:
+        p = dict(p)
+        p["category_name"] = cats.get(p.get("category_id"), "")
+        s = product_page(tpl, p, site, fallback_img, fallback_desc, cats,
+                         prefill=False, path_prefix="p2")
+        payload = json.dumps(p, ensure_ascii=False).replace("<", "\\u003c")
+        s = s.replace("</body>",
+                      f'  <script type="application/json" id="pdpData">{payload}</script>\n</body>', 1)
+        d = OUT / "p2" / str(p["id"])
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "index.html").write_text(s, encoding="utf-8")
+
+    # the template itself is not a page anyone should land on
+    tpl_path.unlink()
+    print(f"   PROTOTYPE product template: {len(products)} under p2/<id>/")
 
 
 def fetch_categories(api, key):
@@ -304,14 +349,19 @@ def meta_content(src, name):
     return m.group(1) if m else None
 
 
-def product_page(shop, p, site, fallback_img, fallback_desc, cats):
+def product_page(shop, p, site, fallback_img, fallback_desc, cats,
+                 prefill=True, path_prefix="p"):
     """One product's page: the shop's HTML with its own head and its own
-    product already drawn into the body."""
+    product already drawn into the body.
+
+    `prefill` is off for the dedicated template, which draws itself from the
+    JSON payload instead of from the shop's modal markup.
+    """
     name = (p.get("name_fr") or "").strip()
     price = fmt_price(p.get("price"))
     title = f"{name} — {price} — {BRAND}"
     desc = " ".join((p.get("description_fr") or "").split())[:155] or fallback_desc
-    url = f"{site}/p/{p['id']}"
+    url = f"{site}/{path_prefix}/{p['id']}"
 
     # a photo-less product falls back to the site card: the storefront's
     # placeholder is a data: URI, which Facebook and WhatsApp refuse as og:image
@@ -357,7 +407,8 @@ def product_page(shop, p, site, fallback_img, fallback_desc, cats):
     s = s.replace("</head>",
                   f'  <script type="application/ld+json">{payload}</script>\n</head>', 1)
 
-    s = prefill_modal(s, p, cats, name, price)
+    if prefill:
+        s = prefill_modal(s, p, cats, name, price)
     return rebase_to_root(s)
 
 
@@ -439,6 +490,37 @@ def set_meta(src, attr, name, value):
     if re.search(pattern, src):
         return re.sub(pattern, f'<meta {attr}="{name}" content="{esc}"', src, count=1)
     return src.replace("</head>", f'  <meta {attr}="{name}" content="{esc}">\n</head>', 1)
+
+
+def write_supabase_origin():
+    """Point the CSP and the preconnect hints at whatever js/config.js says.
+
+    These used to name the project by hand in six places. When the shop was
+    moved to a different Supabase project, config.js changed and they did not
+    — and a Content-Security-Policy that allow-lists the wrong host does not
+    warn anybody: the browser simply refuses every API call and every product
+    photo, and the live shop renders empty while working perfectly in local
+    preview, where no _headers file is served.
+
+    So the source carries a placeholder and the origin is substituted here,
+    from the single file the owner actually edits.
+    """
+    _, api, _ = read_config()
+    origin = api.rstrip("/")
+    host = origin.split("://", 1)[1]
+
+    for path in list(OUT.glob("*.html")) + [OUT / "_headers"]:
+        if not path.exists():
+            continue
+        s = path.read_text(encoding="utf-8")
+        if "__SUPABASE_ORIGIN__" not in s:
+            continue
+        # wss://__SUPABASE_ORIGIN__ must not become wss://https://…
+        s = s.replace("wss://__SUPABASE_ORIGIN__", f"wss://{host}")
+        s = s.replace("__SUPABASE_ORIGIN__", origin)
+        path.write_text(s, encoding="utf-8")
+
+    print(f"   supabase origin: {origin}")
 
 
 def write_verification_tags():
