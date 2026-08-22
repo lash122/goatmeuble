@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 """
-Generates dist-vip/ — a copy of the TECH DZ shop, rebranded "Société de vente
-privée" with the owner's VP logo image in the header, footer, favicon and
-share card.
+Generates dist-vip/ — the GOAT meubles shop, ready for Netlify.
 
-Same generator philosophy as build-techdz.py: one codebase, this file records
-exactly what differs. Re-run after any change to the source:
+The source pages are already GOAT-branded, so this build only assembles the
+deploy folder and generates what cannot be committed: PWA icons and the
+1200x630 share card from the logo, per-product pages from the database,
+and the sitemap/robots/edge-function plumbing.
+
+Re-run after any change to the source:
 
     python3 build-vip.py
 
-Nothing here touches the database. The shop reads the same Supabase project as
-the other variants.
+Nothing here writes to the database. The shop reads the same Supabase
+project as the other variants.
 """
 import html
 import json
 import re
 import shutil
-import subprocess
 from pathlib import Path
 
 from shopdata import fetch_products, fmt_price, read_config
@@ -24,27 +25,19 @@ from shopdata import fetch_products, fmt_price, read_config
 ROOT = Path(__file__).parent
 OUT = ROOT / "dist-vip"
 
-BRAND = "Société de vente privée"
-LOGO_SRC = ROOT / "assets" / "logo-svp.jpg"
+BRAND = "GOAT meubles"
+LOGO_SRC = ROOT / "assets" / "logo-goat.jpg"
 # product.html is a TEMPLATE, not a page: it is branded like the rest, then
 # consumed by write_product_pages() and deleted from the output.
 PAGES = ["index.html", "checkout.html", "admin.html", "track.html", "404.html",
          "product.html"]
-ASSETS = ["css", "js", "og-image.png"]
+# assets/ travels whole: logo-goat.jpg, hero-goat.jpg and the category/product
+# photos the hand-rebranded pages reference by absolute path. Forgetting this
+# folder is what broke the logo on every git-connected deploy before.
+ASSETS = ["css", "js", "assets"]
+FILES = ["favicon.svg"]
 
-# Same trimmed font stack as TECH DZ (Inter + Cairo, no Playfair).
-FONTS = ("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700"
-         "&family=Cairo:wght@400;600;700&display=swap")
-
-# The VP logo is a photo, not a vector — keep it as JPEG in the deploy.
-LOGO_OUT = "/logo.jpg"
-
-# Dark slate, matching the theme's top bar — used for the phone's browser
-# chrome and as the splash background when the shop is installed.
-THEME_COLOR = "#0b1220"
-
-
-THEME_LINK = '<link rel="stylesheet" href="/css/theme-tech.css?v=12" id="themeCss" data-native-theme>'
+THEME_COLOR = "#3b2f24"
 
 
 def build():
@@ -57,19 +50,10 @@ def build():
     for asset in ASSETS:
         src = ROOT / asset
         (shutil.copytree if src.is_dir() else shutil.copy)(src, OUT / asset)
+    for f in FILES:
+        shutil.copy(ROOT / f, OUT / f)
 
-    # every theme ships with the build — the dashboard can switch the shop's
-    # template at runtime (js/layouts.js), so all the theme sheets must exist
-
-    shutil.copy(LOGO_SRC, OUT / LOGO_OUT.lstrip("/"))
-
-    rebrand_pages()
-    # categories right after the hero, products below them (the owner asked
-    # for categories on top on this shop; TECH DZ keeps its products-first)
-    reorder_home(['catTiles', 'shop', 'featured'])
-    retitle_i18n()
     write_verification_tags()
-    write_favicon()
     write_pwa()
     write_og_card()
     write_robots()
@@ -81,184 +65,6 @@ def build():
 
     files = sorted(p.relative_to(OUT).as_posix() for p in OUT.rglob("*") if p.is_file())
     print(f"{OUT.name}/ — {len(files)} files")
-    for f in files:
-        print("  ", f)
-
-
-def rebrand_pages():
-    """Swap in the VP logo image, the brand name and the tech-flavoured copy."""
-    for page in PAGES:
-        p = OUT / page
-        s = p.read_text(encoding="utf-8")
-
-        # theme overlay must come after style.css so it can override
-        # Regex, not a literal: this used to match "css/style.css?v=25" exactly,
-        # so bumping the stylesheet cache-buster silently stopped injecting the
-        # theme overlay and the build fell back to the base look with no error.
-        s = re.sub(
-            r'(<link rel="stylesheet" href="/?css/style\.css\?v=\d+">)',
-            lambda m: m.group(1) + '\n  ' + THEME_LINK, s, count=1)
-
-        # Inter-only font request, like TECH DZ
-        s = re.sub(r'https://fonts\.googleapis\.com/css2\?[^\"]+', FONTS, s)
-
-        # browser chrome colour: the dark slate this theme actually uses
-        s = s.replace('<meta name="theme-color" content="#0f1b33">',
-                      f'<meta name="theme-color" content="{THEME_COLOR}">')
-
-        # wordmarks become the logo image + store name (index / checkout / track)
-        s = s.replace('<span class="logo">É<em>l</em>égance</span>',
-                      f'<span class="brand-lockup">'
-                      f'<img class="logo-img" src="{LOGO_OUT}" alt="{BRAND}">'
-                      f'<span class="brand-name">SOCIÉTÉ<br><em>DE VENTE PRIVÉE</em></span>'
-                      f'</span>')
-        # admin top bar
-        s = s.replace('<span class="brand-w">É<span>l</span>égance · Admin</span>',
-                      f'<span class="brand-w"><img class="logo-img" src="{LOGO_OUT}" '
-                      f'alt="{BRAND}"> · Admin</span>')
-        # admin demo gate heading
-        s = s.replace('<h1>É<span style="color:var(--gold)">l</span>égance</h1>',
-                      f'<h1>{BRAND}</h1>')
-        # index footer wordmark
-        s = s.replace('<h4>É<em style="color:var(--gold)">l</em>égance</h4>',
-                      f'<span class="brand-lockup footer-lockup">'
-                      f'<img class="logo-img footer-logo" src="{LOGO_OUT}" alt="{BRAND}">'
-                      f'<span class="brand-name">{BRAND}</span>'
-                      f'</span>')
-
-        # titles, meta, footer line and the shop description (tech copy)
-        s = s.replace("Élégance — Boutique de costumes", f"{BRAND} — Informatique & high-tech")
-        s = s.replace("Élégance", BRAND)
-        s = s.replace(
-            "Costumes et vêtements formels pour hommes. Livraison à domicile, paiement à la livraison.",
-            "Smartphones, ordinateurs et accessoires. Livraison partout en Algérie, "
-            "paiement à la livraison.")
-        s = s.replace(
-            "Livraison à domicile partout en Algérie. Paiement à la livraison.",
-            "High-tech livré partout en Algérie. Paiement à la livraison.")
-        s = s.replace(f"{BRAND} — Boutique en ligne", f"{BRAND} — Informatique & high-tech")
-
-        # favicon: the tech SVG is replaced by the logo-derived PNG
-        s = re.sub(r'href="/?favicon\.svg" type="image/svg\+xml"',
-                       lambda m: ('href="/favicon.png"' if m.group(0).startswith('href="/')
-                                  else 'href="favicon.png"') + ' type="image/png"', s)
-
-        p.write_text(s, encoding="utf-8")
-
-    # logo sizing — appended to the BASE stylesheet so it survives any
-    # theme switch (layouts.js swaps theme-*.css, not style.css)
-    base = OUT / "css" / "style.css"
-    base.write_text(base.read_text(encoding="utf-8") + """
-
-/* ————— Société de vente privée : logo image + store name ————— */
-/* !important is intentional: theme-*.css loads after style.css and
-   overrides .brand layout — without it the natural-size photo bleeds
-   through when switching templates. */
-.brand { align-items: center !important; }
-.brand-lockup { display: flex !important; align-items: center; gap: 12px; }
-.logo-img { display: block !important; height: 48px !important; width: auto !important;
-  max-height: 48px !important; border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.32); }
-.brand-name { font-weight: 800; letter-spacing: .08em; line-height: 1.2;
-  color: var(--ink); font-size: .95rem; white-space: nowrap; }
-.brand-name em { font-style: normal; color: var(--gold); }
-.admin-top .brand-w .logo-img { height: 36px !important; max-height: 36px !important; }
-footer .footer-lockup { flex-direction: column; gap: 10px; }
-footer .footer-logo { height: 72px !important; max-height: 72px !important; border-radius: 10px; }
-footer .brand-name { font-size: 1.05rem; }
-@media (max-width: 600px) {
-  .logo-img { height: 40px !important; max-height: 40px !important; }
-  .brand-lockup { gap: 10px; }
-  .brand-name { font-size: .72rem; letter-spacing: .05em; }
-  footer .footer-logo { height: 56px !important; max-height: 56px !important; }
-  footer .brand-name { font-size: .95rem; }
-}
-""", encoding="utf-8")
-
-
-# Same clothing-flavoured i18n swaps as TECH DZ — this is a copy of that shop.
-I18N_SWAPS = {
-    "fr": {
-        "hero_title": "La tech au meilleur prix",
-        "hero_sub": "Smartphones, PC portables et accessoires — livrés chez vous, paiement à la livraison.",
-        "all_products": "Nos produits",
-        "select_size": "Choisir une option",
-        "size_required": "Choisissez d’abord une option",
-        "search_ph": "Rechercher un produit…",
-        "no_results": "Aucun produit ne correspond à votre recherche.",
-        "wa_prefill": "Bonjour, j’ai une question sur un produit.",
-    },
-    "ar": {
-        "hero_title": "أفضل الأسعار في عالم التقنية",
-        "hero_sub": "هواتف ذكية، حواسيب محمولة وملحقات — توصيل إلى باب منزلك مع الدفع عند الاستلام.",
-        "all_products": "منتجاتنا",
-        "select_size": "اختر الخيار",
-        "size_required": "اختر الخيار أولاً",
-        "search_ph": "ابحث عن منتج…",
-        "no_results": "لا يوجد منتج مطابق لبحثك.",
-        "wa_prefill": "مرحباً، لدي سؤال عن أحد المنتجات.",
-    },
-    "en": {
-        "hero_title": "Tech at the right price",
-        "hero_sub": "Smartphones, laptops and accessories — delivered to your door, cash on delivery.",
-        "all_products": "Our products",
-        "select_size": "Choose an option",
-        "size_required": "Please choose an option first",
-        "search_ph": "Search products…",
-        "no_results": "No products match your search.",
-        "wa_prefill": "Hello, I have a question about a product.",
-    },
-}
-
-
-def retitle_i18n():
-    p = OUT / "js" / "i18n.js"
-    s = p.read_text(encoding="utf-8")
-
-    for lang, swaps in I18N_SWAPS.items():
-        start = s.index(f"    {lang}: {{")
-        end = s.index("\n    },", start)
-        block = s[start:end]
-        for key, value in swaps.items():
-            new_block, n = re.subn(rf"({key}: )'(?:[^'\\]|\\.)*'",
-                                   lambda m: m.group(1) + "'" + value.replace("'", "\\'") + "'",
-                                   block, count=1)
-            if n != 1:
-                raise SystemExit(f"i18n key not found: {lang}.{key}")
-            block = new_block
-        s = s[:start] + block + s[end:]
-
-    p.write_text(s, encoding="utf-8")
-
-    db = OUT / "js" / "supabase.js"
-    t = db.read_text(encoding="utf-8")
-    t = t.replace("store: { name: 'Élégance',", f"store: {{ name: '{BRAND}',")
-    db.write_text(t, encoding="utf-8")
-
-    a = OUT / "js" / "admin.js"
-    t = a.read_text(encoding="utf-8")
-    t = t.replace("<label>Tailles (séparées par virgule)</label>",
-                  "<label>Options / variantes (séparées par virgule)</label>")
-    a.write_text(t, encoding="utf-8")
-
-
-def reorder_home(order):
-    p = OUT / "index.html"
-    s = p.read_text(encoding="utf-8")
-    blocks = {}
-    s = re.sub(
-        r'<section class="block container[^"]*" id="(featured|catTiles|shop)"[^>]*>.*?</section>',
-        lambda m: blocks.__setitem__(m.group(1), m.group(0)) or f"@@SEC-{m.group(1)}@@",
-        s, flags=re.S)
-    marks = re.findall(r"@@SEC-(?:featured|catTiles|shop)@@", s)
-    if len(marks) != 3:
-        import sys as _sys
-        print(f"reorder_home: found {len(marks)} of 3 expected sections, skipping reorder", file=_sys.stderr)
-        return
-    first = s.index(marks[0])
-    last = s.index(marks[-1]) + len(marks[-1])
-    s = s[:first] + "".join(blocks[sid] for sid in order) + s[last:]
-    p.write_text(s, encoding="utf-8")
 
 
 def write_product_pages():
@@ -299,12 +105,12 @@ def write_product_pages():
     tpl = tpl_path.read_text(encoding="utf-8")
     fallback_img = f"{site}/og-image.png"
     fallback_desc = meta_content((OUT / "index.html").read_text(encoding="utf-8"),
-                                "description") or ""
+                                 "description") or ""
 
     for row in products:
         prod = dict(row)
         prod["category_name"] = cats.get(prod.get("category_id"), "")
-        page = product_page(tpl, prod, site, fallback_img, fallback_desc, cats)
+        page = product_page(tpl, prod, site, fallback_img, fallback_desc)
         # the payload the page draws itself from; \u003c so a name containing
         # "</script>" cannot break out of the JSON island
         payload = json.dumps(prod, ensure_ascii=False).replace("<", "\\u003c")
@@ -342,9 +148,8 @@ def meta_content(src, name):
     return m.group(1) if m else None
 
 
-def product_page(shop, p, site, fallback_img, fallback_desc, cats):
-    """One product's page: the shop's HTML with its own head and its own
-    own head. The body draws itself from the JSON payload appended after.
+def product_page(shop, p, site, fallback_img, fallback_desc):
+    """One product's page: the shop's HTML with its own head and payload.
 
     `prefill` is off for the dedicated template, which draws itself from the
     JSON payload instead of from the shop's modal markup.
@@ -400,8 +205,6 @@ def product_page(shop, p, site, fallback_img, fallback_desc, cats):
                   f'  <script type="application/ld+json">{payload}</script>\n</head>', 1)
 
     return rebase_to_root(s)
-
-
 
 
 def rebase_to_root(s):
@@ -507,24 +310,16 @@ def read_verification_tokens():
     return {name: value for name, value in found if value.strip()}
 
 
-def write_favicon():
-    """Derive a 64×64 favicon from the logo photo."""
-    from PIL import Image
-    img = Image.open(LOGO_SRC).convert("RGB").resize((64, 64), Image.LANCZOS)
-    img.save(OUT / "favicon.png", optimize=True)
-
-
 def write_pwa():
     """Home-screen icons and the web app manifest.
 
     Customers reach this shop from an ad once; an icon on their home screen is
-    how they come back without paying for the click twice. The logo is a
-    1024px square, so the three sizes are straight downscales of it.
+    how they come back without paying for the click twice. The logo is a near
+    square, so the three sizes are straight downscales of it.
 
     start_url is './' — the same bare-directory URL the pages link to, so an
     installed shop and a shared link open the identical address.
     """
-    import json
     from PIL import Image
 
     logo = Image.open(LOGO_SRC).convert("RGB")
@@ -534,9 +329,9 @@ def write_pwa():
 
     (OUT / "manifest.json").write_text(json.dumps({
         "name": BRAND,
-        "short_name": "VP Tech",
-        "description": "Smartphones, ordinateurs et accessoires — "
-                       "livraison partout en Algérie, paiement à la livraison.",
+        "short_name": "GOAT",
+        "description": "Meubles, matelas et confort — livraison partout en "
+                       "Algérie, paiement à la livraison.",
         "start_url": "./",
         "scope": "./",
         "display": "standalone",
@@ -554,36 +349,37 @@ def write_pwa():
 
 
 def write_og_card():
-    """1200×630 share card: the VP logo plaque on a dark tech background."""
+    """1200×630 share card: the GOAT logo plaque on a warm dark background."""
     from PIL import Image, ImageDraw, ImageFont
     W, H = 1200, 630
-    BLUE, WHITE, MUTED = (37, 99, 235), (241, 245, 249), (148, 163, 184)
+    WHITE, MUTED = (247, 243, 237), (196, 181, 158)
 
-    img = Image.new("RGB", (W, H), (11, 18, 32))
+    img = Image.new("RGB", (W, H), (59, 47, 38))
     d = ImageDraw.Draw(img)
-    for i in range(H):                       # vertical slate gradient
+    for i in range(H):                       # vertical warm gradient
         t = i / H
-        d.line([(0, i), (W, i)], fill=(int(11 + t * 8), int(18 + t * 10), int(32 + t * 16)))
-    for x in range(0, W, 44):                # faint technical grid
-        d.line([(x, 0), (x, H)], fill=(24, 33, 54))
-    for y in range(0, H, 44):
-        d.line([(0, y), (W, y)], fill=(24, 33, 54))
+        d.line([(0, i), (W, i)], fill=(int(59 - t * 14), int(47 - t * 12), int(36 - t * 9)))
 
-    # the logo plaque, centred, with a soft glow ring behind it
+    # the logo plaque, centred, sized to leave room for the wordmark below
     logo = Image.open(LOGO_SRC).convert("RGB")
     logo.thumbnail((400, 400), Image.LANCZOS)
     lw, lh = logo.size
-    img.paste(logo, ((W - lw) // 2, 78))
+    img.paste(logo, ((W - lw) // 2, 60))
 
     sans = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
     reg = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    f_sub, f_badge = ImageFont.truetype(reg, 34), ImageFont.truetype(reg, 27)
 
     def centre(text, font, y, fill):
         d.text(((W - d.textbbox((0, 0), text, font=font)[2]) // 2, y), text, font=font, fill=fill)
 
-    centre("Société de vente privée", ImageFont.truetype(sans, 46), 520, WHITE)
-    centre("Smartphones · PC portables · Accessoires", f_sub, 575, MUTED)
+    try:
+        f_sub = ImageFont.truetype(reg, 34)
+        centre(BRAND, ImageFont.truetype(sans, 46), 500, WHITE)
+        centre("Meubles · Matelas · Confort", f_sub, 565, MUTED)
+    except OSError:
+        # a stripped build image without DejaVu still ships a valid card —
+        # just the logo plaque, no lettering
+        pass
 
     img.save(OUT / "og-image.png", optimize=True)
 
