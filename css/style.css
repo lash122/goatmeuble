@@ -575,22 +575,136 @@ section.block { padding: 72px 0 40px; }
   width: 100%; height: 100%; object-fit: cover;
   transition: transform 0.6s var(--ease-out);
 }
+/* full-tile scrim so the centred name stays readable on any photo */
+.cat-tile .tile-photo::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(24, 19, 13, 0.22), rgba(24, 19, 13, 0.5));
+}
 .cat-tile:hover .tile-photo img { transform: scale(1.06); }
 .cat-tile .tile-name {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 32px 20px 16px;
-  background: linear-gradient(transparent, rgba(0,0,0,0.65));
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  padding: 16px 20px;
   color: var(--white);
-  font-size: 1.1rem; font-weight: 500;
-  letter-spacing: 0.3px;
+  font-size: 1.15rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+  transition: letter-spacing 0.35s var(--ease-out);
 }
+.cat-tile:hover .tile-name { letter-spacing: 0.14em; }
 .cat-tile .tile-count {
-  position: absolute; top: 12px; inset-inline-end: 12px;
+  position: absolute; top: 12px; inset-inline-end: 12px; z-index: 2;
   background: var(--white); color: var(--ink);
   font-size: 0.6rem; font-weight: 700;
   border-radius: 999px; padding: 3px 10px;
   text-transform: uppercase; letter-spacing: 0.5px;
 }
+
+/* ---- header "suivre ma commande" pill: visible on every page ---- */
+.track-link {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 14px; text-decoration: none;
+  color: var(--ink); background: var(--white);
+  font-size: 0.82rem; font-weight: 600; white-space: nowrap;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.track-link:hover { border-color: var(--gold); color: var(--gold); }
+.track-link .tl-ico { font-size: 0.95rem; line-height: 1; }
+@media (max-width: 720px) {
+  .track-link { padding: 7px 9px; }
+  .track-link .tl-label { display: none; }   /* icon-only on small screens */
+}
+
+/* ---- tracking page hero + lookup card ---- */
+.track-hero { text-align: center; max-width: 520px; margin: 6px auto 26px; }
+.track-hero .th-ico {
+  width: 74px; height: 74px; margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; background: var(--gold-soft); border-radius: 50%;
+}
+.track-hero h1 { margin-bottom: 8px; }
+.track-hero p { color: var(--muted); margin: 0; }
+
+.track-lookup, .track-result { max-width: 560px; margin-inline: auto;
+  border-radius: 18px; box-shadow: 0 10px 34px rgba(59, 47, 38, .08); }
+.track-lookup { padding: clamp(20px, 3vw, 30px); }
+.track-result { margin-top: 22px; padding: clamp(18px, 3vw, 28px); }
+
+/* the lookup form itself: full-size inputs and a real CTA */
+.track-lookup .form-grid { display: grid; gap: 18px; }
+.track-lookup label { display: block; font-size: 0.78rem; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--ink);
+  margin-bottom: 8px; }
+.track-lookup input {
+  width: 100%; border: 1px solid var(--line); border-radius: 12px;
+  padding: 15px 16px; font-size: 1.05rem; background: var(--paper);
+  transition: border-color .15s, box-shadow .15s;
+}
+.track-lookup input:focus { outline: none; border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-soft); }
+.track-lookup #tBtn {
+  width: 100%; padding: 17px; font-size: 1.05rem; font-weight: 700;
+  letter-spacing: .02em; border-radius: 999px;
+  box-shadow: 0 10px 28px rgba(169, 96, 63, .3);
+  transition: transform .15s, box-shadow .15s;
+}
+.track-lookup #tBtn:hover { transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(169, 96, 63, .38); }
+.track-lookup .error-msg { color: #9c3434; font-size: 0.85rem; margin: 0; }
+.track-lookup .error-msg.show {
+  background: #fdf0f0; border-radius: 10px; padding: 10px 14px; }
+
+/* ---- skeleton tiles shown while the catalogue loads ---- */
+.sk-tile {
+  aspect-ratio: 16 / 10; border-radius: 12px;
+  background: linear-gradient(100deg, #efeae1 40%, #f7f3ec 50%, #efeae1 60%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s ease infinite;
+}
+@keyframes sk-shimmer { to { background-position: -200% 0; } }
+
+/* ---- one-tap add button on product cards ---- */
+.card .qadd {
+  position: absolute; bottom: 10px; inset-inline-end: 10px; z-index: 3;
+  width: 38px; height: 38px; border-radius: 50%; border: none;
+  background: var(--navy, #1a1a1a); color: #fff; font-size: 1.05rem;
+  cursor: pointer; opacity: 0; transform: translateY(6px);
+  transition: opacity .18s, transform .18s, background .15s;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+}
+.card:hover .qadd, .card:focus-within .qadd { opacity: 1; transform: none; }
+.card .qadd:hover { background: var(--gold, #b8860b); }
+@media (hover: none) {
+  /* touch screens have no hover: keep the button visible but quiet */
+  .card .qadd { opacity: .92; transform: none; width: 34px; height: 34px; }
+}
+
+/* ---- tracking trail: a proper stepper ---- */
+.track-trail li { position: relative; display: flex; align-items: center;
+  gap: 10px; padding: 7px 0; color: var(--gray-500); font-size: 0.9rem; }
+.track-trail li:not(:last-child)::before {
+  content: ''; flex: none; width: 2px; height: 22px;
+  position: absolute; inset-inline-start: 11px; top: calc(50% + 8px);
+  background: var(--gray-200);
+}
+.track-trail li.done:not(:last-child)::before { background: var(--gold); }
+.track-trail .dot {
+  width: 24px; height: 24px; border-radius: 50%; flex: none;
+  border: 2px solid var(--gray-200); background: var(--white);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; transition: all .2s;
+}
+.track-trail li.done { color: var(--ink); }
+.track-trail li.done .dot { background: var(--gold); border-color: var(--gold); color: #fff; }
+.track-trail li.done .dot::after { content: '✓'; font-weight: 800; }
+.track-trail li.current { color: var(--gold); font-weight: 700; }
+.track-trail li.current .dot { border-color: var(--gold); animation: dot-pulse 1.8s ease infinite; }
+.track-trail li.current .dot::after { content: ''; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--gold); }
+@keyframes dot-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(169,96,63,.35); }
+                       50%  { box-shadow: 0 0 0 8px rgba(169,96,63,0); } }
 
 /* ============================================================
    PRODUCT MODAL — full-screen product page

@@ -469,6 +469,7 @@ function productCard(p) {
       ${rollover}
       ${badgesHtml}
     </a>
+    ${!soldOut ? `<button class="qadd" type="button" aria-label="${esc(I18N.t('add_to_cart'))}">${p.sizes?.length ? '👁' : '＋'}</button>` : ''}
     <div class="info">
       <span class="cat">${esc(catName(p.category_id))}</span>
       <h3><a href="${href}">${esc(name)}</a></h3>
@@ -480,7 +481,19 @@ function productCard(p) {
       </div>
     </div>`;
   card.querySelector('.heart').addEventListener('click', () => {
-    Wishlist.toggle(p.id); renderChips(); renderGrid(); renderFeatured();
+    const had = Wishlist.has(p.id);
+    Wishlist.toggle(p.id);
+    toast(I18N.t(had ? 'wl_remove' : 'wl_add'));
+    renderChips(); renderGrid(); renderFeatured();
+  });
+  // one-tap add from the grid. A product with variants cannot be added
+  // blindly — the customer has to pick a size — so those go to the page.
+  const qadd = card.querySelector('.qadd');
+  if (qadd) qadd.addEventListener('click', () => {
+    if (p.sizes?.length) { location.href = decodeURIComponent(href); return; }
+    Cart.add(p, '');
+    Track.addToCart(p);
+    toast(I18N.t('added_to_cart'));
   });
   return card;
 }

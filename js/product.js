@@ -161,6 +161,58 @@ const PDP = (() => {
     renderWish();
   }
 
+  /* ---- lightbox: the photo is the product on a furniture page, so give it
+     a fullscreen stage. Arrows, Escape and a swipe all move through the set. */
+  const lb = {
+    el: null, img: null, count: null, index: 0,
+    open(i) { this.index = i; this.render(); this.el.classList.add('open'); },
+    close() { this.el.classList.remove('open'); },
+    render() {
+      const list = photos();
+      this.img.src = list[this.index] || list[0];
+      this.count.textContent = list.length > 1 ? `${this.index + 1} / ${list.length}` : '';
+    },
+    move(d) { const n = photos().length; this.index = (this.index + d + n) % n; this.render(); },
+  };
+
+  function initLightbox() {
+    lb.el = document.getElementById('pdpLightbox');
+    lb.img = document.getElementById('lbImg');
+    lb.count = document.getElementById('lbCount');
+    let x0 = null;
+    document.getElementById('pdpPhoto').addEventListener('click', () => lb.open(photoIndex));
+    lb.el.addEventListener('click', e => { if (e.target === lb.el) lb.close(); });
+    document.getElementById('lbClose').addEventListener('click', () => lb.close());
+    document.getElementById('lbPrev').addEventListener('click', () => lb.move(-1));
+    document.getElementById('lbNext').addEventListener('click', () => lb.move(1));
+    document.addEventListener('keydown', e => {
+      if (!lb.el.classList.contains('open')) return;
+      if (e.key === 'Escape') lb.close();
+      if (e.key === 'ArrowLeft') lb.move(-1);
+      if (e.key === 'ArrowRight') lb.move(1);
+    });
+    lb.el.addEventListener('pointerdown', e => { x0 = e.clientX; });
+    lb.el.addEventListener('pointerup', e => {
+      if (x0 === null) return;
+      const dx = e.clientX - x0; x0 = null;
+      if (Math.abs(dx) > 40) lb.move(dx < 0 ? 1 : -1);
+    });
+  }
+
+  /* Free-delivery teaser: the same threshold checkout enforces, surfaced
+     while the customer is still deciding rather than at the till. */
+  function renderFdTeaser(freeFrom) {
+    const el = document.getElementById('pdpFdTeaser');
+    if (!el || !(freeFrom > 0)) return;
+    el.hidden = false;
+    const inCart = Cart.get().reduce((s, i) => s + i.qty * Number(i.price), 0);
+    const left = freeFrom - inCart;
+    el.innerHTML = left > 0
+      ? `<span>${esc(I18N.t('free_delivery_progress').replace('{x}', I18N.fmtPrice(left)))}</span>
+         <div class="fd-track"><i style="width:${Math.min(100, Math.round((inCart / freeFrom) * 100))}%"></i></div>`
+      : `<span>${esc(I18N.t('free_delivery_qualifies'))}</span>`;
+  }
+
   async function init() {
     p = baked();
     // '/' and not './' — this page lives at /p2/<id>/, where './' is THIS page,
@@ -179,6 +231,7 @@ const PDP = (() => {
 
     document.getElementById('pdpAdd').addEventListener('click', addToCart);
     document.getElementById('pdpStickyAdd').addEventListener('click', addToCart);
+    initLightbox();
     document.querySelectorAll('.qty-picker button').forEach(b =>
       b.addEventListener('click', () => {
         qty = Math.min(99, Math.max(1, qty + Number(b.dataset.q)));
@@ -206,6 +259,8 @@ const PDP = (() => {
       const phone = document.getElementById('footerPhone');
       if (phone) phone.textContent = st?.phone || '—';
     } catch { /* the page is already readable; settings are decoration */ }
+
+    try { renderFdTeaser(await DB.getFreeDeliveryFrom()); } catch { /* decoration */ }
 
     renderRelated();
   }

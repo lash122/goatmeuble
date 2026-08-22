@@ -304,6 +304,13 @@ function renderOrders() {
   document.getElementById('orderCount').textContent =
     `${list.length} commande${list.length > 1 ? 's' : ''} affichée${list.length > 1 ? 's' : ''}` +
     (list.length !== A.orders.length ? ` sur ${A.orders.length}` : '');
+  // the next step of new → confirmed → shipped → delivered; cancelled is a
+  // dead end with nothing to advance to
+  const nextStatus = s => {
+    if (s === 'cancelled') return null;
+    const i = STATUSES.findIndex(x => x[0] === s);
+    return i >= 0 && i < 3 ? STATUSES[i + 1] : null;
+  };
   list.forEach(o => {
     const tr = document.createElement('tr');
     // qty arrives from the public order form: a non-number would make `+`
@@ -319,6 +326,7 @@ function renderOrders() {
       <td>
         <div class="row-actions">
           <button class="btn-mini" data-a="view">Voir</button>
+          ${nextStatus(o.status) ? `<button class="btn-mini adv" data-a="advance" title="${nextStatus(o.status)[1]}">→ ${nextStatus(o.status)[1]}</button>` : ''}
           <select class="btn-mini" data-a="status" style="padding:5px 8px">
             ${STATUSES.map(s => `<option value="${s[0]}" ${s[0] === o.status ? 'selected' : ''}>${s[1]}</option>`).join('')}
           </select>
@@ -326,6 +334,12 @@ function renderOrders() {
         </div>
       </td>`;
     tr.querySelector('[data-a="view"]').addEventListener('click', () => viewOrder(o));
+    const advBtn = tr.querySelector('[data-a="advance"]');
+    if (advBtn) advBtn.addEventListener('click', () =>
+      run(async () => {
+        await DB.updateOrderStatus(o.id, nextStatus(o.status)[0]);
+        await refreshAll();
+      }, `Statut : ${nextStatus(o.status)[1]}`));
     tr.querySelector('[data-a="status"]').addEventListener('change', e =>
       run(async () => {
         await DB.updateOrderStatus(o.id, e.target.value);
@@ -396,8 +410,15 @@ function viewOrder(o) {
       `<span class="order-item-price">${I18N.fmtPrice(i.price * qty)}</span></li>`;
   }).join('');
   const desk = o.delivery_type === 'desk';
-  openEditor(`
-    <h3 style="margin-bottom:14px">Commande #${o.id}</h3>
+  // progress strip: where this order sits between the four live statuses
+  const at = STATUSES.findIndex(s => s[0] === o.status);
+  const timeline = o.status === 'cancelled' ? '' :
+    `<div class="status-timeline">${STATUSES.slice(0, 4).map((s, i) =>
+      `<span class="st ${i < at ? 'done' : i === at ? 'current' : ''}">${i < at ? '✓ ' : ''}${s[1]}</span>`)
+      .join('<i>›</i>')}</div>`;
+  openEditor(
+    `<h3 style="margin-bottom:14px">Commande #${o.id}</h3>
+    ${timeline}
     <p><b>Client :</b> ${esc(o.customer_name)}</p>
     <p><b>Téléphone :</b> ${esc(o.phone)}</p>
     <p><b>Adresse :</b> ${esc(o.address) || '<span style="color:var(--muted)">— (stop desk)</span>'}</p>
@@ -465,7 +486,7 @@ function renderProducts() {
       <td><img class="thumb" src="${DB.photoOf(p)}" alt=""></td>
       <td><b>${esc(p.name_fr)}</b><br><small style="color:var(--muted)">${esc(p.name_ar)}</small></td>
       <td>${I18N.fmtPrice(p.price)}</td>
-      <td>${p.stock}</td>
+      <td class="${p.stock <= 0 ? 'stock-out' : p.stock <= 2 ? 'stock-low' : ''}">${p.stock}${p.stock <= 2 ? ' ⚠' : ''}</td>
       <td>${esc(cat?.name_fr || '—')}</td>
       <td>${p.active ? '✅ active' : '⏸ masqué'}${p.featured ? ' · ⭐' : ''}</td>
       <td>

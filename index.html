@@ -46,8 +46,8 @@
       else absolutizeSeo();
     })();
   </script>
-  <link rel="stylesheet" href="/css/style.css?v=45">
-  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=45">
+  <link rel="stylesheet" href="/css/style.css?v=51">
+  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=49">
 </head>
 <body>
   <!-- page loader -->
@@ -91,6 +91,7 @@
         <span class="brand-name">GOAT meubles</span>
       </a>
       <div class="header-right">
+        <a class="track-link" href="/track.html"><span class="tl-ico">📦</span><span class="tl-label" data-i18n="track"></span></a>
         <div class="lang-btn-wrap">
           <button class="header-icon lang-toggle" id="langToggle" aria-label="Language"><span id="currentLang">FR</span></button>
           <div class="lang-dropdown" id="langDropdown">
@@ -130,7 +131,12 @@
       <div class="section-header">
         <h2 class="section-title" data-i18n="browse_categories"></h2>
       </div>
-      <div class="tile-row" id="tileRow"></div>
+      <!-- skeleton placeholders: cleared by renderTiles() once the
+           catalogue arrives, so the section never collapses while loading -->
+      <div class="tile-row" id="tileRow">
+        <div class="sk-tile"></div><div class="sk-tile"></div>
+        <div class="sk-tile"></div><div class="sk-tile"></div>
+      </div>
     </section>
 
     <!-- featured -->
@@ -294,13 +300,13 @@
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
     crossorigin="anonymous" defer></script>
-  <script src="/js/config.js?v=42" defer></script>
-  <script src="/js/tracking.js?v=42" defer></script>
+  <script src="/js/config.js?v=49" defer></script>
+  <script src="/js/tracking.js?v=49" defer></script>
   <script src="/js/i18n.js?v=44" defer></script>
-  <script src="/js/supabase.js?v=42" defer></script>
-  <script src="/js/cart.js?v=42" defer></script>
-  <script src="/js/layouts.js?v=47" defer></script>
-  <script src="/js/store.js?v=42" defer></script>
-  <script src="/js/ux.js?v=42" defer></script>
+  <script src="/js/supabase.js?v=49" defer></script>
+  <script src="/js/cart.js?v=49" defer></script>
+  <script src="/js/layouts.js?v=50" defer></script>
+  <script src="/js/store.js?v=49" defer></script>
+  <script src="/js/ux.js?v=49" defer></script>
 </body>
 </html>

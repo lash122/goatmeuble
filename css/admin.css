@@ -129,6 +129,22 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width
 .order-watch:empty { display: none; }
 
 .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+/* one-click advance to the next status */
+.btn-mini.adv { border-color: var(--gold); color: var(--gold); font-weight: 600; }
+.btn-mini.adv:hover { background: var(--gold-soft); }
+
+/* order progress strip inside the detail view */
+.status-timeline { display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  background: #f4efe7; border-radius: 10px; padding: 10px 14px;
+  margin-bottom: 14px; font-size: 0.82rem; }
+.status-timeline .st { color: var(--muted); }
+.status-timeline .st.done { color: #1f7a5c; font-weight: 600; }
+.status-timeline .st.current { color: var(--gold); font-weight: 800; }
+.status-timeline i { font-style: normal; opacity: .45; }
+
+/* low / out of stock flags in the products table */
+td.stock-low { color: #8a6d24; font-weight: 700; background: #fdf8ea; }
+td.stock-out { color: #9c3434; font-weight: 700; background: #fdf0f0; }
 .btn-mini {
   border: 1px solid var(--line); background: var(--paper, #fffdf9);
   border-radius: 999px; padding: 7px 14px; font-size: 0.8rem; cursor: pointer;

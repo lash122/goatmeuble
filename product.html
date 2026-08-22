@@ -21,7 +21,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="/css/style.css?v=46">
   <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=46">
-  <link rel="stylesheet" href="/css/product.css?v=49">
+  <link rel="stylesheet" href="/css/product.css?v=50">
 </head>
 <body>
   <div class="topbar" data-i18n="cod_only"></div>
@@ -34,6 +34,7 @@
         <span class="brand-name">GOAT meubles</span>
       </a>
       <div class="header-right">
+        <a class="track-link" href="/track.html"><span class="tl-ico">📦</span><span class="tl-label" data-i18n="track"></span></a>
         <div class="lang-btn-wrap">
           <button class="header-icon lang-toggle" id="langToggle" aria-label="Language"><span id="currentLang">FR</span></button>
           <div class="lang-dropdown" id="langDropdown">
@@ -95,6 +96,7 @@
             </div>
             <button class="btn-gold pdp-add" id="pdpAdd" data-i18n="add_to_cart"></button>
           </div>
+          <div class="fd-teaser" id="pdpFdTeaser" hidden></div>
           <div class="m-actions">
             <button class="wl-btn" id="pdpWish" type="button"></button>
             <button class="wl-btn" id="pdpShare" type="button"></button>
@@ -142,6 +144,16 @@
 
   <a class="wa-float" id="waFloat" hidden target="_blank" rel="noopener noreferrer"></a>
 
+  <!-- fullscreen photo lightbox: opens from the main photo, arrows / swipe /
+       Escape to move and close -->
+  <div class="lb-overlay" id="pdpLightbox" role="dialog" aria-modal="true" aria-label="Photo">
+    <button class="lb-close" id="lbClose" aria-label="Fermer">&times;</button>
+    <button class="lb-arrow lb-prev" id="lbPrev" aria-label="Précédente">‹</button>
+    <img class="lb-img" id="lbImg" alt="">
+    <button class="lb-arrow lb-next" id="lbNext" aria-label="Suivante">›</button>
+    <div class="lb-count" id="lbCount"></div>
+  </div>
+
   <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
@@ -153,7 +165,7 @@
   <script src="/js/cart.js?v=49" defer></script>
   <script src="/js/layouts.js?v=47" defer></script>
   <script src="/js/store.js?v=46" defer></script>
-  <script src="/js/product.js?v=49" defer></script>
+  <script src="/js/product.js?v=50" defer></script>
   <script src="/js/ux.js?v=46" defer></script>
 </body>
 </html>

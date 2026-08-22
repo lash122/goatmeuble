@@ -39,8 +39,8 @@
       else absolutizeSeo();
     })();
   </script>
-  <link rel="stylesheet" href="/css/style.css?v=46">
-  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=46">
+  <link rel="stylesheet" href="/css/style.css?v=51">
+  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=50">
 </head>
 <body>
   <div class="topbar" data-i18n="cod_only"></div>
@@ -53,6 +53,7 @@
         <span class="brand-name">GOAT meubles</span>
       </a>
       <div class="header-right">
+        <a class="track-link" href="/track.html"><span class="tl-ico">📦</span><span class="tl-label" data-i18n="track"></span></a>
         <div class="lang-btn-wrap">
           <button class="header-icon lang-toggle" id="langToggle" aria-label="Language"><span id="currentLang">FR</span></button>
           <div class="lang-dropdown" id="langDropdown">
@@ -70,10 +71,13 @@
   </header>
 
   <main class="container page-pad">
-    <h1 class="section-title" data-i18n="track" style="margin-bottom:14px"></h1>
-    <p style="text-align:center;color:var(--muted);max-width:440px;margin:0 auto 26px" data-i18n="track_intro"></p>
+    <section class="track-hero">
+      <div class="th-ico">📦</div>
+      <h1 class="section-title" data-i18n="track"></h1>
+      <p data-i18n="track_intro"></p>
+    </section>
 
-    <div class="panel" style="max-width:440px;margin:0 auto">
+    <div class="panel track-lookup">
       <div class="form-grid">
         <div><label data-i18n="track_id"></label><input id="tId" type="text" inputmode="numeric" placeholder="42"></div>
         <div><label data-i18n="phone"></label><input id="tPhone" type="tel" placeholder="05 XX XX XX XX"></div>
@@ -82,7 +86,7 @@
       </div>
     </div>
 
-    <div class="panel" id="tResult" hidden style="max-width:440px;margin:22px auto 0"></div>
+    <div class="panel track-result" id="tResult" hidden></div>
   </main>
 
   <footer class="site" style="margin-top:60px">
@@ -103,13 +107,13 @@
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
     crossorigin="anonymous" defer></script>
-  <script src="/js/config.js?v=46" defer></script>
-  <script src="/js/i18n.js?v=46" defer></script>
-  <script src="/js/supabase.js?v=46" defer></script>
-  <script src="/js/cart.js?v=46" defer></script>
-  <script src="/js/layouts.js?v=47" defer></script>
-  <script src="/js/store.js?v=46" defer></script>
-  <script src="/js/track.js?v=46" defer></script>
-  <script src="/js/ux.js?v=46" defer></script>
+  <script src="/js/config.js?v=50" defer></script>
+  <script src="/js/i18n.js?v=50" defer></script>
+  <script src="/js/supabase.js?v=50" defer></script>
+  <script src="/js/cart.js?v=50" defer></script>
+  <script src="/js/layouts.js?v=50" defer></script>
+  <script src="/js/store.js?v=49" defer></script>
+  <script src="/js/track.js?v=50" defer></script>
+  <script src="/js/ux.js?v=50" defer></script>
 </body>
 </html>

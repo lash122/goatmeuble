@@ -67,7 +67,8 @@ header.site { background: var(--paper); border-bottom: 1px solid var(--line); }
   border: 1px solid var(--line); box-shadow: none; transition: box-shadow .25s, transform .25s; }
 .cat-tile:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
 .cat-tile .tile-photo { aspect-ratio: 3 / 2; }        /* rooms are wide */
-.cat-tile .tile-name { font-family: var(--font-display); font-size: 1.02rem; letter-spacing: .01em; }
+.cat-tile .tile-name { font-family: var(--font-display); font-size: 1.18rem;
+  font-weight: 600; letter-spacing: .1em; }
 .cat-tile .tile-count { background: var(--gold); color: #fff; }
 
 /* ---------- the grid: fewer, larger, landscape ---------- */
