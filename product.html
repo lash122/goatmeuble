@@ -21,7 +21,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="/css/style.css?v=46">
   <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=46">
-  <link rel="stylesheet" href="/css/product.css?v=48">
+  <link rel="stylesheet" href="/css/product.css?v=49">
 </head>
 <body>
   <div class="topbar" data-i18n="cod_only"></div>
@@ -50,56 +50,71 @@
     </div>
   </header>
 
-  <main class="container pdp">
-    <!-- Filled at build time so the crawler and the customer both get it
-         without waiting for the database. -->
-    <nav class="pdp-crumbs" aria-label="Fil d'ariane">
-      <a href="./" data-i18n="nav_shop"></a>
-      <span>›</span>
-      <a id="pdpCrumbCat" href="./"></a>
-    </nav>
+  <main class="pdp">
+    <div class="container">
+      <!-- Filled at build time so the crawler and the customer both get it
+           without waiting for the database. -->
+      <nav class="pdp-crumbs" aria-label="Fil d'ariane">
+        <a href="./" data-i18n="nav_shop"></a>
+        <span>›</span>
+        <a id="pdpCrumbCat" href="./"></a>
+      </nav>
 
-    <div class="pdp-grid">
-      <div class="pdp-media">
-        <div class="pdp-photo"><img id="pdpPhoto" alt=""></div>
-        <div class="pdp-thumbs" id="pdpThumbs" hidden></div>
+      <div class="pdp-grid">
+        <div class="pdp-media">
+          <figure class="pdp-stage">
+            <span class="pdp-badge" id="pdpBadge" hidden></span>
+            <div class="pdp-photo"><img id="pdpPhoto" alt=""></div>
+          </figure>
+          <div class="pdp-thumbs" id="pdpThumbs" hidden></div>
+        </div>
+
+        <div class="pdp-info">
+          <span class="cat" id="pdpCat"></span>
+          <h1 id="pdpName"></h1>
+
+          <div class="price-row">
+            <span class="price" id="pdpPrice"></span>
+            <span class="price-old" id="pdpOld"></span>
+            <span class="price-save" id="pdpSave" hidden></span>
+          </div>
+
+          <p class="pdp-desc" id="pdpDesc"></p>
+
+          <div id="pdpSizeBlock" class="pdp-sizes-block">
+            <div class="size-label"><span data-i18n="select_size"></span></div>
+            <div class="sizes" id="pdpSizes"></div>
+            <div class="size-error" id="pdpSizeError" data-i18n="size_required"></div>
+          </div>
+
+          <div class="buy-row">
+            <div class="qty-picker" aria-label="Quantité">
+              <button type="button" data-q="-1" aria-label="−">−</button>
+              <span id="pdpQty">1</span>
+              <button type="button" data-q="1" aria-label="+">+</button>
+            </div>
+            <button class="btn-gold pdp-add" id="pdpAdd" data-i18n="add_to_cart"></button>
+          </div>
+          <div class="m-actions">
+            <button class="wl-btn" id="pdpWish" type="button"></button>
+            <button class="wl-btn" id="pdpShare" type="button"></button>
+          </div>
+
+          <!-- The reassurance a cash-on-delivery buyer is actually looking for,
+               on the page instead of two clicks away at checkout. -->
+          <ul class="pdp-trust">
+            <li><b>💵</b><span data-i18n="cod_only"></span></li>
+            <li><b>🏢</b><span data-i18n="deliv_desk_hint"></span></li>
+            <li><b>🏠</b><span data-i18n="deliv_home_hint"></span></li>
+          </ul>
+        </div>
       </div>
 
-      <div class="pdp-info">
-        <span class="cat" id="pdpCat"></span>
-        <h1 id="pdpName"></h1>
-        <div class="price-row">
-          <span class="price" id="pdpPrice"></span>
-          <span class="price-old" id="pdpOld"></span>
-        </div>
-        <p class="pdp-desc" id="pdpDesc"></p>
-
-        <div id="pdpSizeBlock">
-          <div class="size-label"><span data-i18n="select_size"></span></div>
-          <div class="sizes" id="pdpSizes"></div>
-          <div class="size-error" id="pdpSizeError" data-i18n="size_required"></div>
-        </div>
-
-        <button class="btn-gold pdp-add" id="pdpAdd" data-i18n="add_to_cart"></button>
-        <div class="m-actions">
-          <button class="wl-btn" id="pdpWish" type="button"></button>
-          <button class="wl-btn" id="pdpShare" type="button"></button>
-        </div>
-
-        <!-- The reassurance a cash-on-delivery buyer is actually looking for,
-             on the page instead of two clicks away at checkout. -->
-        <ul class="pdp-trust">
-          <li><b>💵</b><span data-i18n="cod_only"></span></li>
-          <li><b>🏢</b><span data-i18n="deliv_desk_hint"></span></li>
-          <li><b>🏠</b><span data-i18n="deliv_home_hint"></span></li>
-        </ul>
-      </div>
+      <section class="pdp-related" id="pdpRelatedBlock" hidden>
+        <h2 class="section-title" data-i18n="related"></h2>
+        <div class="product-grid" id="pdpRelated"></div>
+      </section>
     </div>
-
-    <section class="pdp-related" id="pdpRelatedBlock" hidden>
-      <h2 class="section-title" data-i18n="related"></h2>
-      <div class="product-grid" id="pdpRelated"></div>
-    </section>
   </main>
 
   <footer class="site" id="contact">
@@ -135,10 +150,10 @@
   <script src="/js/tracking.js?v=46" defer></script>
   <script src="/js/i18n.js?v=46" defer></script>
   <script src="/js/supabase.js?v=46" defer></script>
-  <script src="/js/cart.js?v=46" defer></script>
+  <script src="/js/cart.js?v=49" defer></script>
   <script src="/js/layouts.js?v=47" defer></script>
   <script src="/js/store.js?v=46" defer></script>
-  <script src="/js/product.js?v=46" defer></script>
+  <script src="/js/product.js?v=49" defer></script>
   <script src="/js/ux.js?v=46" defer></script>
 </body>
 </html>

@@ -15,6 +15,7 @@ const PDP = (() => {
   let store = {};
   let selectedSize = null;
   let photoIndex = 0;
+  let qty = 1;
 
   function baked() {
     const el = document.getElementById('pdpData');
@@ -42,6 +43,15 @@ const PDP = (() => {
       ? Number(p.price)
       : (p.compare_at_price && Number(p.compare_at_price) > price ? Number(p.compare_at_price) : null);
     document.getElementById('pdpOld').textContent = old ? I18N.fmtPrice(old) : '';
+    // the discount ribbon over the photo and the pill by the price say the
+    // same thing; both stay hidden until a real discount exists
+    const pct = old ? Math.round((1 - price / old) * 100) : 0;
+    const badge = document.getElementById('pdpBadge');
+    badge.hidden = !pct;
+    if (pct) badge.textContent = `-${pct}%`;
+    const save = document.getElementById('pdpSave');
+    save.hidden = !pct;
+    if (pct) save.textContent = `-${pct}%`;
     document.getElementById('pdpStickyPrice').textContent = I18N.fmtPrice(price);
   }
 
@@ -84,6 +94,10 @@ const PDP = (() => {
     });
   }
 
+  function renderQty() {
+    document.getElementById('pdpQty').textContent = qty;
+  }
+
   function renderWish() {
     const on = Wishlist.has(p.id);
     document.getElementById('pdpWish').textContent =
@@ -98,8 +112,10 @@ const PDP = (() => {
       document.getElementById('pdpSizeBlock').scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    Cart.add(p, selectedSize || '');
+    Cart.add(p, selectedSize || '', qty);
     Track.addToCart(p);
+    qty = 1;
+    renderQty();
     const btn = document.getElementById('pdpAdd');
     const was = btn.textContent;
     btn.textContent = I18N.t('add_to_cart') + ' ✓';
@@ -157,11 +173,17 @@ const PDP = (() => {
     renderPrice(null);
     renderGallery();
     renderSizes();
+    renderQty();
     document.getElementById('pdpSticky').hidden = false;
     Track.view(p);
 
     document.getElementById('pdpAdd').addEventListener('click', addToCart);
     document.getElementById('pdpStickyAdd').addEventListener('click', addToCart);
+    document.querySelectorAll('.qty-picker button').forEach(b =>
+      b.addEventListener('click', () => {
+        qty = Math.min(99, Math.max(1, qty + Number(b.dataset.q)));
+        renderQty();
+      }));
     document.getElementById('pdpWish').addEventListener('click', () => {
       Wishlist.toggle(p.id); renderWish();
     });
