@@ -188,7 +188,18 @@ function renderHeroLook() {
 }
 
 async function initStore() {
-  if (DB.isDemo) document.getElementById('demoBanner').classList.add('show');
+  // shop-less pages (track, checkout) load this file too: they skip the
+  // catalogue but still get real footer contact instead of a bare "—"
+  if (!document.getElementById('tileRow')) {
+    try {
+      const st = await DB.getStore();
+      renderSocials(st);
+      const ph = document.getElementById('footerPhone');
+      if (ph && st?.phone) ph.textContent = st.phone;
+    } catch { /* footer stays minimal */ }
+    return;
+  }
+  if (DB.isDemo) document.getElementById('demoBanner')?.classList.add('show');
   document.getElementById('year').textContent = new Date().getFullYear();
 
   // First paint from the cached catalogue: a returning visitor sees the shop
@@ -209,8 +220,10 @@ async function initStore() {
   }
 
   try {
+    // the catalogue arrives trimmed to card fields (no descriptions) — the
+    // modal pulls the full row itself when it opens
     const [store, cats, prods, promo] = await Promise.all([
-      DB.getStore(), DB.getCategories(), DB.getProducts(), DB.getPromo(),
+      DB.getStore(), DB.getCategories(), DB.getCatalogue(), DB.getPromo(),
     ]);
     state.categories = cats;
     state.products = prods;
@@ -236,14 +249,6 @@ async function initStore() {
   document.addEventListener('langchange', () => {
     renderPromoBanner(); renderChips(); renderTiles();
     renderFeatured(); renderGrid(); renderRecentlyViewed(); renderWhatsApp(state.store);
-    // the Facebook trust badge: only when the owner saved a page URL
-    const fb = document.getElementById('fbBadge');
-    if (fb && state.store?.facebook) {
-      let u = state.store.facebook;
-      if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
-      fb.href = u;
-      fb.hidden = false;
-    }
   });
 
   const search = document.getElementById('searchBox');
@@ -887,7 +892,19 @@ async function shareCurrent() {
   }
 }
 
-function openModal(p, opts = {}) {
+/* Catalogue rows carry no descriptions (they would bloat every page load),
+   so the first time a product's modal opens we pull its full row once and
+   merge it into the in-memory catalogue — later opens are instant. */
+async function ensureFullProduct(p) {
+  if (p.description_fr !== undefined) return p;
+  try {
+    const full = await DB.getProductFull(p.id);
+    if (full) Object.assign(p, full);
+  } catch { /* the modal still opens; the description line just stays empty */ }
+  return p;
+}
+
+async function openModal(p, opts = {}) {
   Track.view(p);
   state.current = p;
   state.selectedSize = null;
@@ -911,6 +928,7 @@ function openModal(p, opts = {}) {
     ? Number(p.price)
     : (p.compare_at_price && Number(p.compare_at_price) > price ? Number(p.compare_at_price) : null);
   oldEl.textContent = old ? I18N.fmtPrice(old) : '';
+  await ensureFullProduct(p);
   document.getElementById('mDesc').textContent = I18N.localize(p, 'description');
   const sizesEl = document.getElementById('mSizes');
   const sizeErr = document.getElementById('mSizeError');
@@ -966,6 +984,7 @@ function openModal(p, opts = {}) {
   document.body.style.overflow = 'hidden';
   // keyboard users land on the close button, never behind the overlay
   document.getElementById('modalClose').focus();
+  // openModal() awaited the full row above, so the description is real here
   setProductSeo(p);   // title, og/twitter tags, canonical + JSON-LD for this product
 }
 function closeSizeGuide() {

@@ -292,6 +292,31 @@ const DB = (() => {
       return data;
     },
 
+    /* The storefront catalogue: card fields only, no descriptions. Cards never
+       show them, so shipping three languages of prose per product made the
+       first load pay for kilobytes the customer may never read. The modal
+       lazily fetches the full row via getProductFull() when it opens.
+       Kept separate from getProducts() on purpose — the admin table and its
+       editor need every column. */
+    async getCatalogue(activeOnly = true) {
+      if (IS_DEMO) return activeOnly ? demo.products.filter(p => p.active) : demo.products;
+      let q = sb.from('products')
+        .select('id,name_fr,name_ar,name_en,price,compare_at_price,photos,stock,' +
+                'sizes,category_id,featured,created_at,active')
+        .order('created_at', { ascending: false });
+      if (activeOnly) q = q.eq('active', true);
+      const data = must(await q) || [];
+      if (cacheEnabled && activeOnly) cacheMerge({ products: data });
+      return data;
+    },
+
+    /* One full row — descriptions included — for the product modal. */
+    async getProductFull(id) {
+      if (IS_DEMO) return demo.products.find(p => String(p.id) === String(id)) || null;
+      const rows = must(await sb.from('products').select('*').eq('id', id).limit(1));
+      return rows?.[0] || null;
+    },
+
     /* A few neighbours for the product page. The shop filters these out of the
        catalogue it already holds; a product page never loads the catalogue, so
        it asks for exactly the four it will show. */

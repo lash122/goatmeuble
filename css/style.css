@@ -623,9 +623,9 @@ section.block { padding: 72px 0 40px; }
   .track-link { display: inline-flex; padding: 6px; }
   .track-link .tl-label { display: none; }
   .track-link .tl-ico { font-size: 1.2rem; }
-  /* free the width the centred brand needs: drop the balance spacer and
-     shrink every header piece so logo + 📦 + FR + cart fit a 360px screen */
-  .header-left[style] { display: none; }
+  /* free the width the centred brand needs: shrink every header piece so
+     logo + 📦 + FR + cart fit a 360px screen. The left column stays in the
+     grid on every page — it is what keeps the brand centred. */
   .site-inner { gap: 6px; }
   .brand-center { gap: 7px; }
   .brand-center img { height: 30px; }
@@ -971,16 +971,6 @@ section.block { padding: 72px 0 40px; }
 }
 .call-fab:hover { transform: scale(1.08); }
 
-/* facebook trust badge (homepage footer) */
-.fb-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  margin-top: 14px; padding: 9px 16px;
-  background: #e7f0fd; color: #2453a6; border-radius: 999px;
-  font-size: 0.84rem; font-weight: 600; text-decoration: none;
-  transition: transform .15s;
-}
-.fb-badge:hover { transform: translateY(-1px); }
-.fb-badge svg { width: 17px; height: 17px; }
 .wa-fab[hidden] { display: none; }
 .wa-fab svg { width: 28px; height: 28px; }
 

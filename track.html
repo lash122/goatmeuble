@@ -39,15 +39,15 @@
       else absolutizeSeo();
     })();
   </script>
-  <link rel="stylesheet" href="/css/style.css?v=55">
-  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=53">
+  <link rel="stylesheet" href="/css/style.css?v=58">
+  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=58">
 </head>
 <body>
   <div class="topbar" data-i18n="cod_only"></div>
 
   <header class="site">
     <div class="container site-inner">
-      <div class="header-left" style="width:80px"></div>
+      <div class="header-left"></div>
       <a class="brand brand-center" href="/">
         <img src="/assets/logo-goat.jpg" alt="GOAT meubles" class="logo-img" style="height:36px;width:auto;object-fit:contain">
         <span class="brand-name">GOAT meubles</span>
@@ -89,8 +89,22 @@
     <div class="panel track-result" id="tResult" hidden></div>
   </main>
 
-  <footer class="site" style="margin-top:60px">
-    <div class="container fine">© <span id="year"></span> GOAT meubles — <span data-i18n="cod_only"></span></div>
+  <footer class="site">
+    <div class="container">
+      <div class="cols" style="grid-template-columns:2fr 1fr;align-items:start">
+        <div>
+          <h4 style="margin-bottom:8px"><img src="/assets/logo-goat.jpg" alt="GOAT meubles" style="height:40px;width:auto;object-fit:contain"></h4>
+          <p data-i18n="hero_sub"></p>
+        </div>
+        <div>
+          <h4 data-i18n="nav_contact"></h4>
+          <p id="footerPhone">—</p>
+          <div class="social-links" id="socialLinks"></div>
+          <a href="/track.html" data-i18n="track"></a>
+        </div>
+      </div>
+      <div class="fine">© <span id="year"></span> GOAT meubles — <span data-i18n="cod_only"></span></div>
+    </div>
   </footer>
 
   <!-- floating WhatsApp button; stays hidden until a number is saved in the admin -->
@@ -108,13 +122,13 @@
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
     crossorigin="anonymous" defer></script>
-  <script src="/js/config.js?v=50" defer></script>
-  <script src="/js/i18n.js?v=52" defer></script>
-  <script src="/js/supabase.js?v=50" defer></script>
-  <script src="/js/cart.js?v=50" defer></script>
-  <script src="/js/layouts.js?v=50" defer></script>
-  <script src="/js/store.js?v=52" defer></script>
-  <script src="/js/track.js?v=50" defer></script>
-  <script src="/js/ux.js?v=51" defer></script>
+  <script src="/js/config.js?v=58" defer></script>
+  <script src="/js/i18n.js?v=58" defer></script>
+  <script src="/js/supabase.js?v=58" defer></script>
+  <script src="/js/cart.js?v=58" defer></script>
+  <script src="/js/layouts.js?v=58" defer></script>
+  <script src="/js/store.js?v=58" defer></script>
+  <script src="/js/track.js?v=58" defer></script>
+  <script src="/js/ux.js?v=58" defer></script>
 </body>
 </html>
