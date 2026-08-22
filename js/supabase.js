@@ -5,7 +5,7 @@ const DB = (() => {
 
   // ---------------- demo data ----------------
   const demo = {
-    store: { name: 'Élégance', phone: '+213 555 000 000', email: '', facebook: '', instagram: '', tiktok: '' },
+    store: { name: 'GOAT meubles', phone: '+213 555 000 000', email: '', facebook: '', instagram: '', tiktok: '' },
     // two prices per wilaya: desk = stopdesk (collected from the courier's
     // agency), home = to the door. A sample of the 58 the schema seeds.
     zones: [

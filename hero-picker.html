@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+h1 { text-align: center; margin-bottom: 24px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.card { background: #fff; border-radius: 8px; overflow: hidden; cursor: pointer; border: 3px solid transparent; transition: border-color 0.2s, transform 0.2s; }
+.card:hover { border-color: #a9603f; transform: scale(1.03); }
+.card img { width: 100%; height: 140px; object-fit: cover; }
+.card p { padding: 8px 12px; font-size: 13px; text-align: center; color: #333; }
+</style>
+</head>
+<body>
+<h1>Choose a Hero Background Image</h1>
+<div class="grid" id="grid"></div>
+<script>
+const products = [
+  ['aura_1.jpg', 'AURA'],
+  ['bloome_1.jpg', 'BLOOMÉ'],
+  ['calm-dreams-oreiller-de-confort-hotelier_1.jpg', 'CALM DREAMS'],
+  ['couette-softy_1.jpg', 'COUETTE SOFTY'],
+  ['elya_1.jpg', 'ELYA'],
+  ['ensemble-sortie-de-bain-elva_1.jpg', 'ELVA'],
+  ['horizon_1.jpg', 'HORIZON'],
+  ['joyful_1.png', 'JOYFUL'],
+  ['lounge-duo_1.jpg', 'LOUNGE DUO'],
+  ['majestic_1.jpg', 'MAJESTIC'],
+  ['matelas-nirvana-orthopedique-d30_1.jpg', 'NIRVANA D30'],
+  ['matelas-elysium-memoire-de-forme-d30_1.jpg', 'ELYSIUM D30'],
+  ['mondo_1.jpg', 'MONDO'],
+  ['neo_1.jpg', 'NEO'],
+  ['pack-calma_1.jpg', 'PACK CALMA'],
+  ['pack-couette-elora_1.jpg', 'PACK ELORA'],
+  ['pack-housse-de-couette-naila_1.jpg', 'PACK NAILA'],
+  ['pack-linea-protection-et-confort_1.jpg', 'PACK LINÉA'],
+  ['parure-de-draps-dune_1.jpg', 'PARURE DUNE'],
+  ['parure-de-draps-serenite_1.jpg', 'PARURE SÉRÉNITÉ'],
+  ['pluma_1.jpg', 'PLUMA'],
+  ['poire-cool_1.jpg', 'POIRE COOL'],
+  ['poire-grande_1.jpg', 'POIRE GRANDE'],
+  ['poire-grande-en-tissu-impermeable_1.jpg', 'POIRE IMPERMÉABLE'],
+  ['seline_1.jpg', 'SELINE'],
+  ['sofa-geante_1.jpg', 'SOFÁ GÉANTE'],
+  ['soft-nuage-ondule-oreiller-orthopedique-a-memoire-de-forme_1.jpg', 'SOFT NUAGE'],
+  ['super-relax_1.jpg', 'SUPER RELAX'],
+  ['surmatelas-sukoon-d30_1.jpg', 'SUKOON D30'],
+  ['surmatelas-sukoon-visco_1.jpg', 'SUKOON VISCO'],
+  ['symphonie_1.jpg', 'SYMPHONIE'],
+  ['vibe_1.jpg', 'VIBE'],
+];
+const grid = document.getElementById('grid');
+products.forEach(([file, name]) => {
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.innerHTML = `<img src="/assets/products/${file}" alt="${name}"><p>${name}</p>`;
+  div.onclick = () => {
+    document.querySelectorAll('.card').forEach(c => c.style.borderColor = 'transparent');
+    div.style.borderColor = '#a9603f';
+    document.title = file;
+    console.log('SELECTED:', file);
+    // Copy to clipboard
+    navigator.clipboard.writeText('/assets/products/' + file).catch(() => {});
+    document.querySelector('h1').textContent = 'Selected: ' + file + ' (copied to clipboard)';
+  };
+  grid.appendChild(div);
+});
+</script>
+</body>
+</html>

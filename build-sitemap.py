@@ -72,7 +72,11 @@ def write_robots(site):
 if __name__ == "__main__":
     site, api, key = read_config()
     products = fetch_products(api, key)
-    write_sitemap(site, products)
-    write_robots(site)
-    print(f"sitemap.xml — {len(STATIC)} pages + {len(products)} products at {site}")
-    print("robots.txt  — Sitemap line pointed at the same domain")
+    if site:
+        write_sitemap(site, products)
+        write_robots(site)
+        print(f"sitemap.xml — {len(STATIC)} pages + {len(products)} products at {site}")
+        print("robots.txt  — Sitemap line pointed at the same domain")
+    else:
+        print("Skipping sitemap/robots: window.SITE_URL is empty in js/config.js")
+        print("Set it in config.js and re-run to generate sitemap.xml.")

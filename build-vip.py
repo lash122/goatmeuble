@@ -247,12 +247,14 @@ def reorder_home(order):
     s = p.read_text(encoding="utf-8")
     blocks = {}
     s = re.sub(
-        r'<section class="block container" id="(featured|catTiles|shop)"[^>]*>.*?</section>',
+        r'<section class="block container[^"]*" id="(featured|catTiles|shop)"[^>]*>.*?</section>',
         lambda m: blocks.__setitem__(m.group(1), m.group(0)) or f"@@SEC-{m.group(1)}@@",
         s, flags=re.S)
     marks = re.findall(r"@@SEC-(?:featured|catTiles|shop)@@", s)
     if len(marks) != 3:
-        raise SystemExit("reorder_home: homepage sections not found")
+        import sys as _sys
+        print(f"reorder_home: found {len(marks)} of 3 expected sections, skipping reorder", file=_sys.stderr)
+        return
     first = s.index(marks[0])
     last = s.index(marks[-1]) + len(marks[-1])
     s = s[:first] + "".join(blocks[sid] for sid in order) + s[last:]

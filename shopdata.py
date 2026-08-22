@@ -24,13 +24,16 @@ def read_config():
     """
     src = CONFIG.read_text(encoding="utf-8")
 
-    def grab(pattern, what):
+    def grab(pattern, what, required=True):
         m = re.search(pattern, src)
         if not m or not m.group(1):
-            sys.exit(f"build: could not find {what} in js/config.js")
+            if required:
+                sys.exit(f"build: could not find {what} in js/config.js")
+            return ''
         return m.group(1)
 
-    site = grab(r"window\.SITE_URL\s*=\s*['\"]([^'\"]+)['\"]", "window.SITE_URL")
+    # SITE_URL can be empty (auto-detect from request origin at runtime)
+    site = grab(r"window\.SITE_URL\s*=\s*['\"]([^'\"]*)['\"]", "window.SITE_URL", required=False)
     url = grab(r"url:\s*['\"](https://[^'\"]+)['\"]", "the Supabase url")
     key = grab(r"anonKey:\s*['\"]([^'\"]+)['\"]", "the Supabase anonKey")
     return site.rstrip("/"), url.rstrip("/"), key

@@ -521,6 +521,20 @@ function renderSocials(store) {
     box.appendChild(a);
   });
   box.hidden = !box.children.length;
+
+  /* Also update the floating social sidebar links */
+  const sidebar = document.getElementById('socialSidebar');
+  if (sidebar) {
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    SOCIALS.forEach((s, i) => {
+      if (i < sidebarLinks.length) {
+        const raw = String(store?.[s.key] || '').trim();
+        sidebarLinks[i].href = raw ? socialHref(s, raw) : '#';
+        if (!raw) sidebarLinks[i].style.opacity = '0.3';
+        else sidebarLinks[i].style.opacity = '';
+      }
+    });
+  }
 }
 
 /* The ⭐ toggle in the admin panel drives this row. Hidden entirely when
@@ -785,7 +799,7 @@ function resetSeo() {
 function setProductSeo(p) {
   captureSeoDefaults();
   const name = I18N.localize(p, 'name');
-  const storeName = state.store?.name || seoDefaults.ogTitle.split('—')[0].trim() || 'Élégance';
+  const storeName = state.store?.name || seoDefaults.ogTitle.split('—')[0].trim() || 'GOAT meubles';
   const title = `${name} — ${I18N.fmtPrice(effPrice(p))} — ${storeName}`;
   const desc = (I18N.localize(p, 'description') || '').replace(/\s+/g, ' ').trim().slice(0, 155);
   const url = seoAbs(productUrl(p.id));

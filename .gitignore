@@ -13,10 +13,13 @@ __pycache__/
 
 # build output for the web host, regenerate with `python3 build-<name>.py`
 dist/
+dist (2)/
+dist (3)/
+final-dist/
 dist-techdz/
 dist-rugs/
 dist-femme/
 dist-gallery/
 dist-app/
 dist-vip/
-elegance-deploy.zip
+*.zip

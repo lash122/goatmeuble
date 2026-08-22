@@ -17,8 +17,8 @@ async function initCheckout() {
       DB.getZones(), DB.getStore(), DB.getPromo(), DB.getFreeDeliveryFrom(),
     ]);
     renderWhatsApp(store);
-    // the dashboard-saved template themes the checkout header/footer too
-    applyLayout(store?.layout);
+    // checkout always keeps the furniture theme baked in the HTML
+    // (applyLayout skipped to avoid flash-then-revert from cached JS)
   } catch (e) {
     console.error('Could not load shop settings:', e);
     document.getElementById('cartView').innerHTML =

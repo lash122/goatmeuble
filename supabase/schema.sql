@@ -1,5 +1,5 @@
 -- ============================================================
--- Élégance — Supabase schema (tables, security, order logic)
+-- GOAT meubles — Supabase schema (tables, security, order logic)
 -- Paste this whole file into: Supabase Dashboard > SQL Editor > New query > Run
 --
 -- Safe to run again later: policies and functions are dropped and recreated.
@@ -92,7 +92,7 @@ create table if not exists settings (
 );
 
 insert into settings (key, value) values
-  ('store', '{"name":"Élégance","phone":"","email":""}'),
+  ('store', '{"name":"GOAT meubles","phone":"","email":""}'),
   ('zones', '[]'),
   ('promo', '{"active":false,"percent":0,"label_fr":"","label_ar":"","label_en":""}'),
   ('free_delivery_from', 'null')

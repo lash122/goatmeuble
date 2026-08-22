@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Page introuvable — Élégance</title>
+  <title>Page introuvable — GOAT meubles</title>
   <meta name="robots" content="noindex">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <!-- Root-absolute, not relative. A 404 is served AT the URL that failed, so
        this page can render at any depth — "css/style.css" from /p/99 resolves
        to /p/css/style.css and 404s too, leaving unstyled text on a broken
@@ -15,19 +15,20 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-180.png">
-  <meta name="theme-color" content="#0f1b33">
-  <link rel="stylesheet" href="/css/style.css?v=28">
+  <meta name="theme-color" content="#3b2f26">
+  <link rel="stylesheet" href="/css/style.css?v=45">
+  <link rel="stylesheet" href="/css/theme-furniture.css?v=45">
   <!-- Deliberately no Supabase, no config, no app JS: the one job of this page
        is to load when something else did not. A trilingual static message
        costs nothing and cannot itself fail. -->
 </head>
 <body>
-  <div class="topbar">Livraison à domicile — Paiement à la livraison فقط | Cash on delivery</div>
+  <div class="topbar" data-i18n="cod_only"></div>
 
   <header class="site">
     <div class="container site-inner">
       <a class="brand" href="/">
-        <span class="logo">É<em>l</em>égance</span>
+        <img src="/assets/logo-goat.jpg" alt="GOAT meubles" style="height:36px;width:auto;object-fit:contain"><span class="brand-name">GOAT meubles</span>
       </a>
     </div>
   </header>
@@ -47,7 +48,7 @@
 
   <footer class="site">
     <div class="container">
-      <div class="fine"><span id="year"></span> — Élégance</div>
+      <div class="fine"><span id="year"></span> — GOAT meubles</div>
     </div>
   </footer>
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>

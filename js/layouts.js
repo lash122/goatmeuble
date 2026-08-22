@@ -19,7 +19,7 @@
 
 /* Cache-buster for the theme stylesheets this module loads. Bump whenever a
    css/theme-*.css file changes, so browsers don't serve a stale sheet. */
-const THEME_CSS_VER = 31;
+const THEME_CSS_VER = 46;
 
 const LAYOUTS = {
   tech: {
@@ -61,7 +61,7 @@ const LAYOUTS = {
      larger cards, and categories first because people shop by room. */
   furniture: {
     label: 'Atelier',
-    desc: 'Lin & noyer, accent terracotta — photos larges, catégories par pièce.',
+    desc: 'Lin & noyer, accent chaleureux — photos larges, catégories par pièce.',
     css: 'css/theme-furniture.css',
     fonts: 'https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600'
       + '&family=Inter:wght@400;600;700'
@@ -69,28 +69,28 @@ const LAYOUTS = {
     order: ['catTiles', 'featured', 'shop'],
     i18n: {
       fr: {
-        hero_title: 'Des meubles qui durent',
-        hero_sub: 'Salon, chambre, bureau — livrés et montés chez vous, paiement à la livraison.',
-        all_products: 'Notre mobilier',
-        search_ph: 'Rechercher un meuble…',
-        no_results: 'Aucun meuble ne correspond à votre recherche.',
-        wa_prefill: 'Bonjour, j’ai une question sur un meuble.',
+        hero_title: 'Aménagez votre intérieur',
+        hero_sub: 'Tables, salons, canapés et meubles — livrés chez vous, paiement à la livraison.',
+        all_products: 'Nos produits',
+        search_ph: 'Rechercher un article…',
+        no_results: 'Aucun article ne correspond à votre recherche.',
+        wa_prefill: 'Bonjour, j’ai une question sur un article.',
       },
       ar: {
-        hero_title: 'أثاث يدوم طويلاً',
-        hero_sub: 'صالون، غرفة نوم، مكتب — التوصيل والتركيب في منزلك مع الدفع عند الاستلام.',
-        all_products: 'أثاثنا',
-        search_ph: 'ابحث عن قطعة أثاث…',
-        no_results: 'لا توجد قطعة أثاث تطابق بحثك.',
-        wa_prefill: 'مرحباً، لدي سؤال عن قطعة أثاث.',
+        hero_title: 'أثث ديكور منزلك',
+        hero_sub: 'طاولات، صالونات، أرائك وأثاث — توصيل إلى باب منزلك مع الدفع عند الاستلام.',
+        all_products: 'منتجاتنا',
+        search_ph: 'ابحث عن منتج…',
+        no_results: 'لا يوجد منتج مطابق لبحثك.',
+        wa_prefill: 'مرحباً، لدي سؤال عن أحد المنتجات.'
       },
       en: {
-        hero_title: 'Furniture built to last',
-        hero_sub: 'Living room, bedroom, office — delivered and assembled at home, cash on delivery.',
-        all_products: 'Our furniture',
-        search_ph: 'Search furniture…',
-        no_results: 'No furniture matches your search.',
-        wa_prefill: 'Hello, I have a question about a piece of furniture.',
+        hero_title: 'Design your living space',
+        hero_sub: 'Tables, sofas, couches and furniture — delivered to your door, cash on delivery.',
+        all_products: 'Our products',
+        search_ph: 'Search products…',
+        no_results: 'No products match your search.',
+        wa_prefill: 'Hello, I have a question about a product.'
       },
     },
   },
@@ -227,10 +227,9 @@ function injectTechDecor() {
    productPath() in js/store.js does, so a shop installed in a subfolder still
    resolves correctly. */
 function shopRoot() {
-  // /index.html comes off first: strip it the other way round and
-  // /p/24/index.html leaves "/p/24/" behind as the supposed shop root.
+  // Strip ANY .html filename: /checkout.html → /, /p/24/index.html → /p/24/
   return location.pathname
-    .replace(/\/index\.html$/, '/')
+    .replace(/\/[^/]*\.html$/, '/')
     .replace(/\/p\/\d+\/?$/, '/');
 }
 
@@ -239,7 +238,7 @@ function shopRoot() {
    repeat calls (every catalogue paint) do nothing once applied. */
 function applyLayout(name) {
   const forced = new URLSearchParams(location.search).get('layout');
-  const key = LAYOUTS[forced] ? forced : (LAYOUTS[name] ? name : 'default');
+  const key = LAYOUTS[forced] ? forced : (LAYOUTS[name] ? name : 'furniture');
   if (applied === key) return;
   applied = key;
   const L = LAYOUTS[key] || null;
@@ -259,10 +258,9 @@ function applyLayout(name) {
     }
     theme.href = `${shopRoot()}${L.css}?v=${THEME_CSS_VER}`;
   } else if (theme) {
-    // no layout: the build's own look — restore its baked theme (if any),
-    // or drop a runtime-created link
+    // no matching layout: keep the HTML-baked theme CSS (don't remove it)
     if (theme.dataset.nativeTheme !== undefined) theme.href = nativeCss;
-    else theme.remove();
+    // else keep whatever href the HTML set — don't remove it
   }
 
   // homepage composition: the template's section order (or the build's own)

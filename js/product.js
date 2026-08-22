@@ -177,7 +177,8 @@ const PDP = (() => {
     try {
       const [st, promo] = await Promise.all([DB.getStore(), DB.getPromo()]);
       store = { ...st, promo };
-      applyLayout(st?.layout);
+      // product page keeps the furniture theme baked in the HTML
+      // (applyLayout skipped to avoid flash-then-revert from cached JS)
       renderPrice(promo);
       renderWhatsApp(st);
       const phone = document.getElementById('footerPhone');

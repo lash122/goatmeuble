@@ -4,21 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Admin — Élégance</title>
+  <title>Admin — GOAT meubles</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <link rel="preconnect" href="__SUPABASE_ORIGIN__" crossorigin>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/style.css?v=28">
-  <link rel="stylesheet" href="css/admin.css?v=14">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link rel="preconnect" href="https://bdvnlqdublfikmadcnev.supabase.co" crossorigin>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css?v=46">
+  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=46">
+  <link rel="stylesheet" href="/css/admin.css?v=46">
 </head>
 <body class="admin-body">
 
   <!-- ============ LOGIN ============ -->
   <div class="login-wrap" id="loginView">
     <div class="login-box">
-      <h1>É<span style="color:var(--gold)">l</span>égance</h1>
+      <h1><img src="/assets/logo-goat.jpg" alt="GOAT meubles" style="height:40px;width:auto;vertical-align:middle"> GOAT meubles</h1>
       <p class="sub">Espace propriétaire — Owner panel</p>
       <input id="loginEmail" type="email" placeholder="Email">
       <input id="loginPass" type="password" placeholder="Mot de passe">
@@ -38,7 +39,7 @@
   <div class="admin-shell" id="adminShell">
     <div class="admin-top">
       <div class="container" style="display:flex;justify-content:space-between;align-items:center">
-        <span class="brand-w">É<span>l</span>égance · Admin</span>
+        <span class="brand-w">GOAT meubles · Admin</span>
         <span style="display:flex;align-items:center;gap:14px">
           <span class="who" id="demoTag"></span>
           <button id="logoutBtn">Déconnexion</button>
@@ -189,7 +190,7 @@
           <div class="f-grid">
             <div>
               <label>Nom de la boutique</label>
-              <input id="s_name" placeholder="Élégance">
+              <input id="s_name" placeholder="GOAT meubles">
             </div>
             <div>
               <label>Téléphone / WhatsApp</label>
@@ -284,9 +285,10 @@
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
     crossorigin="anonymous" defer></script>
-  <script src="js/config.js?v=31" defer></script>
-  <script src="js/i18n.js?v=33" defer></script>
-  <script src="js/supabase.js?v=31" defer></script>
-  <script src="js/admin.js?v=38" defer></script>
+  <script src="/js/config.js?v=46" defer></script>
+  <script src="/js/i18n.js?v=46" defer></script>
+  <script src="/js/supabase.js?v=46" defer></script>
+  <script src="/js/layouts.js?v=47" defer></script>
+  <script src="/js/admin.js?v=46" defer></script>
 </body>
 </html>

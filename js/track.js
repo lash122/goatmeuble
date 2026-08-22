@@ -23,8 +23,8 @@ async function initTrack() {
     const st = await DB.getStore();
     shopPhone = st?.phone || null;
     renderWhatsApp(st);
-    // the dashboard-saved template themes the tracking page too
-    applyLayout(st?.layout);
+    // track page keeps the furniture theme baked in the HTML
+    // (applyLayout skipped to avoid flash-then-revert from cached JS)
   } catch { /* button simply stays hidden */ }
 
   // deep link from the order-confirmed screen: track.html?id=42

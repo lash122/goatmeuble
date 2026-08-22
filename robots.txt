@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://vptech.dzstor.shop/sitemap.xml
+Sitemap: /sitemap.xml
