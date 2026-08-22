@@ -601,20 +601,21 @@ section.block { padding: 72px 0 40px; }
   text-transform: uppercase; letter-spacing: 0.5px;
 }
 
-/* ---- header "suivre ma commande" pill: visible on every page ---- */
+/* ---- header "suivre ma commande" link: styled like the other header
+   icons (no box), so every page's header reads as one uniform row ---- */
 .track-link {
   display: inline-flex; align-items: center; gap: 7px;
-  border: 1px solid var(--line); border-radius: 999px;
-  padding: 7px 14px; text-decoration: none;
-  color: var(--ink); background: var(--white);
-  font-size: 0.82rem; font-weight: 600; white-space: nowrap;
-  transition: border-color .15s, color .15s, background .15s;
+  padding: 8px 10px; text-decoration: none;
+  color: var(--ink); background: none; border: none;
+  font-size: 0.85rem; font-weight: 600; white-space: nowrap;
+  transition: color .15s;
 }
-.track-link:hover { border-color: var(--gold); color: var(--gold); }
-.track-link .tl-ico { font-size: 0.95rem; line-height: 1; }
+.track-link:hover { color: var(--gold); }
+.track-link .tl-ico { font-size: 1rem; line-height: 1; }
+.header-right { display: flex; align-items: center; gap: 4px; }
 @media (max-width: 860px) {
   /* tablet band: drop the words, keep the icon */
-  .track-link { padding: 7px 9px; }
+  .track-link { padding: 8px 6px; }
   .track-link .tl-label { display: none; }
 }
 @media (max-width: 600px) {
