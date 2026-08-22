@@ -158,7 +158,7 @@ def product_page(shop, p, site, fallback_img, fallback_desc):
     price = fmt_price(p.get("price"))
     title = f"{name} — {price} — {BRAND}"
     desc = " ".join((p.get("description_fr") or "").split())[:155] or fallback_desc
-    url = f"{site}/p/{p['id']}"
+    url = f"{site}/p/{p['id']}/"
 
     # a photo-less product falls back to the site card: the storefront's
     # placeholder is a data: URI, which Facebook and WhatsApp refuse as og:image

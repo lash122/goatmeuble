@@ -209,6 +209,7 @@ function buildForm(subtotal) {
         <div><label data-i18n="zone"></label><select id="fZone"></select></div>
         <div class="error-msg" id="formError"></div>
         <button class="btn-gold" id="placeOrderBtn" style="width:100%" data-i18n="place_order"></button>
+        <small class="confirm-note">📞 <span data-i18n="confirm_call"></span></small>
       </div>`;
     right.appendChild(form);
     form.querySelector('#placeOrderBtn').addEventListener('click', placeOrder);

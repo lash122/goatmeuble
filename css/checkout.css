@@ -71,6 +71,27 @@
   font-size: 0.85rem; font-weight: 600; color: var(--ink);
   margin-top: 16px; }
 
+/* trust lines under the summary: wilayas + confirmation call */
+.co-trust { display: grid; gap: 8px; margin-top: 14px;
+  border-top: 1px dashed var(--line); padding-top: 14px; }
+.co-trust > div { display: flex; gap: 9px; align-items: center;
+  font-size: 0.86rem; color: var(--ink); }
+
+/* carrier name chips */
+.co-carriers { display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+  margin-top: 12px; font-size: 0.8rem; color: var(--muted); }
+.co-carriers b { background: var(--paper); border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px 11px; font-size: 0.78rem; color: var(--ink); }
+
+/* the promise right under the order button */
+.confirm-note { display: block; text-align: center; margin-top: 10px;
+  font-size: 0.82rem; color: var(--muted); }
+
+/* no-hidden-fees line under the total */
+.final-price { display: flex; align-items: center; gap: 7px;
+  font-size: 0.82rem; color: var(--muted);
+  border-top: 1px dashed var(--line); padding-top: 12px; margin-top: 4px; }
+
 /* ---- order form ---- */
 .form-grid { display: grid; gap: 16px; }
 .form-grid label { display: block; font-size: 0.78rem; font-weight: 700;

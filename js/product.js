@@ -131,10 +131,13 @@ const PDP = (() => {
     row.innerHTML = '';
     list.forEach(x => {
       // a real link, not a modal swap: on a page, related products are
-      // navigation, and each one has its own URL to be shared or indexed
+      // navigation, and each one has its own URL to be shared or indexed.
+      // Root-absolute on purpose: this page can be served at /p/<id> OR
+      // /p/<id>/, and a relative ../<id>/ resolves to /<id>/ (404) when the
+      // trailing slash is missing.
       const a = document.createElement('a');
       a.className = 'card';
-      a.href = `../${x.id}/`;
+      a.href = `/p/${x.id}/`;
       a.style.textDecoration = 'none';
       a.innerHTML = `
         <div class="photo"><img src="${esc(DB.photoOf(x))}" alt="" loading="lazy"></div>

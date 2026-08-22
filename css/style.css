@@ -612,9 +612,18 @@ section.block { padding: 72px 0 40px; }
 }
 .track-link:hover { border-color: var(--gold); color: var(--gold); }
 .track-link .tl-ico { font-size: 0.95rem; line-height: 1; }
-@media (max-width: 720px) {
+@media (max-width: 860px) {
+  /* tablet band: drop the words, keep the icon */
   .track-link { padding: 7px 9px; }
-  .track-link .tl-label { display: none; }   /* icon-only on small screens */
+  .track-link .tl-label { display: none; }
+}
+@media (max-width: 600px) {
+  /* phones: the header cannot fit a third control next to language + cart —
+     the pill goes away entirely. Mobile customers still reach tracking from
+     the footer link and, right after ordering, from the success screen. */
+  .track-link { display: none; }
+  /* the 80px spacer that balances the centred brand is a waste of width here */
+  .header-left[style] { display: none; }
 }
 
 /* ---- tracking page hero + lookup card ---- */
@@ -942,6 +951,29 @@ section.block { padding: 72px 0 40px; }
   transition: transform 0.3s var(--ease-spring);
 }
 .wa-fab:hover { transform: scale(1.08); }
+
+/* click-to-call: stacked above the WhatsApp button, same tap target */
+.call-fab {
+  position: fixed; bottom: 88px; right: 24px; z-index: 90;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--navy, #3b2f26); color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.35rem; text-decoration: none;
+  box-shadow: 0 4px 16px rgba(59,47,38,0.35);
+  transition: transform 0.3s var(--ease-spring);
+}
+.call-fab:hover { transform: scale(1.08); }
+
+/* facebook trust badge (homepage footer) */
+.fb-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 14px; padding: 9px 16px;
+  background: #e7f0fd; color: #2453a6; border-radius: 999px;
+  font-size: 0.84rem; font-weight: 600; text-decoration: none;
+  transition: transform .15s;
+}
+.fb-badge:hover { transform: translateY(-1px); }
+.fb-badge svg { width: 17px; height: 17px; }
 .wa-fab[hidden] { display: none; }
 .wa-fab svg { width: 28px; height: 28px; }
 

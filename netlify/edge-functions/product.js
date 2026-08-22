@@ -91,7 +91,7 @@ function render(shell, p, site) {
   const title = `${name} — ${price}${brand ? ' — ' + brand : ''}`;
   const desc = (p.description_fr || '').replace(/\s+/g, ' ').trim().slice(0, 155) ||
     meta(shell, 'name', 'description') || '';
-  const url = `${site}/p/${p.id}`;
+  const url = `${site}/p/${p.id}/`;
 
   // a placeholder photo is a data: URI, which Facebook and WhatsApp refuse
   const photos = (p.photos || []).filter(u => String(u).startsWith('https://'));

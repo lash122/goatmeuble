@@ -59,16 +59,30 @@ function waOrderMessage(order) {
   ].join('\n');
 }
 
-/* Floating WhatsApp button, shown only once a number is saved in the admin. */
+/* Floating WhatsApp button, shown only once a number is saved in the admin.
+   The call button rides along: same phone, one tap to talk — on COD markets
+   half the buyers want a voice before they commit. */
 function renderWhatsApp(store) {
-  const fab = document.getElementById('waFab');
-  if (!fab) return;
   const href = waLink(store?.phone, I18N.t('wa_prefill'));
-  fab.hidden = !href;
-  if (href) {
-    fab.href = href;
-    fab.setAttribute('aria-label', I18N.t('wa_cta'));
-    fab.title = I18N.t('wa_cta');
+  // two ids exist across pages: waFab on most, waFloat on the product page
+  ['waFab', 'waFloat'].forEach(id => {
+    const fab = document.getElementById(id);
+    if (!fab) return;
+    fab.hidden = !href;
+    if (href) {
+      fab.href = href;
+      fab.setAttribute('aria-label', I18N.t('wa_cta'));
+      fab.title = I18N.t('wa_cta');
+    }
+  });
+  const call = document.getElementById('callFab');
+  if (call) {
+    const tel = String(store?.phone || '').replace(/[^\d+]/g, '');
+    call.hidden = !tel;
+    if (tel) {
+      call.href = `tel:${tel}`;
+      call.title = store.phone;
+    }
   }
 }
 
@@ -79,6 +93,15 @@ const I18N = (() => {
       hero_title: 'Am\u00e9nagez votre int\u00e9rieur', hero_sub: 'Tables, salons, canap\u00e9s et meubles — livr\u00e9s chez vous, paiement \u00e0 la livraison.',
       shop_now: 'Commander', featured: 'S\u00e9lection', all_products: 'Nos articles',
       all: 'Tout', add_to_cart: 'Ajouter au panier', added_to_cart: 'Ajouté au panier ✓', select_size: 'Choisir une taille',
+      confirm_call: 'Nous vous appelons pour confirmer votre commande avant l\u2019expédition',
+      wilayas_58: 'Livraison dans les 58 wilayas',
+      carriers_strip: 'Livraison rapide via',
+      exchange_7: 'Échange sous 7 jours',
+      no_signup: 'Commandez sans créer de compte',
+      final_price: 'Le prix affiché est le prix final — aucun frais caché',
+      delivery_time: 'Livraison en 2 à 5 jours ouvrables',
+      fb_follow: 'Suivez-nous sur Facebook',
+
       cart: 'Panier', cart_empty: 'Votre panier est vide', checkout: 'Commander',
       subtotal: 'Sous-total', delivery: 'Livraison', total: 'Total',
       cod_only: 'Paiement \u00e0 la livraison uniquement', qty: 'Qt\u00e9',
@@ -154,6 +177,15 @@ const I18N = (() => {
       hero_title: 'أثث ديكور منزلك', hero_sub: 'طاولات، صالونات، أرائك وأثاث — توصيل إلى باب منزلك مع الدفع عند الاستلام.',
       shop_now: 'اطلب الآن', featured: 'مختارات', all_products: 'منتجاتنا',
       all: 'الكل', add_to_cart: 'أضف إلى السلة', added_to_cart: 'تمت الإضافة إلى السلة ✓', select_size: 'اختر المقاس',
+      confirm_call: 'نتصل بك لتأكيد طلبك قبل الشحن',
+      wilayas_58: 'التوصيل إلى 58 ولاية',
+      carriers_strip: 'توصيل سريع عبر',
+      exchange_7: 'استبدال خلال 7 أيام',
+      no_signup: 'اطلب بدون إنشاء حساب',
+      final_price: 'السعر المعروض هو السعر النهائي — بدون رسوم خفية',
+      delivery_time: 'التوصيل خلال 2 إلى 5 أيام عمل',
+      fb_follow: 'تابعنا على فيسبوك',
+
       cart: 'السلة', cart_empty: 'سلتك فارغة', checkout: 'إتمام الطلب',
       subtotal: 'المجموع الفرعي', delivery: 'التوصيل', total: 'الإجمالي',
       cod_only: 'الدفع عند الاستلام فقط', qty: 'الكمية',
@@ -228,6 +260,15 @@ const I18N = (() => {
       hero_title: 'Design your living space', hero_sub: 'Tables, sofas, couches and furniture — delivered to your door, cash on delivery.',
       shop_now: 'Order now', featured: 'Featured', all_products: 'Our collection',
       all: 'All', add_to_cart: 'Add to cart', added_to_cart: 'Added to cart ✓', select_size: 'Choose a size',
+      confirm_call: 'We call you to confirm your order before shipping',
+      wilayas_58: 'Delivery across all 58 wilayas',
+      carriers_strip: 'Fast delivery via',
+      exchange_7: '7-day exchange',
+      no_signup: 'Order without creating an account',
+      final_price: 'The price shown is the final price — no hidden fees',
+      delivery_time: 'Delivery in 2 to 5 business days',
+      fb_follow: 'Follow us on Facebook',
+
       cart: 'Cart', cart_empty: 'Your cart is empty', checkout: 'Checkout',
       subtotal: 'Subtotal', delivery: 'Delivery', total: 'Total',
       cod_only: 'Cash on delivery only', qty: 'Qty',

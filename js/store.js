@@ -236,6 +236,14 @@ async function initStore() {
   document.addEventListener('langchange', () => {
     renderPromoBanner(); renderChips(); renderTiles();
     renderFeatured(); renderGrid(); renderRecentlyViewed(); renderWhatsApp(state.store);
+    // the Facebook trust badge: only when the owner saved a page URL
+    const fb = document.getElementById('fbBadge');
+    if (fb && state.store?.facebook) {
+      let u = state.store.facebook;
+      if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+      fb.href = u;
+      fb.hidden = false;
+    }
   });
 
   const search = document.getElementById('searchBox');
@@ -721,11 +729,13 @@ function readProductId() {
    pinned SITE_URL while previewing on localhost throws a SecurityError. */
 function productPath(id) {
   // /index.html first: the other order leaves "/p/24/" as the base when the
-  // visitor is on the pre-rendered p/24/index.html
+  // visitor is on the pre-rendered p/24/index.html. The trailing slash
+  // matters: without it, relative links from a product page resolve
+  // against /p/ instead of /, landing one level too high.
   const base = location.pathname
     .replace(/\/index\.html$/, '/')
     .replace(/\/p\/\d+\/?$/, '/');
-  return `${base}p/${encodeURIComponent(id)}`;
+  return `${base}p/${encodeURIComponent(id)}/`;
 }
 
 /* The absolute link that goes into a share sheet, an ad, or the canonical.
