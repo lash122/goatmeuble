@@ -18,7 +18,6 @@ import html
 import json
 import re
 import shutil
-import time
 from pathlib import Path
 
 from shopdata import fetch_products, fmt_price, read_config
@@ -64,27 +63,8 @@ def build():
     write_supabase_origin()
     write_product_pages()
 
-    stamp_asset_versions()
-
     files = sorted(p.relative_to(OUT).as_posix() for p in OUT.rglob("*") if p.is_file())
     print(f"{OUT.name}/ — {len(files)} files")
-
-
-
-def stamp_asset_versions():
-    """Rewrite every ?v= reference to this build's timestamp.
-
-    Manual cache-busting kept drifting (pages pinning different numbers,
-    changed files shipping under old URLs), so the build now owns it: each
-    deploy produces one fresh version across every page, and browsers that
-    hold older copies under older URLs simply refetch."""
-    stamp = str(int(time.time()))
-    for page in list(OUT.rglob('*.html')):
-        s = page.read_text(encoding='utf-8')
-        s2 = re.sub(r'\?v=\d+', f'?v={stamp}', s)
-        if s2 != s:
-            page.write_text(s2, encoding='utf-8')
-    print(f"   asset versions -> ?v={stamp}")
 
 
 def write_product_pages():
