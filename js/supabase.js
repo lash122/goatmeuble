@@ -92,7 +92,7 @@ const DB = (() => {
       };
       img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read the image')); };
       img.src = url;
-  };
+  });
 }
 
   /* v1.6 — two WebP variants per upload: a full-size one for the product
@@ -129,8 +129,6 @@ const DB = (() => {
       };
       img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read the image')); };
       img.src = url;
-    });
-  }
     });
   }
 
