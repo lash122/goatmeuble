@@ -89,7 +89,7 @@ function renderWhatsApp(store) {
 const I18N = (() => {
   const translations = {
     fr: {
-      nav_home: 'Accueil', nav_shop: 'Boutique', nav_meubles: 'Nos Meubles', nav_categories: 'Pièces', nav_collections: 'Collections', nav_contact: 'Contact',
+      nav_home: 'Accueil', nav_shop: 'Nos Meubles', nav_categories: 'Pièces', nav_collections: 'Collections', nav_contact: 'Contact',
       hero_title: 'Am\u00e9nagez votre int\u00e9rieur', hero_sub: 'Tables, salons, canap\u00e9s et meubles — livr\u00e9s chez vous, paiement \u00e0 la livraison.',
       shop_now: 'Commander', featured: 'S\u00e9lection', all_products: 'Nos articles',
       all: 'Tout', add_to_cart: 'Ajouter au panier', added_to_cart: 'Ajouté au panier ✓', select_size: 'Choisir une taille',
@@ -102,6 +102,7 @@ const I18N = (() => {
       delivery_time: 'Livraison en 2 à 5 jours ouvrables',
       fb_follow: 'Suivez-nous sur Facebook',
       bn_search: 'Recherche', bn_cart: 'Panier',
+      results_count: 'article(s)', see_all: 'Tout voir',
       err_duplicate: 'Vous avez déjà commandé ce panier récemment — vérifiez vos commandes ou appelez-nous.',
       err_too_many_today: 'Trop de commandes depuis ce numéro aujourd\u2019hui. Contactez-nous si nécessaire.',
       reviews_title: 'Avis clients', review_write: 'Donner mon avis',
@@ -179,7 +180,7 @@ const I18N = (() => {
       currency: 'DA', lang_name: 'Fran\u00e7ais',
     },
     ar: {
-      nav_home: 'الرئيسية', nav_shop: 'المتجر', nav_meubles: 'أثاثنا', nav_categories: 'الأقسام', nav_collections: 'المجموعات', nav_contact: 'اتصل بنا',
+      nav_home: 'الرئيسية', nav_shop: 'أثاثنا', nav_categories: 'الأقسام', nav_collections: 'المجموعات', nav_contact: 'اتصل بنا',
       hero_title: 'أثث ديكور منزلك', hero_sub: 'طاولات، صالونات، أرائك وأثاث — توصيل إلى باب منزلك مع الدفع عند الاستلام.',
       shop_now: 'اطلب الآن', featured: 'مختارات', all_products: 'منتجاتنا',
       all: 'الكل', add_to_cart: 'أضف إلى السلة', added_to_cart: 'تمت الإضافة إلى السلة ✓', select_size: 'اختر المقاس',
@@ -192,6 +193,7 @@ const I18N = (() => {
       delivery_time: 'التوصيل خلال 2 إلى 5 أيام عمل',
       fb_follow: 'تابعنا على فيسبوك',
       bn_search: 'بحث', bn_cart: 'السلة',
+      results_count: 'منتج', see_all: 'عرض الكل',
       err_duplicate: 'لقد طلبت هذه السلة مؤخرًا — تحقق من طلباتك أو اتصل بنا.',
       err_too_many_today: 'طلبات كثيرة من هذا الرقم اليوم. اتصل بنا إذا لزم الأمر.',
       reviews_title: 'آراء العملاء', review_write: 'أضف رأيك',
@@ -268,7 +270,7 @@ const I18N = (() => {
       currency: 'دج', lang_name: 'العربية',
     },
     en: {
-      nav_home: 'Home', nav_shop: 'Shop', nav_meubles: 'Our Furniture', nav_categories: 'Rooms', nav_collections: 'Collections', nav_contact: 'Contact',
+      nav_home: 'Home', nav_shop: 'Our Furniture', nav_categories: 'Rooms', nav_collections: 'Collections', nav_contact: 'Contact',
       hero_title: 'Design your living space', hero_sub: 'Tables, sofas, couches and furniture — delivered to your door, cash on delivery.',
       shop_now: 'Order now', featured: 'Featured', all_products: 'Our collection',
       all: 'All', add_to_cart: 'Add to cart', added_to_cart: 'Added to cart ✓', select_size: 'Choose a size',
@@ -281,6 +283,7 @@ const I18N = (() => {
       delivery_time: 'Delivery in 2 to 5 business days',
       fb_follow: 'Follow us on Facebook',
       bn_search: 'Search', bn_cart: 'Cart',
+      results_count: 'item(s)', see_all: 'View all',
       err_duplicate: 'You already ordered this basket recently — check your orders or call us.',
       err_too_many_today: 'Too many orders from this number today. Call us if needed.',
       reviews_title: 'Customer reviews', review_write: 'Write a review',

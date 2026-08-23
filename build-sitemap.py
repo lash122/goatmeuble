@@ -26,7 +26,8 @@ ROOT = Path(__file__).parent
 
 # Static pages. admin.html and checkout.html are deliberately absent — they are
 # Disallow-ed in robots.txt and carry X-Robots-Tag: noindex in _headers.
-STATIC = [("/", "daily", "1.0"), ("/track.html", "monthly", "0.3")]
+STATIC = [("/", "daily", "1.0"), ("/boutique.html", "daily", "0.9"),
+          ("/track.html", "monthly", "0.3")]
 
 
 

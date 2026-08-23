@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GOAT meubles — Mobilier, matelas et confort</title>
-  <meta name="description" content="Tables, salons, canapés et meubles — livrés chez vous, paiement à la livraison.">
+  <title>Nos Meubles — GOAT meubles</title>
+  <meta name="description" Tout le catalogue GOAT meubles : salons, tables, chambres — filtrez par catégorie.>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link id="fontsCss" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -13,14 +13,14 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-180.png">
   <meta name="theme-color" content="#3b2f26">
-  <link rel="canonical" href="">
+  <link rel="canonical" href="/boutique.html">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="GOAT meubles">
-  <meta property="og:title" content="GOAT meubles — Mobilier et confort">
-  <meta property="og:description" content="Tables, salons, canapés et meubles — livrés chez vous, paiement à la livraison.">
+  <meta property="og:title" content="Nos Meubles — GOAT meubles — Mobilier et confort">
+  <meta property="og:description" Tout le catalogue GOAT meubles : salons, tables, chambres — filtrez par catégorie.>
   <meta property="og:image" content="assets/logo-goat.jpg">
   <meta property="og:image:alt" content="GOAT meubles">
-  <meta property="og:url" content="">
+  <meta property="og:url" content="/boutique.html">
   <meta property="og:locale" content="fr_FR">
   <meta property="og:locale:alternate" content="ar_DZ">
   <meta name="twitter:card" content="summary_large_image">
@@ -50,7 +50,7 @@
   <link rel="stylesheet" href="/css/bottomnav.css?v=85">
   <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=85">
 </head>
-<body>
+<body class="page-boutique">
   <!-- page loader -->
   <div class="page-loader" id="pageLoader">
     <div class="loader-logo"><img src="/assets/logo-goat.jpg" alt="GOAT meubles" style="height:48px;width:auto"></div>
@@ -77,14 +77,9 @@
   <!-- header -->
   <header class="site">
     <div class="container site-inner">
+      <!-- back to the shop front instead of a second menu -->
       <div class="header-left">
-        <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
-          <span></span><span></span><span></span>
-        </button>
-        <nav class="main-nav">
-          <a href="/boutique.html" data-i18n="nav_shop"></a>
-          <a href="#contact" data-i18n="nav_contact"></a>
-        </nav>
+        <a class="back-home" href="/"><span class="bh-arrow">←</span> <span data-i18n="nav_home"></span></a>
       </div>
       <a class="brand brand-center" href="/">
         <img src="/assets/logo-goat.jpg" alt="GOAT meubles" class="logo-img" style="height:36px;width:auto;object-fit:contain">
@@ -111,44 +106,53 @@
     </div>
   </header>
 
-  <main>
-    <!-- hero -->
-    <section class="hero">
-      <div class="hero-bg" id="heroBg"></div>
-      <div class="hero-content">
-        <h1 data-i18n="hero_title"></h1>
-        <p data-i18n="hero_sub"></p>
-        <a class="btn-primary" href="/boutique.html" data-i18n="shop_now"></a>
-        <div class="cod-badge" data-i18n="cod_only"></div>
-      </div>
-      <div class="scroll-hint">
-        <div class="scroll-line"></div>
-      </div>
-    </section>
-
-    <!-- categories -->
-    <section class="block container reveal" id="catTiles" hidden>
-      <div class="section-header">
-        <h2 class="section-title" data-i18n="browse_categories"></h2>
-      </div>
-      <!-- skeleton placeholders: cleared by renderTiles() once the
-           catalogue arrives, so the section never collapses while loading -->
-      <div class="tile-row" id="tileRow">
-        <div class="sk-tile"></div><div class="sk-tile"></div>
-        <div class="sk-tile"></div><div class="sk-tile"></div>
-      </div>
-    </section>
-
+  <main class="page-pad">
+        
     <!-- featured -->
-    <section class="block container reveal" id="featured" hidden>
-      <div class="section-header">
-        <h2 class="section-title" data-i18n="featured"></h2>
+    
+    <!-- shop -->
+    <section class="block container reveal" id="shop">
+      <h1 class="section-title" style="margin-bottom:14px" data-i18n="nav_shop"></h1>
+      <div class="shop-trust">
+        <span>💵 <em data-i18n="cod_only"></em></span>
+        <span>🚚 <em data-i18n="wilayas_58"></em></span>
+        <span>⏱ <em data-i18n="delivery_time"></em></span>
       </div>
-      <div class="product-grid reveal-stagger" id="featuredGrid"></div>
+
+      <div class="catalogue-layout">
+      <!-- desktop: vertical sticky category rail · phone: chips stay on top -->
+      <aside class="cat-rail">
+        <div class="cat-rail-title" data-i18n="nav_categories"></div>
+        <div class="cat-rail-chips" id="categoryChips"></div>
+      </aside>
+
+      <div class="cat-main">
+      <div class="shop-tools">
+        <input id="searchBox" type="search" data-i18n-placeholder="search_ph" aria-label="Search">
+        <select id="sortBy">
+          <option value="new" data-i18n="sort_new"></option>
+          <option value="price_asc" data-i18n="sort_price_asc"></option>
+          <option value="price_desc" data-i18n="sort_price_desc"></option>
+        </select>
+      </div>
+      <div class="shop-meta"><span id="resultCount"></span></div>
+      <div class="grid-empty" id="gridEmpty" hidden>
+        <p data-i18n="no_results"></p>
+        <button class="btn-outline btn-sm" id="resetFilters" data-i18n="see_all"></button>
+      </div>
+      <div class="product-grid reveal-stagger" id="productGrid"></div>
+      </div><!-- /cat-main -->
+      </div><!-- /catalogue-layout -->
     </section>
 
-    <!-- shop -->
-      </main>
+    <!-- recently viewed -->
+    <section class="block container reveal" id="recentlyViewed" hidden>
+      <div class="section-header">
+        <h2 class="section-title" data-i18n="recently_viewed"></h2>
+      </div>
+      <div class="rv-strip" id="rvStrip"></div>
+    </section>
+  </main>
 
   <!-- footer -->
   <footer class="site reveal" id="contact">
@@ -161,7 +165,9 @@
         <div>
           <h4 data-i18n="nav_shop"></h4>
           <ul>
-            <li><a href="/boutique.html" data-i18n="nav_shop"></a></li>
+            <li><a href="/#featured" data-i18n="nav_collections"></a></li>
+            <li><a href="/boutique.html" data-i18n="nav_categories"></a></li>
+            <li><a href="#featured" data-i18n="nav_collections"></a></li>
             <li><a href="/track.html" data-i18n="track"></a></li>
           </ul>
         </div>

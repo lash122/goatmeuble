@@ -29,8 +29,8 @@ BRAND = "GOAT meubles"
 LOGO_SRC = ROOT / "assets" / "logo-goat.jpg"
 # product.html is a TEMPLATE, not a page: it is branded like the rest, then
 # consumed by write_product_pages() and deleted from the output.
-PAGES = ["index.html", "checkout.html", "admin.html", "track.html", "404.html",
-         "product.html"]
+PAGES = ["index.html", "boutique.html", "checkout.html", "admin.html",
+         "track.html", "404.html", "product.html"]
 # assets/ travels whole: logo-goat.jpg, hero-goat.jpg and the category/product
 # photos the hand-rebranded pages reference by absolute path. Forgetting this
 # folder is what broke the logo on every git-connected deploy before.

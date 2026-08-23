@@ -185,9 +185,12 @@ function renderHeroLook() {
 }
 
 async function initStore() {
-  // shop-less pages (track, checkout) load this file too: they skip the
-  // catalogue but still get real footer contact instead of a bare "—"
-  if (!document.getElementById('tileRow')) {
+  // three kinds of pages load this file: the home (tiles + featured), the
+  // boutique catalogue (chips + grid), and shop-less pages (track, checkout)
+  // which skip the catalogue but still get real footer contact.
+  const isHome = !!document.getElementById('tileRow');
+  const isCatalogue = !!document.getElementById('productGrid');
+  if (!isHome && !isCatalogue) {
     try {
       const st = await DB.getStore();
       renderSocials(st);
@@ -225,6 +228,11 @@ async function initStore() {
     state.categories = cats;
     state.products = prods;
     state.promo = promo || { active: false, percent: 0 };
+    // deep link: /boutique.html?cat=<id> opens the catalogue pre-filtered
+    const catParam = new URLSearchParams(location.search).get('cat');
+    if (catParam && state.categories.some(c => String(c.id) === catParam)) {
+      state.filter = isNaN(Number(catParam)) ? catParam : Number(catParam);
+    }
     if (store?.phone) document.getElementById('footerPhone').textContent = store.phone;
     state.store = store || {};
     applyCatalogue();
@@ -267,6 +275,13 @@ async function initStore() {
     })();
   });
 
+  const resetBtn = document.getElementById('resetFilters');
+  if (resetBtn) resetBtn.addEventListener('click', () => {
+    state.filter = null; state.query = '';
+    const box2 = document.getElementById('searchBox');
+    if (box2) box2.value = '';
+    renderChips(); renderGrid(); renderFeatured();
+  });
   const search = document.getElementById('searchBox');
   search.addEventListener('input', () => { state.query = search.value.trim().toLowerCase(); renderGrid(); });
   const sortSel = document.getElementById('sortBy');
@@ -389,6 +404,7 @@ async function initStore() {
    one (in the visitor's language), otherwise a plain "-X% site-wide". */
 function renderPromoBanner() {
   const el = document.getElementById('promoBanner');
+  if (!el) return;
   if (!state.promo?.active || !(Number(state.promo.percent) > 0)) { el.hidden = true; return; }
   const label = I18N.localize(state.promo, 'label');
   el.textContent = label || I18N.t('promo_off').replace('{p}', state.promo.percent);
@@ -397,8 +413,13 @@ function renderPromoBanner() {
 
 function renderChips() {
   const row = document.getElementById('categoryChips');
+  if (!row) return;
   const chips = [{ id: null, label: I18N.t('all') },
-    ...stockedCategories().map(c => ({ id: c.id, label: I18N.localize(c, 'name') }))];
+    ...stockedCategories().map(c => ({
+      id: c.id,
+      label: I18N.localize(c, 'name'),
+      count: state.products.filter(p => p.category_id === c.id).length,
+    }))];
   // the wishlist lives next to the categories: one tap to see saved hearts
   const wlCount = Wishlist.get().length;
   chips.push({ id: 'wishlist', label: `♥ ${I18N.t('wishlist')}${wlCount ? ` (${wlCount})` : ''}` });
@@ -406,7 +427,8 @@ function renderChips() {
   chips.forEach(ch => {
     const b = document.createElement('button');
     b.className = 'chip' + (String(state.filter) === String(ch.id) ? ' active' : '');
-    b.textContent = ch.label;
+    b.innerHTML = `<span class="chip-label">${esc(ch.label)}</span>` +
+      (ch.count !== undefined ? `<span class="chip-count">${ch.count}</span>` : '');
     b.addEventListener('click', () => { state.filter = ch.id; renderChips(); renderGrid(); });
     row.appendChild(b);
   });
@@ -421,6 +443,7 @@ function catName(catId) {
    navy placeholder so the row never breaks when the owner skips images. */
 function renderTiles() {
   const section = document.getElementById('catTiles');
+  if (!section) return;
   const row = document.getElementById('tileRow');
   row.innerHTML = '';
   const shown = stockedCategories();
@@ -433,9 +456,7 @@ function renderTiles() {
       <span class="tile-name">${esc(I18N.localize(c, 'name'))}</span>
       <span class="tile-count">${count}</span>`;
     tile.addEventListener('click', () => {
-      state.filter = c.id;
-      renderChips(); renderGrid();
-      document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
+      location.href = `/boutique.html?cat=${c.id}`;
     });
     row.appendChild(tile);
   });
@@ -600,6 +621,7 @@ function renderSocials(store) {
    nothing is featured, so the homepage never shows an empty heading. */
 function renderFeatured() {
   const section = document.getElementById('featured');
+  if (!section) return;
   const grid = document.getElementById('featuredGrid');
   const list = state.products.filter(p => p.featured);
   section.hidden = !list.length;
@@ -627,6 +649,7 @@ function sortList(list) {
 
 function renderGrid() {
   const grid = document.getElementById('productGrid');
+  if (!grid) return;
   grid.innerHTML = '';
   let list = state.products;
   if (state.filter === 'wishlist') list = list.filter(p => Wishlist.has(p.id));
@@ -664,6 +687,7 @@ function eagerFirstRow(grid) {
 /* Recently viewed strip: photo + name + live price, reopens the modal. */
 function renderRecentlyViewed() {
   const section = document.getElementById('recentlyViewed');
+  if (!section) return;
   const strip = document.getElementById('rvStrip');
   const items = RecentlyViewed.get()
     .map(id => state.products.find(p => p.id === id))
@@ -766,12 +790,13 @@ function readProductId() {
    and the shareable link below is a separate thing — handing pushState the
    pinned SITE_URL while previewing on localhost throws a SecurityError. */
 function productPath(id) {
-  // /index.html first: the other order leaves "/p/24/" as the base when the
-  // visitor is on the pre-rendered p/24/index.html. The trailing slash
-  // matters: without it, relative links from a product page resolve
-  // against /p/ instead of /, landing one level too high.
+  // Works from every page shape: "/", "/boutique.html", "/p/24/",
+  // "/p/24/index.html". Any ".html" filename collapses to its folder first
+  // ("/boutique.html" -> "/"), then a product-page path collapses to "/".
+  // The trailing slash matters: without it, relative links from a product
+  // page resolve against /p/ instead of /, landing one level too high.
   const base = location.pathname
-    .replace(/\/index\.html$/, '/')
+    .replace(/[^/]*\.html$/, '')
     .replace(/\/p\/\d+\/?$/, '/');
   return `${base}p/${encodeURIComponent(id)}/`;
 }
