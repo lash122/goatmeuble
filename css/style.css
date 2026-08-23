@@ -1391,3 +1391,10 @@ body:has(.app-tabbar) .sticky-cart { bottom: 58px; }
 /* boutique page has no hero above it — kill the stacked dead space */
 .page-boutique main.page-pad { padding: 22px 0 46px; }
 .page-boutique section.block { padding-top: 6px; }
+
+/* fractional star fill (PDP review summary) */
+.pr-stars-frac { position: relative; display: inline-block;
+  font-size: 1.25rem; line-height: 1; letter-spacing: 2px; }
+.pr-stars-frac .sf-base { color: var(--line); }
+.pr-stars-frac .sf-fill { position: absolute; inset-inline-start: 0; top: 0;
+  overflow: hidden; white-space: nowrap; color: var(--gold); }

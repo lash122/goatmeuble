@@ -530,7 +530,7 @@ function productCard(p) {
         ${!soldOut && p.stock <= 3 ? `<span class="badge-low">${esc(I18N.t('low_stock').replace('{n}', p.stock))}</span>` : ''}
       </div>
       ${(() => { const r = blendedRating(p.id);
-        return r ? `<div class="card-stars">★ <b>${r.avg}</b> <small>(${r.count})</small></div>` : ''; })()}
+        return r ? `<div class="card-stars">★ <b>${r.avg.toFixed(1)}</b> <small>(${r.count})</small></div>` : ''; })()}
     </div>`;
   card.querySelector('.heart').addEventListener('click', () => {
     const had = Wishlist.has(p.id);
