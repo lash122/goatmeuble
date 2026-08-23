@@ -1305,3 +1305,9 @@ body:has(.app-tabbar) .sticky-cart { bottom: 58px; }
   color: #fff;
   transform: scale(1.1);
 }
+
+/* star line on product cards */
+.card .card-stars { margin-top: 5px; font-size: 0.82rem; color: var(--gold);
+  display: flex; align-items: center; gap: 4px; }
+.card .card-stars b { font-weight: 700; }
+.card .card-stars small { color: var(--muted); }

@@ -414,7 +414,10 @@ function orderErrorMessage(e) {
   const code = String(e?.message || '');
   if (code.includes('OUT_OF_STOCK')) return I18N.t('err_stock');
   if (code.includes('PRODUCT_UNAVAILABLE')) return I18N.t('err_unavailable');
+  // the daily message first: 'TOO_MANY_ORDERS' is a prefix of it
+  if (code.includes('TOO_MANY_ORDERS_TODAY')) return I18N.t('err_too_many_today');
   if (code.includes('TOO_MANY_ORDERS')) return I18N.t('err_too_many');
+  if (code.includes('DUPLICATE_ORDER')) return I18N.t('err_duplicate');
   if (code.includes('INVALID_SIZE')) return I18N.t('size_required');
   if (code.includes('INVALID_PHONE')) return I18N.t('invalid_phone_dz');
   if (code.includes('INVALID_PROMO') || code.includes('PROMO_MIN_ORDER')) return I18N.t('promo_invalid');

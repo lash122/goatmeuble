@@ -145,6 +145,12 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width
 /* low / out of stock flags in the products table */
 td.stock-low { color: #8a6d24; font-weight: 700; background: #fdf8ea; }
 td.stock-out { color: #9c3434; font-weight: 700; background: #fdf0f0; }
+
+/* ---- reviews moderation ---- */
+.review-row { margin-bottom: 12px; max-width: 640px; }
+.review-row .rr-head { display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap; }
+.review-row .pr-stars { color: var(--gold); letter-spacing: 2px; }
 .btn-mini {
   border: 1px solid var(--line); background: var(--paper, #fffdf9);
   border-radius: 999px; padding: 7px 14px; font-size: 0.8rem; cursor: pointer;

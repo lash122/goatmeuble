@@ -19,9 +19,9 @@
   <meta property="og:type" content="product">
   <meta property="og:site_name" content="GOAT meubles">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="/css/style.css?v=58">
-  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=58">
-  <link rel="stylesheet" href="/css/product.css?v=58">
+  <link rel="stylesheet" href="/css/style.css?v=59">
+  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=59">
+  <link rel="stylesheet" href="/css/product.css?v=59">
 </head>
 <body>
   <div class="topbar" data-i18n="cod_only"></div>
@@ -116,6 +116,27 @@
         </div>
       </div>
 
+      <section class="pdp-reviews" id="pdpReviewsBlock" hidden>
+        <div class="pr-head">
+          <h2 class="section-title" data-i18n="reviews_title"></h2>
+          <span class="pr-summary" id="pdpReviewSummary"></span>
+        </div>
+        <ul class="pr-list" id="pdpReviews"></ul>
+        <p class="pr-empty" id="pdpNoReviews" hidden data-i18n="review_none"></p>
+
+        <!-- submission: no account, one screen; approval gates publication -->
+        <form class="pr-form" id="pdpReviewForm">
+          <h3 data-i18n="review_write"></h3>
+          <div class="pr-stars-input" id="prStars">
+            <button type="button" data-v="1">★</button><button type="button" data-v="2">★</button><button type="button" data-v="3">★</button><button type="button" data-v="4">★</button><button type="button" data-v="5">★</button>
+          </div>
+          <input id="prName" type="text" maxlength="60" data-i18n-placeholder="review_name" required>
+          <textarea id="prBody" rows="3" maxlength="600" data-i18n-placeholder="review_text"></textarea>
+          <div class="error-msg" id="prError"></div>
+          <button type="submit" class="btn-gold" data-i18n="review_send"></button>
+        </form>
+      </section>
+
       <section class="pdp-related" id="pdpRelatedBlock" hidden>
         <h2 class="section-title" data-i18n="related"></h2>
         <div class="product-grid" id="pdpRelated"></div>
@@ -163,14 +184,14 @@
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
     crossorigin="anonymous" defer></script>
-  <script src="/js/config.js?v=58" defer></script>
-  <script src="/js/tracking.js?v=58" defer></script>
-  <script src="/js/i18n.js?v=58" defer></script>
-  <script src="/js/supabase.js?v=58" defer></script>
-  <script src="/js/cart.js?v=58" defer></script>
-  <script src="/js/layouts.js?v=58" defer></script>
-  <script src="/js/store.js?v=58" defer></script>
-  <script src="/js/product.js?v=58" defer></script>
-  <script src="/js/ux.js?v=58" defer></script>
+  <script src="/js/config.js?v=59" defer></script>
+  <script src="/js/tracking.js?v=59" defer></script>
+  <script src="/js/i18n.js?v=59" defer></script>
+  <script src="/js/supabase.js?v=59" defer></script>
+  <script src="/js/cart.js?v=59" defer></script>
+  <script src="/js/layouts.js?v=59" defer></script>
+  <script src="/js/store.js?v=59" defer></script>
+  <script src="/js/product.js?v=59" defer></script>
+  <script src="/js/ux.js?v=59" defer></script>
 </body>
 </html>

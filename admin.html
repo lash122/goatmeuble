@@ -10,9 +10,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="preconnect" href="https://bdvnlqdublfikmadcnev.supabase.co" crossorigin>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/style.css?v=58">
-  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=58">
-  <link rel="stylesheet" href="/css/admin.css?v=58">
+  <link rel="stylesheet" href="/css/style.css?v=59">
+  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=59">
+  <link rel="stylesheet" href="/css/admin.css?v=59">
 </head>
 <body class="admin-body">
 
@@ -53,6 +53,7 @@
           <button data-tab="orders" class="active">Commandes <span class="pill" id="newOrdersBadge" style="display:none">0</span></button>
           <button data-tab="products">Produits</button>
           <button data-tab="categories">Catégories</button>
+          <button data-tab="reviews">Avis <span class="pill" id="pendingReviewsBadge" style="display:none">0</span></button>
           <button data-tab="zones">Zones de livraison</button>
           <button data-tab="promotions">Promotions</button>
           <button data-tab="shop">Boutique</button>
@@ -116,6 +117,16 @@
         <div class="tbl-wrap"><table class="tbl"><thead>
           <tr><th></th><th>Nom (FR)</th><th>العربية</th><th>English</th><th>Ordre</th><th></th></tr>
         </thead><tbody id="catsBody"></tbody></table></div>
+      </div>
+
+      <!-- REVIEWS: submissions arrive unapproved; publish or delete here -->
+      <div class="tab-panel" id="tab-reviews">
+        <div class="panel-h"><h2>Avis clients</h2></div>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:14px">
+          Les nouveaux avis arrivent « en attente » et ne sont visibles sur la
+          boutique qu'après approbation.
+        </p>
+        <div id="reviewsBox"></div>
       </div>
 
       <!-- ZONES -->
@@ -226,6 +237,21 @@
             <button class="a-btn gold" id="saveShopBtn">💾 Enregistrer</button>
           </div>
         </div>
+
+        <!-- review baseline: seeds the stars customers see before real
+             reviews accumulate; real reviews are blended in on top -->
+        <div class="panel" style="max-width:480px;margin-top:18px">
+          <h3 style="margin-bottom:12px;font-size:1.05rem">Note de départ (étoiles)</h3>
+          <div class="f-grid two">
+            <div><label>Avis de base (compteur)</label><input id="rb_count" type="number" min="0"></div>
+            <div><label>Moyenne de base (0–5)</label><input id="rb_avg" type="number" min="0" max="5" step="0.1"></div>
+          </div>
+          <small style="color:var(--muted);display:block;margin:8px 0 12px">
+            Ex : 15 avis à 4.6★. Les vrais avis clients s'ajoutent par-dessus.
+            0 / 0 = afficher uniquement les vrais avis.
+          </small>
+          <button class="a-btn gold" id="saveBaselineBtn">💾 Enregistrer la note de départ</button>
+        </div>
       </div>
 
       <!-- APPEARANCE: the dashboard controls which of the three templates
@@ -291,10 +317,10 @@
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
     crossorigin="anonymous" defer></script>
-  <script src="/js/config.js?v=58" defer></script>
-  <script src="/js/i18n.js?v=58" defer></script>
-  <script src="/js/supabase.js?v=58" defer></script>
-  <script src="/js/layouts.js?v=58" defer></script>
-  <script src="/js/admin.js?v=58" defer></script>
+  <script src="/js/config.js?v=59" defer></script>
+  <script src="/js/i18n.js?v=59" defer></script>
+  <script src="/js/supabase.js?v=59" defer></script>
+  <script src="/js/layouts.js?v=59" defer></script>
+  <script src="/js/admin.js?v=59" defer></script>
 </body>
 </html>

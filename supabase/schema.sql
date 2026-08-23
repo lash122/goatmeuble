@@ -317,6 +317,15 @@ begin
     raise exception 'TOO_MANY_ORDERS';
   end if;
 
+  -- v1.5: a daily ceiling too. Five an hour still allowed a determined prank
+  -- to file a hundred orders overnight, and every one of them is a courier
+  -- rolling out to a dead phone.
+  if (select count(*) from orders
+      where dz_phone(phone) = p_phone
+        and created_at > now() - interval '24 hours') >= 10 then
+    raise exception 'TOO_MANY_ORDERS_TODAY';
+  end if;
+
   if p_items is null or jsonb_typeof(p_items) <> 'array'
      or jsonb_array_length(p_items) = 0 or jsonb_array_length(p_items) > 50 then
     raise exception 'INVALID_CART';
@@ -421,6 +430,28 @@ begin
   -- delivery fee and charged another.
   if v_free_from > 0 and (v_sub - v_discount) >= v_free_from then
     v_fee := 0;
+  end if;
+
+  -- v1.5: identical basket from the same phone inside 24h is a double-click
+  -- or a replayed prank — two real customers never order the exact same cart
+  -- twice from one number. Compared as multisets, so line order is irrelevant.
+  if exists (
+    select 1
+    from orders o
+    where dz_phone(o.phone) = p_phone
+      and o.created_at > now() - interval '24 hours'
+      and jsonb_array_length(o.items) = jsonb_array_length(clean)
+      and not exists (
+        select 1
+        from jsonb_array_elements(clean) c
+        left join jsonb_array_elements(o.items) x
+          on x->>'product_id' = c->>'product_id'
+         and coalesce(x->>'size', '') = coalesce(c->>'size', '')
+         and (x->>'qty')::int = (c->>'qty')::int
+        where x is null
+      )
+  ) then
+    raise exception 'DUPLICATE_ORDER';
   end if;
 
   insert into orders (customer_name, phone, address, zone,
@@ -574,6 +605,7 @@ drop policy if exists "owner writes products"  on products;
 drop policy if exists "read public settings"   on settings;
 drop policy if exists "owner writes settings"  on settings;
 drop policy if exists "owner only orders"      on orders;
+drop policy if exists "owner writes promo codes" on promo_codes;
 
 -- Visitors: read the catalogue, and nothing else.
 create policy "read categories" on categories
@@ -644,3 +676,81 @@ create policy "owner deletes photos" on storage.objects
 --
 -- To check it worked:  select * from owners;   -- should show exactly one row
 -- ============================================================
+
+
+-- ============================================================
+-- v1.5 — CUSTOMER REVIEWS
+--
+-- Social proof is the strongest converter a COD shop can add: the buyer
+-- cannot touch the product, so other buyers' words carry the sale.
+--
+-- Flow: anyone may submit (insert), nothing is public until the owner
+-- approves it. This keeps prank and competitor reviews off the page without
+-- making honest customers wait for an account they will never create.
+-- ============================================================
+
+create table if not exists reviews (
+  id bigint generated always as identity primary key,
+  product_id bigint not null references products(id) on delete cascade,
+  name text not null,
+  rating int not null check (rating between 1 and 5),
+  body text not null default '',
+  approved boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists reviews_product_idx on reviews(product_id) where approved;
+create index if not exists reviews_pending_idx on reviews(created_at) where not approved;
+
+alter table reviews enable row level security;
+
+drop policy if exists "anyone may submit a review" on reviews;
+drop policy if exists "approved reviews are public" on reviews;
+drop policy if exists "owner sees all reviews" on reviews;
+drop policy if exists "owner manages reviews" on reviews;
+
+-- submission needs no account; length limits keep the abuse surface small.
+-- Approval still gates what becomes public, so spam costs the owner one click.
+create policy "anyone may submit a review" on reviews
+  for insert to anon, authenticated
+  with check (char_length(name) between 2 and 60 and char_length(body) <= 600);
+
+create policy "approved reviews are public" on reviews
+  for select using (approved);
+
+create policy "owner sees all reviews" on reviews
+  for select to authenticated using (public.is_owner());
+
+create policy "owner manages reviews" on reviews
+  for update to authenticated using (public.is_owner()) with check (public.is_owner());
+
+create policy "owner deletes reviews" on reviews
+  for delete to authenticated using (public.is_owner());
+
+-- One aggregate row per product for cards and product pages: average and
+-- count over APPROVED reviews only. Security definer so it can read the table
+-- without opening it up; takes a slice of ids or all products when null.
+create or replace function public.review_summary(p_ids bigint[] default null)
+returns table (product_id bigint, avg_rating numeric, review_count bigint)
+language sql stable security definer set search_path = public as $$
+  select r.product_id, round(avg(r.rating)::numeric, 1), count(*)
+  from reviews r
+  where r.approved
+    and (p_ids is null or r.product_id = any (p_ids))
+  group by r.product_id;
+$$;
+
+revoke all on function public.review_summary(bigint[]) from public;
+grant execute on function public.review_summary(bigint[]) to anon, authenticated;
+
+-- v1.5.1 — adjustable review baseline
+-- The owner may seed a starting count/average (a shop that sold for years
+-- before launching the site should not start at zero credibility). Stored as
+-- a public settings row: {"count": 15, "avg": 4.6}. Real reviews are blended
+-- with it, never replaced by it.
+insert into settings (key, value) values ('reviews_baseline', '{"count": 0, "avg": 0}')
+on conflict (key) do nothing;
+
+drop policy if exists "read public settings" on settings;
+create policy "read public settings" on settings
+  for select using (key in ('store', 'zones', 'promo', 'free_delivery_from', 'reviews_baseline'));

@@ -504,6 +504,71 @@ const DB = (() => {
       must(await sb.from('orders').delete().eq('id', id));
     },
 
+    /* ---- v1.5 customer reviews ------------------------------------------ */
+
+    /* Approved reviews for one product, newest first. */
+    async getReviews(productId) {
+      if (IS_DEMO) return [];
+      return must(await sb.from('reviews')
+        .select('id,name,rating,body,created_at')
+        .eq('product_id', productId).eq('approved', true)
+        .order('created_at', { ascending: false }).limit(20)) || [];
+    },
+
+    /* { avg_rating, review_count } or null when nobody has reviewed yet. */
+    async getReviewSummary(productId) {
+      if (IS_DEMO) return null;
+      const rows = must(await sb.rpc('review_summary', { p_ids: [productId] })) || [];
+      return rows[0] || null;
+    },
+
+    /* Every product's summary in one call — the grid paints stars without
+       per-card round trips. */
+    async reviewSummaryAll() {
+      if (IS_DEMO) return [];
+      return must(await sb.rpc('review_summary')) || [];
+    },
+
+    /* Public submission: lands unapproved; the owner publishes it. */
+    async addReview(productId, name, rating, body) {
+      if (IS_DEMO) return { ok: true };
+      must(await sb.from('reviews')
+        .insert({ product_id: productId, name, rating, body: body || '' }));
+      return { ok: true };
+    },
+
+    /* Admin: every review, pending first so moderation is one screen. */
+    async getAllReviews() {
+      if (IS_DEMO) return [];
+      return must(await sb.from('reviews')
+        .select('*').order('approved', { ascending: true })
+        .order('created_at', { ascending: false }).limit(200)) || [];
+    },
+
+    async setReviewApproved(id, approved) {
+      if (IS_DEMO) return;
+      must(await sb.from('reviews').update({ approved }).eq('id', id));
+    },
+
+    async deleteReview(id) {
+      if (IS_DEMO) return;
+      must(await sb.from('reviews').delete().eq('id', id));
+    },
+
+    /* Owner-seeded baseline: {count, avg} blended with real reviews. */
+    async getReviewsBaseline() {
+      if (IS_DEMO) return { count: 0, avg: 0 };
+      const rows = must(await sb.from('settings')
+        .select('value').eq('key', 'reviews_baseline').limit(1));
+      return rows?.[0]?.value || { count: 0, avg: 0 };
+    },
+
+    async saveReviewsBaseline(count, avg) {
+      if (IS_DEMO) return;
+      must(await sb.from('settings')
+        .upsert({ key: 'reviews_baseline', value: { count: Number(count) || 0, avg: Number(avg) || 0 } }));
+    },
+
     /* Storefront first paint: the whole cached entry, synchronously, when it
        is fresh enough to trust. The live fetch still runs and replaces it. */
     getCachedCatalogue() {

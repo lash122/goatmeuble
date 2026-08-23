@@ -5,7 +5,7 @@ const STATUSES = [
   ['cancelled', 'Annulée', 'cancelled'],
 ];
 let A = { cats: [], products: [], orders: [], zones: [], store: {},
-          promo: {}, freeFrom: null, codes: [] };
+          promo: {}, freeFrom: null, codes: [], reviews: [] };
 let orderQuery = '';      // orders search box
 let orderSort = 'date_desc';
 let chosenLayout = '';    // Apparence tab — pending template choice
@@ -52,6 +52,12 @@ async function initAdmin() {
   });
   document.getElementById('saveZonesBtn').addEventListener('click', saveZones);
   document.getElementById('saveShopBtn').addEventListener('click', saveShop);
+  document.getElementById('saveBaselineBtn').addEventListener('click', () =>
+    run(async () => {
+      await DB.saveReviewsBaseline(
+        document.getElementById('rb_count').value,
+        document.getElementById('rb_avg').value);
+    }, 'Note de départ enregistrée'));
   document.getElementById('saveLayoutBtn').addEventListener('click', () => saveLayout(false));
   // back to the build's own look — clears the saved layout entirely
   document.getElementById('resetLayoutBtn').addEventListener('click', () => {
@@ -111,6 +117,59 @@ async function refreshAll() {
   renderOrders(); renderProducts(); renderCats(); renderZones(); renderShop();
   renderLayouts(); renderPromotions(); renderCodes(); renderStats();
   setNewBadge(A.orders.filter(o => o.status === 'new').length);
+  try { await refreshReviews(); } catch { /* reviews are optional */ }
+  try {
+    const rb = await DB.getReviewsBaseline();
+    document.getElementById('rb_count').value = Number(rb.count) || 0;
+    document.getElementById('rb_avg').value = Number(rb.avg) || 0;
+  } catch { /* baseline inputs stay empty */ }
+}
+
+/* ---- customer reviews moderation ---- */
+
+async function refreshReviews() {
+  A.reviews = await DB.getAllReviews().catch(() => []);
+  renderReviews();
+}
+
+function renderReviews() {
+  const box = document.getElementById('reviewsBox');
+  if (!box) return;
+  const pending = (A.reviews || []).filter(r => !r.approved);
+  const badge = document.getElementById('pendingReviewsBadge');
+  if (badge) { badge.style.display = pending.length ? '' : 'none'; badge.textContent = pending.length; }
+
+  box.innerHTML = '';
+  if (!(A.reviews || []).length) {
+    box.innerHTML = '<div class="panel" style="color:var(--muted)">Aucun avis pour le moment.</div>';
+    return;
+  }
+  (A.reviews || []).forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'panel review-row';
+    const d = r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR') : '';
+    div.innerHTML = `
+      <div class="rr-head">
+        <b>${esc(r.name)}</b>
+        <span class="pr-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+        ${r.approved ? '<span class="status-tag status-delivered">publié</span>'
+                     : '<span class="status-tag status-confirmed">en attente</span>'}
+      </div>
+      <p style="margin:8px 0;color:var(--ink)">${esc(r.body)}</p>
+      <small style="color:var(--muted)">Produit #${r.product_id} · ${d}</small>
+      <div class="row-actions" style="margin-top:10px">
+        <button class="btn-mini adv" data-a="${r.approved ? 'hide' : 'approve'}">${r.approved ? 'Masquer' : '✓ Publier'}</button>
+        <button class="btn-mini danger" data-a="del">🗑</button>
+      </div>`;
+    div.querySelector('[data-a="approve"],[data-a="hide"]').addEventListener('click', () =>
+      run(async () => { await DB.setReviewApproved(r.id, !r.approved); await refreshAll(); },
+          r.approved ? 'Avis masqué' : 'Avis publié'));
+    div.querySelector('[data-a="del"]').addEventListener('click', () => {
+      if (!confirm('Supprimer définitivement cet avis ?')) return;
+      run(async () => { await DB.deleteReview(r.id); await refreshAll(); }, 'Avis supprimé');
+    });
+    box.appendChild(div);
+  });
 }
 
 function setNewBadge(n) {

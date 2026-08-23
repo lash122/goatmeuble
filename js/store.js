@@ -249,6 +249,25 @@ async function initStore() {
   document.addEventListener('langchange', () => {
     renderPromoBanner(); renderChips(); renderTiles();
     renderFeatured(); renderGrid(); renderRecentlyViewed(); renderWhatsApp(state.store);
+    // review stars: one RPC for every product + the owner's baseline, then
+    // the cards repaint with whatever ratings exist. Silent on any failure.
+    (async () => {
+      try {
+        const [rows, base] = await Promise.all([
+          DB.reviewSummaryAll().catch(() => []),
+          DB.getReviewsBaseline().catch(() => ({ count: 0, avg: 0 })),
+        ]);
+        const map = {};
+        (rows || []).forEach(r => { map[r.product_id] = r; });
+        state.reviewMap = map;
+        state.reviewBase = {
+          count: Math.max(0, Number(base.count) || 0),
+          avg: Math.min(5, Math.max(0, Number(base.avg) || 0)),
+        };
+        state.ratingsReady = true;
+        renderFeatured(); renderGrid(); renderRecentlyViewed();
+      } catch { /* stars are decoration */ }
+    })();
   });
 
   const search = document.getElementById('searchBox');
@@ -492,6 +511,8 @@ function productCard(p) {
         ${soldOut ? `<span class="badge-oos" data-i18n="out_of_stock"></span>` : ''}
         ${!soldOut && p.stock <= 3 ? `<span class="badge-low">${esc(I18N.t('low_stock').replace('{n}', p.stock))}</span>` : ''}
       </div>
+      ${(() => { const r = blendedRating(p.id);
+        return r ? `<div class="card-stars">★ <b>${r.avg}</b> <small>(${r.count})</small></div>` : ''; })()}
     </div>`;
   card.querySelector('.heart').addEventListener('click', () => {
     const had = Wishlist.has(p.id);
@@ -509,6 +530,21 @@ function productCard(p) {
     toast(I18N.t('added_to_cart'));
   });
   return card;
+}
+
+/* Blended rating for a card: real approved reviews plus the owner's baseline
+   (a shop with years of offline sales should not start at zero). Returns
+   null when there is nothing to show. */
+function blendedRating(pid) {
+  if (!state.ratingsReady) return null;
+  const real = state.reviewMap[pid];
+  const rn = Number(real?.review_count) || 0;
+  const rs = rn * (Number(real?.avg_rating) || 0);
+  const bn = state.reviewBase.count, ba = state.reviewBase.avg;
+  const total = rn + bn;
+  if (!total) return null;
+  const avg = Math.round(((rs + bn * ba) / total) * 10) / 10;
+  return { avg, count: total };
 }
 
 /* Social links from the shop settings: a row of icon links in the footer.

@@ -216,6 +216,77 @@ const PDP = (() => {
       : `<span>${esc(I18N.t('free_delivery_qualifies'))}</span>`;
   }
 
+  /* ---- customer reviews: approved list + a one-screen submission form.
+     Submissions land unapproved; the owner publishes them from the admin. */
+  let reviewRating = 0;
+
+  function starsHtml(v, of = 5) {
+    return '★'.repeat(Math.round(v)) + '☆'.repeat(of - Math.round(v));
+  }
+
+  async function renderReviews() {
+    const block = document.getElementById('pdpReviewsBlock');
+    if (!block || !p?.id) return;
+    I18N.apply();
+    const [list, summary, baseline] = await Promise.all([
+      DB.getReviews(p.id).catch(() => []),
+      DB.getReviewSummary(p.id).catch(() => null),
+      DB.getReviewsBaseline().catch(() => ({ count: 0, avg: 0 })),
+    ]);
+    // blend real reviews with the owner's baseline, same as the grid cards
+    const rn = Number(summary?.review_count) || 0;
+    const bn = Math.max(0, Number(baseline?.count) || 0);
+    const total = rn + bn;
+    if (total) {
+      const rs = rn * (Number(summary?.avg_rating) || 0);
+      const avg = Math.round(((rs + bn * (Number(baseline.avg) || 0)) / total) * 10) / 10;
+      document.getElementById('pdpReviewSummary').textContent =
+        `★ ${avg} (${total})`;
+    }
+    const ul = document.getElementById('pdpReviews');
+    ul.innerHTML = '';
+    (list || []).forEach(r => {
+      const li = document.createElement('li');
+      li.className = 'pr-item';
+      const d = r.created_at ? new Date(r.created_at).toLocaleDateString(
+        I18N.getLang() === 'ar' ? 'ar-DZ' : I18N.getLang() === 'fr' ? 'fr-FR' : 'en-US') : '';
+      li.innerHTML = `
+        <div class="pr-top"><b>${esc(r.name)}</b><span class="pr-stars">${starsHtml(r.rating)}</span></div>
+        ${r.body ? `<p>${esc(r.body)}</p>` : ''}
+        <small>${d}</small>`;
+      ul.appendChild(li);
+    });
+    document.getElementById('pdpNoReviews').hidden = !!(list && list.length);
+    document.getElementById('pdpReviewForm').hidden = false;
+    block.hidden = false;
+  }
+
+  function initReviewForm() {
+    const stars = document.getElementById('prStars');
+    if (!stars) return;
+    const paint = () => stars.querySelectorAll('button').forEach((b, i) =>
+      b.classList.toggle('on', i < reviewRating));
+    stars.querySelectorAll('button').forEach((b, i) =>
+      b.addEventListener('click', () => { reviewRating = i + 1; paint(); }));
+    document.getElementById('pdpReviewForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const err = document.getElementById('prError');
+      err.classList.remove('show');
+      if (!reviewRating) { err.textContent = '★ ?'; err.classList.add('show'); return; }
+      const name = document.getElementById('prName').value.trim();
+      if (name.length < 2) { err.textContent = I18N.t('required'); err.classList.add('show'); return; }
+      try {
+        await DB.addReview(p.id, name, reviewRating,
+          document.getElementById('prBody').value.trim());
+        e.target.reset(); reviewRating = 0; paint();
+        err.textContent = I18N.t('review_thanks');   // reused as the success line
+        err.classList.add('show');
+      } catch {
+        err.textContent = I18N.t('err_generic'); err.classList.add('show');
+      }
+    });
+  }
+
   async function init() {
     p = baked();
     // '/' and not './' — this page lives at /p2/<id>/, where './' is THIS page,
@@ -235,6 +306,7 @@ const PDP = (() => {
     document.getElementById('pdpAdd').addEventListener('click', addToCart);
     document.getElementById('pdpStickyAdd').addEventListener('click', addToCart);
     initLightbox();
+    initReviewForm();
     document.querySelectorAll('.qty-picker button').forEach(b =>
       b.addEventListener('click', () => {
         qty = Math.min(99, Math.max(1, qty + Number(b.dataset.q)));
@@ -264,6 +336,7 @@ const PDP = (() => {
     } catch { /* the page is already readable; settings are decoration */ }
 
     try { renderFdTeaser(await DB.getFreeDeliveryFrom()); } catch { /* decoration */ }
+    renderReviews();
 
     renderRelated();
   }
