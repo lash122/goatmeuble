@@ -139,9 +139,6 @@ function effPrice(p) {
 /* Paint the whole shopfront from the current state. Used for both the
    cached first paint and the live refresh, so they can never disagree. */
 function applyCatalogue() {
-  // the dashboard-saved template (layouts.js) must be in place before any
-  // section renders, so the hero arch / sidebar / decor exist for the painters
-  applyLayout(state.store?.layout);
   renderPromoBanner();
   renderChips();
   renderTiles();

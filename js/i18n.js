@@ -399,22 +399,5 @@ const I18N = (() => {
     document.dispatchEvent(new CustomEvent('langchange'));
   }
 
-  /* The runtime layout switcher (layouts.js) swaps a few shopfront strings
-     per template (hero title, section names…). snapshot() captures the
-     current values so a layout can be undone, override() replaces them. */
-  function snapshot(keys) {
-    const out = {};
-    for (const lang in translations) {
-      out[lang] = {};
-      keys.forEach(k => { out[lang][k] = translations[lang][k]; });
-    }
-    return out;
-  }
-  function override(map) {
-    for (const lang in map) {
-      if (translations[lang]) Object.assign(translations[lang], map[lang]);
-    }
-  }
-
-  return { t, fmtPrice, localize, getLang, setLang, apply, snapshot, override };
+  return { t, fmtPrice, localize, getLang, setLang, apply };
 })();

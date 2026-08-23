@@ -8,15 +8,7 @@ let A = { cats: [], products: [], orders: [], zones: [], store: {},
           promo: {}, freeFrom: null, codes: [], reviews: [], leads: [] };
 let orderQuery = '';      // orders search box
 let orderSort = 'date_desc';
-let chosenLayout = '';    // Apparence tab — pending template choice
-let layoutDirty = false;  // true once the owner picks a card on this screen
 
-/* The templates the dashboard can apply (keys match layouts.js). */
-const LAYOUT_CHOICES = [
-  { key: 'tech', label: 'Tech', desc: 'Navy & bleu électrique — accueil design, produits en avant.', mini: 'tech' },
-  { key: 'furniture', label: 'Atelier', desc: 'Lin & noyer, accent terracotta — photos larges, catégories par pièce. Pour le mobilier.', mini: 'furniture' },
-  { key: 'sharp', label: 'Sharp', desc: 'Minimaliste noir & blanc — mur masonry, sans héros.', mini: 'sharp' },
-];
 
 document.addEventListener('DOMContentLoaded', initAdmin);
 
@@ -58,13 +50,6 @@ async function initAdmin() {
         document.getElementById('rb_count').value,
         document.getElementById('rb_avg').value);
     }, 'Note de départ enregistrée'));
-  document.getElementById('saveLayoutBtn').addEventListener('click', () => saveLayout(false));
-  // back to the build's own look — clears the saved layout entirely
-  document.getElementById('resetLayoutBtn').addEventListener('click', () => {
-    chosenLayout = '';
-    layoutDirty = true;
-    saveLayout(true);
-  });
   document.getElementById('savePromoBtn').addEventListener('click', savePromo);
   document.getElementById('saveFreeBtn').addEventListener('click', saveFreeDelivery);
   document.getElementById('addCodeBtn').addEventListener('click', () => editCode(null));
@@ -115,7 +100,7 @@ async function refreshAll() {
   ]);
   A.freeFrom = await DB.getFreeDeliveryFrom();
   renderOrders(); renderProducts(); renderCats(); renderZones(); renderShop();
-  renderLayouts(); renderPromotions(); renderCodes(); renderStats();
+  renderPromotions(); renderCodes(); renderStats();
   setNewBadge(A.orders.filter(o => o.status === 'new').length);
   try { await refreshReviews(); } catch { /* reviews are optional */ }
   try {
@@ -876,66 +861,12 @@ async function saveShop() {
     facebook: document.getElementById('s_facebook').value.trim(),
     instagram: document.getElementById('s_instagram').value.trim(),
     tiktok: document.getElementById('s_tiktok').value.trim(),
-    // the template choice from the Apparence tab must survive a save here
-    layout: A.store?.layout || null,
   };
   if (!store.name) { alert('Le nom de la boutique est requis'); return; }
   await run(async () => {
     await DB.saveStore(store);
     A.store = store;
   }, 'Informations enregistrées ✓');
-}
-
-/* ================= APPEARANCE =================
-   The dashboard picks one of the three templates; the choice travels with
-   the shop settings and the storefront applies it at runtime (layouts.js).
-   The Aperçu link forces ?layout=<key> without saving — safe to try freely. */
-function renderLayouts() {
-  const grid = document.getElementById('layoutGrid');
-  if (!grid) return;
-  // a card picked on this screen wins over the saved value; otherwise the
-  // picker reflects what is actually saved
-  if (!layoutDirty) {
-    const current = A.store?.layout || '';
-    chosenLayout = LAYOUT_CHOICES.some(l => l.key === current) ? current : '';
-  }
-  grid.innerHTML = '';
-  const minis = {
-    tech: '<i class="m-grid"></i><i class="m-chip"></i>',
-    furniture: '<i class="m-band"></i><i class="m-wide a"></i><i class="m-wide b"></i>',
-    sharp: '<i class="m-top"></i><i class="m-tile a"></i><i class="m-tile b"></i><i class="m-tile c"></i><i class="m-dot"></i>',
-  };
-  LAYOUT_CHOICES.forEach(l => {
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'layout-card' + (l.key === chosenLayout ? ' selected' : '');
-    card.setAttribute('aria-pressed', String(l.key === chosenLayout));
-    card.innerHTML = `
-      <span class="mini ${l.mini}">${minis[l.mini]}</span>
-      <b>${esc(l.label)}</b>
-      <small>${esc(l.desc)}</small>`;
-    card.addEventListener('click', () => { chosenLayout = l.key; layoutDirty = true; renderLayouts(); });
-    grid.appendChild(card);
-  });
-  // './' rather than 'index.html' — the shop's public URL is the bare
-  // directory, and the preview should open the address customers actually see
-  document.getElementById('previewLayoutLink').href = chosenLayout
-    ? `./?layout=${chosenLayout}` : './';
-}
-
-async function saveLayout(skipConfirm) {
-  if (!chosenLayout && !skipConfirm) {
-    if (!confirm('Aucun thème sélectionné — la boutique gardera son apparence actuelle. Continuer ?')) return;
-  }
-  await run(async () => {
-    const store = { ...(A.store || {}), layout: chosenLayout || null };
-    await DB.saveStore(store);
-    A.store = store;
-    layoutDirty = false;
-    renderLayouts();
-  }, chosenLayout
-    ? 'Thème enregistré ✓ — la boutique l’affiche maintenant'
-    : 'Apparence d’origine restaurée ✓');
 }
 
 /* ================= PROMOTIONS (v1.1) ================= */
