@@ -210,3 +210,9 @@
 
 .pr-bigstars { color: var(--gold); font-size: 1.25rem; letter-spacing: 3px; }
 .pr-count { color: var(--muted); font-weight: 400; }
+
+/* the sticky buy button rides above the phone bottom-nav, never under it */
+@media (max-width: 860px) {
+  .pdp-sticky { bottom: calc(58px + env(safe-area-inset-bottom)) !important; }
+  .pdp { padding-bottom: calc(170px + env(safe-area-inset-bottom)); }
+}

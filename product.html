@@ -19,9 +19,10 @@
   <meta property="og:type" content="product">
   <meta property="og:site_name" content="GOAT meubles">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="/css/style.css?v=66">
-  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=66">
-  <link rel="stylesheet" href="/css/product.css?v=66">
+  <link rel="stylesheet" href="/css/style.css?v=67">
+  <link rel="stylesheet" href="/css/bottomnav.css?v=67">
+  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=67">
+  <link rel="stylesheet" href="/css/product.css?v=67">
 </head>
 <body>
   <div class="topbar" data-i18n="cod_only"></div>
@@ -180,17 +181,26 @@
     <div class="lb-count" id="lbCount"></div>
   </div>
 
-  <script
+    <!-- phone-only bottom tab bar: home, shop, search, tracking, cart -->
+  <nav class="bottom-nav" aria-label="Navigation principale">
+    <a href="/" data-bn="home"><span class="bn-ico">🏠</span><span data-i18n="nav_home"></span></a>
+    <a href="/#shop" data-bn="shop"><span class="bn-ico">🛋️</span><span data-i18n="nav_shop"></span></a>
+    <a href="/#search" data-bn="search"><span class="bn-ico">🔍</span><span data-i18n="bn_search"></span></a>
+    <a href="/track.html" data-bn="track"><span class="bn-ico">📦</span><span data-i18n="track"></span></a>
+    <a href="/checkout.html" data-bn="cart"><span class="bn-ico">🛒</span><span data-i18n="bn_cart"></span><span class="bn-badge nav-cart-count">0</span></a>
+  </nav>
+
+<script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
     crossorigin="anonymous" defer></script>
-  <script src="/js/config.js?v=66" defer></script>
-  <script src="/js/tracking.js?v=66" defer></script>
-  <script src="/js/i18n.js?v=66" defer></script>
-  <script src="/js/supabase.js?v=66" defer></script>
-  <script src="/js/cart.js?v=66" defer></script>
-  <script src="/js/store.js?v=66" defer></script>
-  <script src="/js/product.js?v=66" defer></script>
-  <script src="/js/ux.js?v=66" defer></script>
+  <script src="/js/config.js?v=67" defer></script>
+  <script src="/js/tracking.js?v=67" defer></script>
+  <script src="/js/i18n.js?v=67" defer></script>
+  <script src="/js/supabase.js?v=67" defer></script>
+  <script src="/js/cart.js?v=67" defer></script>
+  <script src="/js/store.js?v=67" defer></script>
+  <script src="/js/product.js?v=67" defer></script>
+  <script src="/js/ux.js?v=67" defer></script>
 </body>
 </html>

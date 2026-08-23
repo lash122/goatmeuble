@@ -46,8 +46,9 @@
       else absolutizeSeo();
     })();
   </script>
-  <link rel="stylesheet" href="/css/style.css?v=66">
-  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=66">
+  <link rel="stylesheet" href="/css/style.css?v=67">
+  <link rel="stylesheet" href="/css/bottomnav.css?v=67">
+  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=67">
 </head>
 <body>
   <!-- page loader -->
@@ -297,16 +298,25 @@
     <a href="#" target="_blank" rel="noopener" aria-label="TikTok" title="TikTok"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M16.6 3c.4 2 1.7 3.4 3.9 3.6v2.6c-1.4 0-2.8-.4-3.9-1.2v6.3c0 4.1-2.6 6.7-6.4 6.7-3.2 0-5.7-2.4-5.7-5.6 0-3.4 2.8-5.8 6.3-5.6v2.8c-1.9-.2-3.5 1-3.5 2.9 0 1.7 1.2 2.9 2.8 2.9 1.7 0 2.9-1.1 2.9-3V3h2.6z"/></svg></a>
   </div>
 
-  <script
+    <!-- phone-only bottom tab bar: home, shop, search, tracking, cart -->
+  <nav class="bottom-nav" aria-label="Navigation principale">
+    <a href="/" data-bn="home"><span class="bn-ico">🏠</span><span data-i18n="nav_home"></span></a>
+    <a href="/#shop" data-bn="shop"><span class="bn-ico">🛋️</span><span data-i18n="nav_shop"></span></a>
+    <a href="/#search" data-bn="search"><span class="bn-ico">🔍</span><span data-i18n="bn_search"></span></a>
+    <a href="/track.html" data-bn="track"><span class="bn-ico">📦</span><span data-i18n="track"></span></a>
+    <a href="/checkout.html" data-bn="cart"><span class="bn-ico">🛒</span><span data-i18n="bn_cart"></span><span class="bn-badge nav-cart-count">0</span></a>
+  </nav>
+
+<script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
     crossorigin="anonymous" defer></script>
-  <script src="/js/config.js?v=66" defer></script>
-  <script src="/js/tracking.js?v=66" defer></script>
-  <script src="/js/i18n.js?v=66" defer></script>
-  <script src="/js/supabase.js?v=66" defer></script>
-  <script src="/js/cart.js?v=66" defer></script>
-  <script src="/js/store.js?v=66" defer></script>
-  <script src="/js/ux.js?v=66" defer></script>
+  <script src="/js/config.js?v=67" defer></script>
+  <script src="/js/tracking.js?v=67" defer></script>
+  <script src="/js/i18n.js?v=67" defer></script>
+  <script src="/js/supabase.js?v=67" defer></script>
+  <script src="/js/cart.js?v=67" defer></script>
+  <script src="/js/store.js?v=67" defer></script>
+  <script src="/js/ux.js?v=67" defer></script>
 </body>
 </html>

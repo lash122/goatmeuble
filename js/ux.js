@@ -154,6 +154,39 @@
     }).observe(grid, { childList: true, subtree: true });
   }
 
+
+  /* ---- Bottom navigation (phones): active tab + search deep-link.
+     The search tab opens the fullscreen overlay when this page has one;
+     elsewhere it walks the visitor home first. #search on any page works. */
+  function initBottomNav() {
+    const nav = document.querySelector('.bottom-nav');
+    if (!nav) return;
+    const path = location.pathname.replace(/\/index\.html$/, '/');
+    nav.querySelectorAll('a').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      const target = href.split('#')[0] || '/';
+      const isHome = target === '/';
+      if ((isHome && (path === '/' || path === '/index.html')) ||
+          (!isHome && path.startsWith(target.replace(/\.html$/, '')))) {
+        a.classList.add('active');
+      }
+      if (href.endsWith('#search')) {
+        a.addEventListener('click', e => {
+          const btn = document.getElementById('searchBtn');
+          if (btn) { e.preventDefault(); btn.click(); }
+        });
+      }
+    });
+    const openFromHash = () => {
+      if (location.hash !== '#search') return;
+      const btn = document.getElementById('searchBtn');
+      if (btn) btn.click();
+      else location.href = '/#search';
+    };
+    if (location.hash === '#search') openFromHash();
+    window.addEventListener('hashchange', openFromHash);
+  }
+
   /* ---- Search Overlay ---- */
   function initSearchOverlay() {
     const overlay = document.getElementById('searchOverlay');
@@ -322,6 +355,7 @@
     initScrollReveal();
     initScrollVisibilityFallback();
     initSearchOverlay();
+    initBottomNav();
     initHamburger();
     initLangDropdown();
     initRipple();

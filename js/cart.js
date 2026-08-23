@@ -40,6 +40,9 @@ const Wishlist = {
 };
 
 function renderCartCount() {
+  const n = Cart.count();
   const el = document.getElementById('cartCount');
-  if (el) el.textContent = Cart.count();
+  if (el) el.textContent = n;
+  // the phone bottom-bar cart tab carries its own badge
+  document.querySelectorAll('.nav-cart-count').forEach(x => x.textContent = n);
 }

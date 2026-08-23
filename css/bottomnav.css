@@ -1,0 +1,37 @@
+
+/* ============================================================
+   BOTTOM NAVIGATION (phones only)
+   ============================================================ */
+.bottom-nav {
+  position: fixed; bottom: 0; inset-inline: 0; z-index: 96;
+  display: none; grid-template-columns: repeat(5, 1fr);
+  background: var(--paper, #fffdf9);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -6px 22px rgba(59, 47, 38, .10);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.bottom-nav a {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 2px 7px;
+  font-size: 0.62rem; font-weight: 600;
+  color: var(--muted); text-decoration: none;
+}
+.bottom-nav a.active { color: var(--gold); }
+.bottom-nav .bn-ico { font-size: 1.2rem; line-height: 1.15; }
+.bottom-nav .bn-badge {
+  position: absolute; top: 2px; inset-inline-end: calc(50% - 20px);
+  background: var(--gold); color: #fff; font-size: 0.58rem; font-weight: 700;
+  min-width: 16px; height: 16px; border-radius: 999px; padding: 0 4px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+@media (max-width: 860px) {
+  .bottom-nav { display: grid; }
+  /* keep the page footer readable above the bar */
+  body { padding-bottom: calc(62px + env(safe-area-inset-bottom)); }
+  /* floating call / WhatsApp buttons ride above the bar */
+  .call-fab { bottom: calc(74px + env(safe-area-inset-bottom)) !important; }
+  .wa-fab { bottom: calc(74px + env(safe-area-inset-bottom)); }
+  .wa-float { bottom: calc(74px + env(safe-area-inset-bottom)); }
+}
