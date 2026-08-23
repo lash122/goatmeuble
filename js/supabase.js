@@ -207,7 +207,6 @@ const DB = (() => {
   return {
     isDemo: IS_DEMO,
     photoOf,
-    thumbUrl,
     // elegant navy placeholder, used for categories with no tile photo yet
     placeholderFor: (seed) => placeholderPhoto(Number(seed) || 1),
 
