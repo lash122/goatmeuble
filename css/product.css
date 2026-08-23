@@ -207,3 +207,6 @@
   .m-actions { order: 3; }
   .pdp-sticky:not([hidden]) { display: flex; }
 }
+
+.pr-bigstars { color: var(--gold); font-size: 1.25rem; letter-spacing: 3px; }
+.pr-count { color: var(--muted); font-weight: 400; }

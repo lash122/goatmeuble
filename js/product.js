@@ -240,8 +240,10 @@ const PDP = (() => {
     if (total) {
       const rs = rn * (Number(summary?.avg_rating) || 0);
       const avg = Math.round(((rs + bn * (Number(baseline.avg) || 0)) / total) * 10) / 10;
-      document.getElementById('pdpReviewSummary').textContent =
-        `★ ${avg} (${total})`;
+      // draw the average AS stars (★★★★☆) with the figure beside it
+      document.getElementById('pdpReviewSummary').innerHTML =
+        `<span class="pr-bigstars">${starsHtml(Math.round(avg))}</span>` +
+        ` <b>${avg}</b> <span class="pr-count">(${total})</span>`;
     }
     const ul = document.getElementById('pdpReviews');
     ul.innerHTML = '';
