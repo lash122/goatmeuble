@@ -118,8 +118,13 @@ const PDP = (() => {
     renderQty();
     const btn = document.getElementById('pdpAdd');
     const was = btn.textContent;
-    btn.textContent = I18N.t('add_to_cart') + ' ✓';
+    btn.textContent = I18N.t('added_to_cart');
     setTimeout(() => { btn.textContent = was; }, 1400);
+    // the sticky bar's job is done once the item is in the cart: keep it
+    // hidden for the rest of the visit — the main CTA remains in its place,
+    // and the floating call/WhatsApp buttons get the corner back
+    const sticky = document.getElementById('pdpSticky');
+    if (sticky) sticky.hidden = true;
   }
 
   async function renderRelated() {

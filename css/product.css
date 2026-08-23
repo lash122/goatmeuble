@@ -217,3 +217,9 @@
     inset-inline: 10px; border-radius: 14px; padding-top: 9px; padding-bottom: 9px; }
   .pdp { padding-bottom: calc(180px + env(safe-area-inset-bottom)); }
 }
+
+/* on the product page the sticky buy bar occupies the zone just above the
+   bottom nav, so the floating call / WhatsApp buttons move up one level */
+@media (max-width: 860px) {
+  .call-fab, .wa-float { bottom: calc(122px + env(safe-area-inset-bottom)) !important; }
+}
