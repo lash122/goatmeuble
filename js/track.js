@@ -73,7 +73,9 @@ function renderResult(o) {
       I18N.getLang() === 'ar' ? 'ar-DZ' : I18N.getLang() === 'fr' ? 'fr-FR' : 'en-US')}</span>`;
   box.appendChild(head);
 
-  box.appendChild(o.status === 'cancelled' ? cancelledBanner() : statusTrail(o.status));
+  box.appendChild(
+    (o.status === 'cancelled' || o.status === 'returned')
+      ? cancelledBanner(o.status) : statusTrail(o.status));
 
   const items = document.createElement('ul');
   items.className = 'order-items';
@@ -162,10 +164,10 @@ function statusTrail(status) {
   return trail;
 }
 
-function cancelledBanner() {
+function cancelledBanner(status) {
   const div = document.createElement('div');
   div.className = 'track-cancelled';
-  div.textContent = I18N.t('st_cancelled');
+  div.textContent = I18N.t(status === 'returned' ? 'st_returned' : 'st_cancelled');
   return div;
 }
 

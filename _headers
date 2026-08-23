@@ -33,7 +33,7 @@
   #
   # Adding a pixel means adding its hosts here too — a CSP that silently
   # blocks the tracker looks exactly like a tracker that was never installed.
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://connect.facebook.net https://analytics.tiktok.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://bdvnlqdublfikmadcnev.supabase.co https://www.facebook.com https://analytics.tiktok.com https://relax-confort.com; connect-src 'self' https://bdvnlqdublfikmadcnev.supabase.co wss://bdvnlqdublfikmadcnev.supabase.co https://www.facebook.com https://connect.facebook.net https://analytics.tiktok.com
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://connect.facebook.net https://analytics.tiktok.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://bdvnlqdublfikmadcnev.supabase.co https://www.facebook.com https://analytics.tiktok.com ; connect-src 'self' https://bdvnlqdublfikmadcnev.supabase.co wss://bdvnlqdublfikmadcnev.supabase.co https://www.facebook.com https://connect.facebook.net https://analytics.tiktok.com
 
 # The owner's panel is not a search result and not a shareable link.
 /admin.html

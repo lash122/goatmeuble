@@ -708,6 +708,7 @@ drop policy if exists "anyone may submit a review" on reviews;
 drop policy if exists "approved reviews are public" on reviews;
 drop policy if exists "owner sees all reviews" on reviews;
 drop policy if exists "owner manages reviews" on reviews;
+drop policy if exists "owner deletes reviews" on reviews;
 
 -- submission needs no account; length limits keep the abuse surface small.
 -- Approval still gates what becomes public, so spam costs the owner one click.
@@ -754,3 +755,62 @@ on conflict (key) do nothing;
 drop policy if exists "read public settings" on settings;
 create policy "read public settings" on settings
   for select using (key in ('store', 'zones', 'promo', 'free_delivery_from', 'reviews_baseline'));
+
+
+-- ============================================================
+-- v1.6 — ABANDONED CHECKOUT LEADS + RETURN STATUS
+--
+-- A cart is browser-local storage: when someone fills their name and phone
+-- but leaves before pressing Commander, that lead used to vanish. This table
+-- keeps it — the owner sees who to call back. Public writes only (no reads),
+-- so the table leaks nothing even though the whole internet can write to it.
+-- ============================================================
+
+create table if not exists checkout_leads (
+  id bigint generated always as identity primary key,
+  phone text not null,
+  name text not null default '',
+  zone text not null default '',
+  items jsonb not null default '[]',
+  total numeric not null default 0,
+  recovered boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists leads_open_idx on checkout_leads(created_at) where not recovered;
+
+alter table checkout_leads enable row level security;
+
+drop policy if exists "anyone may leave a lead" on checkout_leads;
+drop policy if exists "owner reads leads" on checkout_leads;
+drop policy if exists "owner manages leads" on checkout_leads;
+drop policy if exists "owner deletes leads" on checkout_leads;
+
+create policy "anyone may leave a lead" on checkout_leads
+  for insert to anon, authenticated
+  with check (char_length(phone) <= 20);
+
+create policy "owner reads leads" on checkout_leads
+  for select to authenticated using (public.is_owner());
+
+create policy "owner manages leads" on checkout_leads
+  for update to authenticated using (public.is_owner()) with check (public.is_owner());
+
+create policy "owner deletes leads" on checkout_leads
+  for delete to authenticated using (public.is_owner());
+
+-- orders may come back: refused at the door, damaged in transit, exchanged.
+-- The status CHECK on orders only knows five states; widen it to accept
+-- 'returned' (the constraint arrived unnamed in v1.0, so find it by column).
+do $$
+declare c text;
+begin
+  select conname into c from pg_constraint
+   where conrelid = 'orders'::regclass and contype = 'c'
+     and pg_get_constraintdef(oid) like '%status%';
+  if c is not null then
+    execute format('alter table orders drop constraint %I', c);
+  end if;
+end $$;
+alter table orders add constraint orders_status_chk
+  check (status in ('new','confirmed','shipped','delivered','cancelled','returned'));

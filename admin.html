@@ -10,9 +10,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="preconnect" href="https://bdvnlqdublfikmadcnev.supabase.co" crossorigin>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/style.css?v=61">
-  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=61">
-  <link rel="stylesheet" href="/css/admin.css?v=61">
+  <link rel="stylesheet" href="/css/style.css?v=64">
+  <link id="themeCss" rel="stylesheet" href="/css/theme-furniture.css?v=64">
+  <link rel="stylesheet" href="/css/admin.css?v=64">
 </head>
 <body class="admin-body">
 
@@ -92,6 +92,16 @@
         </div>
         <p class="order-watch" id="orderWatch"></p>
         <p class="order-count" id="orderCount"></p>
+
+        <!-- abandoned checkouts: people who typed their name and number but
+             never pressed Commander — the call-back list -->
+        <div class="panel" style="margin-top:18px">
+          <div class="panel-h" style="margin-bottom:10px">
+            <h3 style="font-size:1.05rem;margin:0">Paniers abandonnés</h3>
+            <span class="order-count" id="leadsCount" style="margin:0"></span>
+          </div>
+          <div id="leadsBox"></div>
+        </div>
         <div class="tbl-wrap"><table class="tbl"><thead>
           <tr><th>#</th><th>Client</th><th>Zone</th><th>Total</th><th>Articles</th><th>Statut</th><th></th></tr>
         </thead><tbody id="ordersBody"></tbody></table></div>
@@ -317,10 +327,10 @@
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.js"
     integrity="sha384-qafw21c/iciq0VXsi9FzkfoQv5I/V0iqE4lSNcKXPnW9/UTJLnv5CcN4FHxVLnKg"
     crossorigin="anonymous" defer></script>
-  <script src="/js/config.js?v=61" defer></script>
-  <script src="/js/i18n.js?v=61" defer></script>
-  <script src="/js/supabase.js?v=61" defer></script>
-  <script src="/js/layouts.js?v=61" defer></script>
-  <script src="/js/admin.js?v=61" defer></script>
+  <script src="/js/config.js?v=64" defer></script>
+  <script src="/js/i18n.js?v=64" defer></script>
+  <script src="/js/supabase.js?v=64" defer></script>
+  <script src="/js/layouts.js?v=64" defer></script>
+  <script src="/js/admin.js?v=64" defer></script>
 </body>
 </html>

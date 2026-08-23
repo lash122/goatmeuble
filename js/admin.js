@@ -2,10 +2,10 @@
 const STATUSES = [
   ['new', 'Nouvelle', 'new'], ['confirmed', 'Confirmée', 'confirmed'],
   ['shipped', 'Expédiée', 'shipped'], ['delivered', 'Livrée', 'delivered'],
-  ['cancelled', 'Annulée', 'cancelled'],
+  ['returned', 'Retournée', 'cancelled'], ['cancelled', 'Annulée', 'cancelled'],
 ];
 let A = { cats: [], products: [], orders: [], zones: [], store: {},
-          promo: {}, freeFrom: null, codes: [], reviews: [] };
+          promo: {}, freeFrom: null, codes: [], reviews: [], leads: [] };
 let orderQuery = '';      // orders search box
 let orderSort = 'date_desc';
 let chosenLayout = '';    // Apparence tab — pending template choice
@@ -118,6 +118,10 @@ async function refreshAll() {
   renderLayouts(); renderPromotions(); renderCodes(); renderStats();
   setNewBadge(A.orders.filter(o => o.status === 'new').length);
   try { await refreshReviews(); } catch { /* reviews are optional */ }
+  try {
+    A.leads = await DB.getCheckoutLeads();
+    renderLeads();
+  } catch { /* leads panel is optional */ }
   try {
     const rb = await DB.getReviewsBaseline();
     document.getElementById('rb_count').value = Number(rb.count) || 0;
@@ -416,6 +420,50 @@ async function deleteOrder(o) {
     await DB.deleteOrder(o.id);
     await refreshAll();
   }, 'Commande supprimée');
+}
+
+/* ---- abandoned checkout leads: who to call back ---- */
+
+function renderLeads() {
+  const box = document.getElementById('leadsBox');
+  if (!box) return;
+  const list = A.leads || [];
+  const open = list.filter(l => !l.recovered);
+  const count = document.getElementById('leadsCount');
+  if (count) count.textContent = `${open.length} à rappeler sur ${list.length}`;
+
+  box.innerHTML = '';
+  if (!list.length) {
+    box.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;margin:0">Aucun panier abandonné pour le moment.</p>';
+    return;
+  }
+  list.forEach(l => {
+    const items = (l.items || []).reduce((s2, i) => s2 + (Number(i.qty) || 0), 0);
+    const d = l.created_at ? new Date(l.created_at).toLocaleDateString('fr-FR') : '';
+    const div = document.createElement('div');
+    div.className = 'panel lead-row';
+    div.innerHTML = `
+      <div class="rr-head">
+        <b>${esc(l.name || '—')}</b>
+        <a href="tel:${esc(l.phone)}" style="font-weight:600">${esc(l.phone)}</a>
+        ${l.recovered ? '<span class="status-tag status-delivered">récupéré</span>'
+                      : '<span class="status-tag status-confirmed">à rappeler</span>'}
+      </div>
+      <small style="color:var(--muted)">${esc(l.zone || '—')} · ${items} article(s) · ${I18N.fmtPrice(l.total)} · ${d}</small>
+      <div class="row-actions" style="margin-top:8px">
+        <a class="btn-mini" href="tel:${esc(l.phone)}">📞 Appeler</a>
+        ${!l.recovered ? `<button class="btn-mini adv" data-a="rec">✓ Récupéré</button>` : ''}
+        <button class="btn-mini danger" data-a="del">🗑</button>
+      </div>`;
+    const rec = div.querySelector('[data-a="rec"]');
+    if (rec) rec.addEventListener('click', () =>
+      run(async () => { await DB.setLeadRecovered(l.id, true); await refreshAll(); }, 'Marqué récupéré'));
+    div.querySelector('[data-a="del"]').addEventListener('click', () => {
+      if (!confirm('Supprimer ce panier abandonné ?')) return;
+      run(async () => { await DB.deleteLead(l.id); await refreshAll(); });
+    });
+    box.appendChild(div);
+  });
 }
 
 /* Export the current view (filter + search + sort) to an Excel-friendly CSV.

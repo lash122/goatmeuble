@@ -140,7 +140,7 @@ const PDP = (() => {
       a.href = `/p/${x.id}/`;
       a.style.textDecoration = 'none';
       a.innerHTML = `
-        <div class="photo"><img src="${esc(DB.photoOf(x))}" alt="" loading="lazy"></div>
+        <div class="photo"><img src="${esc(DB.thumbUrl(DB.photoOf(x)))}" onerror="this.onerror=null;this.src='${esc(DB.photoOf(x))}'" alt="" loading="lazy"></div>
         <div class="info">
           <span class="cat">${esc(p.category_name || '')}</span>
           <h3>${esc(I18N.localize(x, 'name'))}</h3>

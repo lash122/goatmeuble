@@ -218,6 +218,10 @@ function buildForm(subtotal) {
     // method has to redraw it, not just recompute the total
     form.querySelectorAll('input[name="deliv"]').forEach(r =>
       r.addEventListener('change', () => { renderZoneOptions(); updateTotals(); }));
+    // abandoned-cart capture: once we know WHO they are, keep a server-side
+    // copy so a lost customer is a phone call, not a memory
+    form.querySelector('#fPhone').addEventListener('input', saveLeadDebounced);
+    form.querySelector('#fName').addEventListener('input', saveLeadDebounced);
   }
 
   // localize labels + placeholders
@@ -410,6 +414,38 @@ function renderSuccessContact() {
 
 /* place_order() raises short codes rather than sentences, so the customer
    gets a translated message instead of a Postgres error. */
+/* ---- abandoned-cart lead capture ----------------------------------------
+   Fires (debounced) whenever name + phone look real. One lead per phone per
+   session: a repeat event for the same basket is skipped, an updated basket
+   overwrites by inserting fresh — the admin screen shows the newest anyway. */
+let lastLeadSent = { phone: '', sig: '' };
+let leadTimer = null;
+
+function saveLeadDebounced() {
+  clearTimeout(leadTimer);
+  leadTimer = setTimeout(saveLead, 2500);
+}
+
+function saveLead() {
+  const name = document.getElementById('fName')?.value.trim() || '';
+  const rawPhone = document.getElementById('fPhone')?.value.trim() || '';
+  const digits = rawPhone.replace(/\D/g, '').replace(/^(213|00213)/, '');
+  const phone = digits.startsWith('0') ? digits : '0' + digits;
+  // a lead without a usable number cannot be called back — skip quietly
+  if (!/^0[567]\d{8}$/.test(phone) || name.length < 2) return;
+  const items = Cart.get().map(i => ({ product_id: i.product_id, size: i.size, qty: i.qty }));
+  const total = Number(document.getElementById('totalVal')?.textContent.replace(/\D/g, '')) || 0;
+  const sig = phone + '|' + JSON.stringify(items);
+  if (phone === lastLeadSent.phone && sig === lastLeadSent.sig) return;
+  lastLeadSent = { phone, sig };
+  const zoneSel = document.getElementById('fZone');
+  DB.saveCheckoutLead({
+    phone, name,
+    zone: zoneSel?.selectedOptions?.[0]?.textContent?.trim() || '',
+    items, total,
+  }).catch(() => { /* leads are opportunistic; never nag the customer */ });
+}
+
 function orderErrorMessage(e) {
   const code = String(e?.message || '');
   if (code.includes('OUT_OF_STOCK')) return I18N.t('err_stock');

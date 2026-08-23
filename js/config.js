@@ -24,7 +24,7 @@ window.SITE_URL = ''; // Set to your production domain, e.g. 'https://goatmeuble
 /* Hero background image. Leave empty to auto-use the first featured product
    photo. Set a URL (absolute or root-relative like '/assets/hero.jpg') to
    use a specific image instead. */
-window.HERO_IMAGE = '/assets/hero-goat.jpg';
+window.HERO_IMAGE = '/assets/hero-goat.webp';
 
 /* Ad pixels. The shop's traffic comes from Facebook, Instagram and TikTok,
    and an ad platform can only optimise for what it can measure — without

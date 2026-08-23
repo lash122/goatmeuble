@@ -92,6 +92,45 @@ const DB = (() => {
       };
       img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read the image')); };
       img.src = url;
+  };
+}
+
+  /* v1.6 — two WebP variants per upload: a full-size one for the product
+     page and a small one for cards. WebP typically halves the bytes of the
+     same-quality JPEG. Falls back to JPEG when the browser cannot encode
+     WebP (the thumb then simply reuses the main file). */
+  function processImage(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const draw = (maxDim, type, q) => new Promise(res => {
+          const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+          const w = Math.max(1, Math.round(img.naturalWidth * scale));
+          const h = Math.max(1, Math.round(img.naturalHeight * scale));
+          const c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          const ctx = c.getContext('2d');
+          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          c.toBlob(b => res(b), type, q);
+        });
+        (async () => {
+          try {
+            let main = await draw(1400, 'image/webp', 0.82);
+            if (!main || main.type !== 'image/webp') {
+              main = await draw(1400, 'image/jpeg', 0.82);
+            }
+            let sm = await draw(420, 'image/webp', 0.72);
+            URL.revokeObjectURL(url);
+            resolve({ main, sm: (sm && sm.type === 'image/webp') ? sm : main });
+          } catch (err) { URL.revokeObjectURL(url); reject(err); }
+        })();
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read the image')); };
+      img.src = url;
+    });
+  }
     });
   }
 
@@ -170,6 +209,7 @@ const DB = (() => {
   return {
     isDemo: IS_DEMO,
     photoOf,
+    thumbUrl,
     // elegant navy placeholder, used for categories with no tile photo yet
     placeholderFor: (seed) => placeholderPhoto(Number(seed) || 1),
 
@@ -569,6 +609,36 @@ const DB = (() => {
         .upsert({ key: 'reviews_baseline', value: { count: Number(count) || 0, avg: Number(avg) || 0 } }));
     },
 
+    /* ---- v1.6 abandoned-checkout leads ----------------------------------
+       Written the moment a customer identifies themselves (name + phone),
+       long before Commander. Public write, owner-only read: the table can
+       never leak even though the whole internet may fill it. */
+    async saveCheckoutLead(lead) {
+      if (IS_DEMO) return;
+      must(await sb.from('checkout_leads').insert({
+        phone: lead.phone, name: lead.name || '', zone: lead.zone || '',
+        items: lead.items || [], total: Number(lead.total) || 0,
+      }));
+    },
+
+    async getCheckoutLeads() {
+      if (IS_DEMO) return [];
+      // open leads first, newest first
+      return must(await sb.from('checkout_leads')
+        .select('*').order('recovered', { ascending: false })
+        .order('created_at', { ascending: false }).limit(100)) || [];
+    },
+
+    async setLeadRecovered(id, recovered) {
+      if (IS_DEMO) return;
+      must(await sb.from('checkout_leads').update({ recovered }).eq('id', id));
+    },
+
+    async deleteLead(id) {
+      if (IS_DEMO) return;
+      must(await sb.from('checkout_leads').delete().eq('id', id));
+    },
+
     /* Storefront first paint: the whole cached entry, synchronously, when it
        is fresh enough to trust. The live fetch still runs and replaces it. */
     getCachedCatalogue() {
@@ -596,13 +666,27 @@ const DB = (() => {
 
     // ---- storage (product photos, category tiles) ----
     async uploadPhoto(file) {
-      const name = `${Date.now()}-${file.name.replace(/[^\w.-]/g, '_')}.jpg`;
-      const blob = await compressImage(file, 1200);
-      if (IS_DEMO) return URL.createObjectURL(blob);
+      const base = `${Date.now()}-${file.name.replace(/[^\w.-]/g, '_').replace(/\.[^.]+$/, '')}`;
+      const { main, sm } = await processImage(file);
+      if (IS_DEMO) return URL.createObjectURL(main);
       // a File, not a bare Blob, so Supabase stores the right content-type
-      const upload = new File([blob], name, { type: 'image/jpeg' });
-      must(await sb.storage.from('products').upload(name, upload));
-      return sb.storage.from('products').getPublicUrl(name).data.publicUrl;
+      must(await sb.storage.from('products')
+        .upload(base + '.webp', new File([main], base + '.webp', { type: main.type })));
+      // the card-size twin is a convenience: if it fails the storefront just
+      // keeps using the full image through thumbUrl()'s fallback
+      sb.storage.from('products')
+        .upload(base + '-sm.webp', new File([sm], base + '-sm.webp', { type: sm.type }))
+        .catch(e => console.warn('thumb upload skipped:', e?.message));
+      return sb.storage.from('products').getPublicUrl(base + '.webp').data.publicUrl;
+    },
+
+    /* Card-size variant of a stored photo. New uploads carry a -sm.webp twin;
+       anything else (older photos, external urls) comes back unchanged, and
+       the <img> onerror falls back to the original file. */
+    thumbUrl(url) {
+      const s = String(url || '');
+      if (!s.includes('/storage/v1/object/public/') || !s.endsWith('.webp')) return s;
+      return s.replace(/\.webp$/, '-sm.webp');
     },
 
     async uploadCategoryPhoto(file) {

@@ -199,7 +199,7 @@
             const card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = `
-              <a class="photo" href="/p/${p.id}/"><img src="${esc(p.photos?.[0] || '')}" alt="${esc(typeof I18N !== 'undefined' ? I18N.localize(p, 'name') : '')}" loading="lazy"></a>
+              <a class="photo" href="/p/${p.id}/"><img src="${esc(typeof DB !== 'undefined' && DB.thumbUrl ? DB.thumbUrl(p.photos?.[0] || '') : (p.photos?.[0] || ''))}" alt="${esc(typeof I18N !== 'undefined' ? I18N.localize(p, 'name') : '')}" loading="lazy"></a>
               <div class="info">
                 <div class="cat">${esc(typeof I18N !== 'undefined' ? (p.category_id ? catName(p.category_id) : '') : '')}</div>
                 <h3><a href="/p/${p.id}/">${esc(typeof I18N !== 'undefined' ? I18N.localize(p, 'name') : '')}</a></h3>

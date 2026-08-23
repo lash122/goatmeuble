@@ -476,7 +476,7 @@ function productCard(p) {
   // fashion sells on the second look: a product with several photos reveals
   // the next one on hover, so the grid feels alive without opening the modal
   const rollover = photos[1]
-    ? `<img class="ph-second" src="${esc(photos[1])}" alt="" loading="lazy">` : '';
+    ? `<img class="ph-second" src="${esc(DB.thumbUrl(photos[1]))}" onerror="this.onerror=null;this.src='${esc(photos[1])}'" alt="" loading="lazy">` : '';
   // merchandising ribbons on the photo: Nouveau (added within two weeks) and
   // Bestseller (the ⭐ flag the owner sets in the admin)
   const isNew = !!p.created_at && Date.now() - new Date(p.created_at).getTime() < 14 * 864e5;
@@ -497,7 +497,7 @@ function productCard(p) {
     ${wishHeart(p)}
     <a class="photo" href="${href}"
        aria-label="${esc(I18N.t('view_product').replace('{name}', name))}">
-      <img class="ph-main" src="${esc(DB.photoOf(p))}" alt="${esc(name)}" loading="lazy">
+      <img class="ph-main" src="${esc(DB.thumbUrl(DB.photoOf(p)))}" onerror="this.onerror=null;this.src='${esc(DB.photoOf(p))}'" alt="${esc(name)}" loading="lazy">
       ${rollover}
       ${badgesHtml}
     </a>
@@ -678,7 +678,7 @@ function renderRecentlyViewed() {
     el.className = 'rv-item';
     el.href = productPath(p.id);
     el.innerHTML = `
-      <img src="${esc(DB.photoOf(p))}" alt="" loading="lazy">
+      <img src="${esc(DB.thumbUrl(DB.photoOf(p)))}" onerror="this.onerror=null;this.src='${esc(DB.photoOf(p))}'" alt="" loading="lazy">
       <span class="rv-name">${esc(I18N.localize(p, 'name'))}</span>
       <span class="rv-price">${I18N.fmtPrice(effPrice(p))}</span>`;
     strip.appendChild(el);
@@ -728,7 +728,7 @@ function renderRelated(p) {
     const b = document.createElement('button');
     b.className = 'rel-item';
     b.innerHTML = `
-      <img src="${esc(DB.photoOf(x))}" alt="" loading="lazy">
+      <img src="${esc(DB.thumbUrl(DB.photoOf(x)))}" onerror="this.onerror=null;this.src='${esc(DB.photoOf(x))}'" alt="" loading="lazy">
       <span class="rv-name">${esc(I18N.localize(x, 'name'))}</span>
       <span class="rv-price">${I18N.fmtPrice(effPrice(x))}</span>`;
     b.addEventListener('click', () => openModal(x));   // swaps the modal in place

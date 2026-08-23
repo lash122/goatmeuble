@@ -349,3 +349,9 @@ td.stock-out { color: #9c3434; font-weight: 700; background: #fdf0f0; }
   .zone-edit .z-name { flex: 1 1 100%; }
   .bar-row { grid-template-columns: 110px 1fr 60px; }
 }
+
+/* abandoned-checkout lead rows */
+.lead-row { margin-bottom: 10px; }
+@media (max-width: 640px) {
+  .lead-row { padding: 10px 12px; margin-bottom: 8px; box-shadow: none; }
+}
