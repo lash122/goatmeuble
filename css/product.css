@@ -213,9 +213,8 @@
 
 /* the sticky buy button rides above the phone bottom-nav, never under it */
 @media (max-width: 860px) {
-  .pdp-sticky { bottom: calc(66px + env(safe-area-inset-bottom)) !important;
-    inset-inline: 10px; border-radius: 14px; padding-top: 9px; padding-bottom: 9px; }
-  .pdp { padding-bottom: calc(180px + env(safe-area-inset-bottom)); }
+  .pdp-sticky { bottom: calc(58px + env(safe-area-inset-bottom)) !important; }
+  .pdp { padding-bottom: calc(170px + env(safe-area-inset-bottom)); }
 }
 
 /* on the product page the sticky buy bar occupies the zone just above the
