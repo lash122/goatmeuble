@@ -19,7 +19,7 @@ const SUPABASE_CONFIG = {
 // window, and every reader here (index/checkout/track head snippets,
 // absUrl() in js/store.js) looks it up as window.SITE_URL. Declared as a
 // const it silently stayed undefined and the pages fell back to the origin.
-window.SITE_URL = ''; // Set to your production domain, e.g. 'https://goatmeubles.dz'
+window.SITE_URL = 'https://goat7.netlify.app';
 
 /* Hero background image. Leave empty to auto-use the first featured product
    photo. Set a URL (absolute or root-relative like '/assets/hero.jpg') to

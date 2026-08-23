@@ -1,38 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>/</loc>
-    <lastmod>2026-08-19</lastmod>
+    <loc>https://goat7.netlify.app/</loc>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>/track.html</loc>
-    <lastmod>2026-08-19</lastmod>
+    <loc>https://goat7.netlify.app/boutique.html</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://goat7.netlify.app/track.html</loc>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>/p/1</loc>
-    <lastmod>2026-08-19</lastmod>
+    <loc>https://goat7.netlify.app/p/67</loc>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>/p/2</loc>
-    <lastmod>2026-08-19</lastmod>
+    <loc>https://goat7.netlify.app/p/68</loc>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>/p/3</loc>
-    <lastmod>2026-08-19</lastmod>
+    <loc>https://goat7.netlify.app/p/69</loc>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>/p/4</loc>
-    <lastmod>2026-08-19</lastmod>
+    <loc>https://goat7.netlify.app/p/73</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://goat7.netlify.app/p/74</loc>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
