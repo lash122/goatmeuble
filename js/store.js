@@ -138,6 +138,19 @@ function effPrice(p) {
 
 /* Paint the whole shopfront from the current state. Used for both the
    cached first paint and the live refresh, so they can never disagree. */
+
+/* Safety net for the scroll-reveal system: any .reveal / .reveal-stagger
+   section that already holds rendered content is forced visible. On slow
+   first loads the IntersectionObserver handshake could otherwise leave
+   dynamically injected products/categories at opacity:0 - looking exactly
+   like "the page did not load". */
+function forceRevealPopulated() {
+  document.querySelectorAll('.reveal:not(.visible), .reveal-stagger:not(.visible)').forEach(el => {
+    if (el.hidden) return;
+    if (el.children.length) el.classList.add('visible');
+  });
+}
+
 function applyCatalogue() {
   renderPromoBanner();
   renderChips();
@@ -273,6 +286,7 @@ async function initStore() {
         renderFeatured(); renderGrid(); renderRecentlyViewed();
       } catch { /* stars are decoration */ }
     })();
+    forceRevealPopulated();
   });
 
   const resetBtn = document.getElementById('resetFilters');
