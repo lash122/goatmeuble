@@ -1412,3 +1412,21 @@ body:has(.app-tabbar) .sticky-cart { bottom: 58px; }
 .card-stars .cs-fill { position: absolute; inset-inline-start: 0; top: 0;
   overflow: hidden; white-space: nowrap; color: var(--gold); }
 .card-stars b { color: var(--ink); font-size: 0.78rem; }
+
+/* phone fix: the category rail was hidden with the desktop sidebar - bring
+   the chips back as a horizontal scroller above the grid */
+@media (max-width: 860px) {
+  .catalogue-layout { display: block; }
+  .cat-rail { display: block !important; position: static;
+    background: transparent; border: none; box-shadow: none;
+    border-radius: 0; padding: 0; margin-bottom: 16px; }
+  #categoryChips { display: flex; flex-direction: row !important;
+    overflow-x: auto; gap: 8px; padding-bottom: 4px;
+    scrollbar-width: none; }
+  #categoryChips::-webkit-scrollbar { display: none; }
+  #categoryChips .chip, #categoryChips .chip:hover {
+    width: auto; white-space: nowrap;
+    border: 1px solid var(--gray-200); background: var(--white);
+    color: var(--muted); padding: 8px 18px; border-radius: 999px; }
+  #categoryChips .chip.active { background: var(--gold); border-color: var(--gold); color: #fff; }
+}
