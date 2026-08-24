@@ -795,16 +795,14 @@ function readProductId() {
    and the shareable link below is a separate thing — handing pushState the
    pinned SITE_URL while previewing on localhost throws a SecurityError. */
 function productPath(id) {
-  // Works from every page shape: "/", "/boutique.html", "/p/24/",
-  // "/p/24/index.html". Any ".html" filename collapses to its folder first
-  // ("/boutique.html" -> "/"), then a product-page path collapses to "/".
-  // The trailing slash matters: without it, relative links from a product
-  // page resolve against /p/ instead of /, landing one level too high.
-  const base = location.pathname
-    .replace(/[^/]*\.html$/, '')
-    .replace(/\/p\/\d+\/?$/, '/');
-  return `${base}p/${encodeURIComponent(id)}/`;
+  /* Every storefront page lives at the domain root - "/", "/boutique",
+     "/boutique.html", "/track.html" - so the product path is always
+     root-absolute. Deriving a relative base from location.pathname broke on
+     extension-less pretty URLs like "/boutique", where it produced
+     "/boutiquep/<id>/" (404). Root-absolute works from any page shape. */
+  return `/p/${encodeURIComponent(id)}/`;
 }
+
 
 /* The absolute link that goes into a share sheet, an ad, or the canonical.
    Pinned to SITE_URL when it is set, so Google and WhatsApp see one domain
