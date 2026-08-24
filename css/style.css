@@ -1398,3 +1398,7 @@ body:has(.app-tabbar) .sticky-cart { bottom: 58px; }
 .pr-stars-frac .sf-base { color: var(--line); }
 .pr-stars-frac .sf-fill { position: absolute; inset-inline-start: 0; top: 0;
   overflow: hidden; white-space: nowrap; color: var(--gold); }
+
+/* photo-corner discount ribbon on cards */
+.badges .badge-off { background: var(--gold); color: #fff;
+  box-shadow: 0 4px 12px rgba(169, 96, 63, .35); }

@@ -499,6 +499,11 @@ function productCard(p) {
   // Bestseller (the ⭐ flag the owner sets in the admin)
   const isNew = !!p.created_at && Date.now() - new Date(p.created_at).getTime() < 14 * 864e5;
   const badges = [];
+  // the discount leads the stack: it is the strongest click driver of all
+  if (onSale) {
+    const pct = Math.min(90, Math.round((1 - price / old) * 100));
+    badges.push(`<span class="badge-pill badge-off">-${pct}%</span>`);
+  }
   if (isNew) badges.push(`<span class="badge-pill badge-new">${esc(I18N.t('badge_new'))}</span>`);
   if (p.featured) badges.push(`<span class="badge-pill badge-top">${esc(I18N.t('badge_bestseller'))}</span>`);
   const badgesHtml = badges.length ? `<div class="badges">${badges.join('')}</div>` : '';
