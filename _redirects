@@ -9,3 +9,10 @@
 # Anything else falls through to 404.html, which Netlify and Cloudflare Pages
 # both serve automatically for an unmatched path. No rule needed here — but
 # adding a catch-all /* rule WOULD break it, so don't.
+
+# Rescue rule for visitors whose browser still holds the pre-fix storefront
+# script: it builds garbage product links like /boutique.htmlp/77/ from any
+# page. Redirect every <page>.htmlp/<id>/ shape to the real product page.
+/boutique.htmlp/*  /p/:splat   301
+/index.htmlp/*     /p/:splat   301
+/track.htmlp/*     /p/:splat   301
