@@ -230,6 +230,7 @@ async function initStore() {
     state.store = cached.store || {};
     if (cached.store?.phone) document.getElementById('footerPhone').textContent = cached.store.phone;
     applyCatalogue();
+    loadRatings();
   } else {
     // first visit, nothing cached — paint ghost cards so the wait reads as
     // loading instead of an empty shop
@@ -253,6 +254,7 @@ async function initStore() {
     if (store?.phone) document.getElementById('footerPhone').textContent = store.phone;
     state.store = store || {};
     applyCatalogue();
+    loadRatings();
   } catch (e) {
     // without this the catalogue would just look empty, which reads as
     // "the shop has no products" rather than "something is broken"
@@ -271,25 +273,7 @@ async function initStore() {
   document.addEventListener('langchange', () => {
     renderPromoBanner(); renderChips(); renderTiles();
     renderFeatured(); renderGrid(); renderRecentlyViewed(); renderWhatsApp(state.store);
-    // review stars: one RPC for every product + the owner's baseline, then
-    // the cards repaint with whatever ratings exist. Silent on any failure.
-    (async () => {
-      try {
-        const [rows, base] = await Promise.all([
-          DB.reviewSummaryAll().catch(() => []),
-          DB.getReviewsBaseline().catch(() => ({ count: 0, avg: 0 })),
-        ]);
-        const map = {};
-        (rows || []).forEach(r => { map[r.product_id] = r; });
-        state.reviewMap = map;
-        state.reviewBase = {
-          count: Math.max(0, Number(base.count) || 0),
-          avg: Math.min(5, Math.max(0, Number(base.avg) || 0)),
-        };
-        state.ratingsReady = true;
-        renderFeatured(); renderGrid(); renderRecentlyViewed();
-      } catch { /* stars are decoration */ }
-    })();
+    loadRatings();
     forceRevealPopulated();
   });
 
@@ -554,7 +538,9 @@ function productCard(p) {
         ${!soldOut && p.stock <= 3 ? `<span class="badge-low">${esc(I18N.t('low_stock').replace('{n}', p.stock))}</span>` : ''}
       </div>
       ${(() => { const r = blendedRating(p.id);
-        return r ? `<div class="card-stars">★ <b>${r.avg.toFixed(1)}</b> <small>(${r.count})</small></div>` : ''; })()}
+        if (!r) return '';
+        const pct = Math.max(0, Math.min(100, (r.avg / 5) * 100));
+        return `<div class="card-stars"><span class="cs-frac"><span class="cs-base">★★★★★</span><span class="cs-fill" style="width:${pct}%">★★★★★</span></span> <b>${r.avg.toFixed(1)}</b> <small>(${r.count})</small></div>`; })()}
     </div>`;
   card.querySelector('.heart').addEventListener('click', () => {
     const had = Wishlist.has(p.id);
@@ -577,6 +563,28 @@ function productCard(p) {
 /* Blended rating for a card: real approved reviews plus the owner's baseline
    (a shop with years of offline sales should not start at zero). Returns
    null when there is nothing to show. */
+
+/* Fetch every product's rating summary + the owner's baseline once, then
+   repaint the card surfaces. Called at boot; safe to call again (it just
+   re-renders with fresh numbers). */
+async function loadRatings() {
+  try {
+    const [rows, base] = await Promise.all([
+      DB.reviewSummaryAll().catch(() => []),
+      DB.getReviewsBaseline().catch(() => ({ count: 0, avg: 0 })),
+    ]);
+    const map = {};
+    (rows || []).forEach(r => { map[r.product_id] = r; });
+    state.reviewMap = map;
+    state.reviewBase = {
+      count: Math.max(0, Number(base.count) || 0),
+      avg: Math.min(5, Math.max(0, Number(base.avg) || 0)),
+    };
+    state.ratingsReady = true;
+    renderFeatured(); renderGrid(); renderRecentlyViewed();
+  } catch { /* stars are decoration */ }
+}
+
 function blendedRating(pid) {
   if (!state.ratingsReady) return null;
   const real = state.reviewMap[pid];

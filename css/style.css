@@ -1402,3 +1402,13 @@ body:has(.app-tabbar) .sticky-cart { bottom: 58px; }
 /* photo-corner discount ribbon on cards */
 .badges .badge-off { background: var(--gold); color: #fff;
   box-shadow: 0 4px 12px rgba(169, 96, 63, .35); }
+
+/* fractional gold stars on cards */
+.card-stars { display: flex; align-items: center; gap: 5px;
+  margin-top: 4px; font-size: 0.78rem; color: var(--muted); }
+.card-stars .cs-frac { position: relative; display: inline-block;
+  font-size: 0.85rem; line-height: 1; letter-spacing: 1px; }
+.card-stars .cs-base { color: var(--gray-200); }
+.card-stars .cs-fill { position: absolute; inset-inline-start: 0; top: 0;
+  overflow: hidden; white-space: nowrap; color: var(--gold); }
+.card-stars b { color: var(--ink); font-size: 0.78rem; }
