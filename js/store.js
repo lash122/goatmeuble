@@ -169,7 +169,11 @@ function applyCatalogue() {
    is no cached copy to paint. Mirrors the grid silhouette (photo, title,
    price) so the real cards replace them in place without a layout jump. */
 function showSkeletons() {
+  // the boutique split removed the grid from the homepage: there, skeletons
+  // make no sense (the tiles/featured sections carry their own states) and
+  // crashing here used to abort the whole catalogue boot
   const grid = document.getElementById('productGrid');
+  if (!grid) return;
   const cols = Math.max(1, Math.round(grid.clientWidth / 260));
   grid.innerHTML = '';
   for (let i = 0; i < cols * 2; i++) {
@@ -289,6 +293,7 @@ async function initStore() {
     forceRevealPopulated();
   });
 
+  // catalogue-only controls (they live on boutique.html since the split)
   const resetBtn = document.getElementById('resetFilters');
   if (resetBtn) resetBtn.addEventListener('click', () => {
     state.filter = null; state.query = '';
@@ -297,9 +302,9 @@ async function initStore() {
     renderChips(); renderGrid(); renderFeatured();
   });
   const search = document.getElementById('searchBox');
-  search.addEventListener('input', () => { state.query = search.value.trim().toLowerCase(); renderGrid(); });
+  if (search) search.addEventListener('input', () => { state.query = search.value.trim().toLowerCase(); renderGrid(); });
   const sortSel = document.getElementById('sortBy');
-  sortSel.addEventListener('change', () => { state.sort = sortSel.value; renderGrid(); });
+  if (sortSel) sortSel.addEventListener('change', () => { state.sort = sortSel.value; renderGrid(); });
 
   document.getElementById('mShare').addEventListener('click', shareCurrent);
   window.addEventListener('popstate', () => {

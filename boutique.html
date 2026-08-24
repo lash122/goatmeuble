@@ -30,16 +30,16 @@
   <script>
     (function () {
       function absolutizeSeo() {
-        var base = (window.SITE_URL || location.origin).replace(/\\/+$/, '');
+        var base = (window.SITE_URL || location.origin).replace(/\/+$/, '');
         ['og:url', 'og:image', 'twitter:image'].forEach(function (prop) {
           var el = document.querySelector('meta[property="' + prop + '"], meta[name="' + prop + '"]');
           if (el && el.content && !/^https?:/i.test(el.content)) {
-            el.content = base + '/' + el.content.replace(/^\\/+/, '');
+            el.content = base + '/' + el.content.replace(/^\/+/, '');
           }
         });
         var can = document.querySelector('link[rel="canonical"]');
         if (can && can.href && !/^https?:/i.test(can.getAttribute('href') || '')) {
-          can.href = base + '/' + (can.getAttribute('href') || '').replace(/^\\/+/, '');
+          can.href = base + '/' + (can.getAttribute('href') || '').replace(/^\/+/, '');
         }
       }
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', absolutizeSeo);
